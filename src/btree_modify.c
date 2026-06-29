@@ -81,7 +81,7 @@ garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root,
         if (new_root_node.entry_count <= orig_root_entries) {
             new_root_page = garry_allocate_internal(pool);
             if (new_root_page < 0) {
-                return inserted;
+                return 0;
             }
             new_root_node.kind = GARRY_NODE_INTERNAL;
             hdr.page_type = GARRY_NODE_INTERNAL;
@@ -176,8 +176,10 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
                 garry_store_node(pool, page, &node);
                 garry_pool_mark_dirty(pool, page);
             } else {
-                internal_split(pool, page, &node, idx, child_sep, child_sep_len,
-                               child_new, sep, sep_len, new_child);
+                if (!internal_split(pool, page, &node, idx, child_sep, child_sep_len,
+                                   child_new, sep, sep_len, new_child)) {
+                    return 0;
+                }
             }
         }
         return inserted;
@@ -210,6 +212,11 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
     tmp_lens = malloc(sizeof(garry_i32) * (GARRY_MAX_KEYS_PER_NODE + 1));
     tmp_values = malloc(sizeof(garry_byte_array) * (GARRY_MAX_KEYS_PER_NODE + 1));
     tmp_vlens = malloc(sizeof(garry_i32) * (GARRY_MAX_KEYS_PER_NODE + 1));
+
+    if (!tmp_keys || !tmp_lens || !tmp_values || !tmp_vlens) {
+        free(tmp_keys); free(tmp_lens); free(tmp_values); free(tmp_vlens);
+        return 0;
+    }
 
     all_count = node->entry_count + 1;
     mid = all_count / 2;
@@ -301,6 +308,11 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
     tmp_keys = malloc(sizeof(garry_byte_array) * (GARRY_MAX_KEYS_PER_NODE + 1));
     tmp_lens = malloc(sizeof(garry_i32) * (GARRY_MAX_KEYS_PER_NODE + 1));
     tmp_children = malloc(sizeof(garry_i32) * (GARRY_MAX_KEYS_PER_NODE + 2));
+
+    if (!tmp_keys || !tmp_lens || !tmp_children) {
+        free(tmp_keys); free(tmp_lens); free(tmp_children);
+        return 0;
+    }
 
     all_count = node->entry_count + 1;
     mid = all_count / 2;

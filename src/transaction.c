@@ -97,23 +97,19 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
 
     eng->active_txns = (garry_txn_id*)malloc(sizeof(garry_txn_id) * settings.max_txns);
     eng->txn_states = (garry_txn_info*)malloc(sizeof(garry_txn_info) * settings.max_txns);
-    eng->modified_pages = (garry_i32*)malloc(sizeof(garry_i32) * GARRY_MAX_MODIFIED_PAGES);
-    if (!eng->active_txns || !eng->txn_states || !eng->modified_pages) {
+    if (!eng->active_txns || !eng->txn_states) {
         free(eng->active_txns);
         free(eng->txn_states);
-        free(eng->modified_pages);
         free(eng);
         return NULL;
     }
     memset(eng->active_txns, 0, sizeof(garry_txn_id) * settings.max_txns);
     memset(eng->txn_states, 0, sizeof(garry_txn_info) * settings.max_txns);
-    memset(eng->modified_pages, 0, sizeof(garry_i32) * GARRY_MAX_MODIFIED_PAGES);
 
     eng->pool = garry_pool_create(path, (garry_u32)settings.pool_size, (garry_u32)settings.page_size);
     if (!eng->pool) {
         free(eng->active_txns);
         free(eng->txn_states);
-        free(eng->modified_pages);
         free(eng);
         return NULL;
     }
@@ -129,7 +125,13 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
     ckpt_path[path_len] = '-'; ckpt_path[path_len + 1] = 'c';
     ckpt_path[path_len + 2] = 'k'; ckpt_path[path_len + 3] = 'p';
     ckpt_path[path_len + 4] = 't'; ckpt_path[path_len + 5] = '\0';
-    garry_wal_log_init(&eng->wal, (const char*)wal_path, (const char*)ckpt_path);
+    if (garry_wal_log_init(&eng->wal, (const char*)wal_path, (const char*)ckpt_path) != GARRY_OK) {
+        garry_pool_close(eng->pool);
+        free(eng->active_txns);
+        free(eng->txn_states);
+        free(eng);
+        return NULL;
+    }
 
     eng->lock_mgr = garry_create_lock_manager();
     garry_rwlock_init(&eng->root_lock);
@@ -231,18 +233,15 @@ garry_engine_handle* garry_engine_open(const char *path)
 
     eng->active_txns = (garry_txn_id*)malloc(sizeof(garry_txn_id) * eng->max_txns);
     eng->txn_states = (garry_txn_info*)malloc(sizeof(garry_txn_info) * eng->max_txns);
-    eng->modified_pages = (garry_i32*)malloc(sizeof(garry_i32) * GARRY_MAX_MODIFIED_PAGES);
-    if (!eng->active_txns || !eng->txn_states || !eng->modified_pages) {
+    if (!eng->active_txns || !eng->txn_states) {
         free(eng->active_txns);
         free(eng->txn_states);
-        free(eng->modified_pages);
         free(eng->pool);
         free(eng);
         return NULL;
     }
     memset(eng->active_txns, 0, sizeof(garry_txn_id) * eng->max_txns);
     memset(eng->txn_states, 0, sizeof(garry_txn_info) * eng->max_txns);
-    memset(eng->modified_pages, 0, sizeof(garry_i32) * GARRY_MAX_MODIFIED_PAGES);
 
     path_len = (garry_i32)strlen(path);
     if (path_len > PATH_MAX - 6) path_len = PATH_MAX - 6;
@@ -254,7 +253,13 @@ garry_engine_handle* garry_engine_open(const char *path)
     ckpt_path[path_len] = '-'; ckpt_path[path_len + 1] = 'c';
     ckpt_path[path_len + 2] = 'k'; ckpt_path[path_len + 3] = 'p';
     ckpt_path[path_len + 4] = 't'; ckpt_path[path_len + 5] = '\0';
-    garry_wal_log_init(&eng->wal, (const char*)wal_path, (const char*)ckpt_path);
+    if (garry_wal_log_init(&eng->wal, (const char*)wal_path, (const char*)ckpt_path) != GARRY_OK) {
+        garry_pool_close(eng->pool);
+        free(eng->active_txns);
+        free(eng->txn_states);
+        free(eng);
+        return NULL;
+    }
 
     eng->lock_mgr = garry_create_lock_manager();
     garry_rwlock_init(&eng->root_lock);
@@ -280,7 +285,6 @@ void garry_engine_close(garry_engine_handle *eng)
     }
     free(eng->active_txns);
     free(eng->txn_states);
-    free(eng->modified_pages);
     free(eng);
 }
 
@@ -341,7 +345,7 @@ void garry_mvcc_commit(garry_engine_handle *eng, garry_txn_id txn)
         count = eng->txn_states[slot].modified_count;
         if (count > GARRY_MAX_MODIFIED_PAGES) count = GARRY_MAX_MODIFIED_PAGES;
         for (i = 0; i < count; i++) {
-            pages[i] = eng->modified_pages[i];
+            pages[i] = eng->txn_states[slot].modified_pages[i];
         }
         eng->txn_states[slot].state = GARRY_TXN_COMMITTED;
         eng->txn_states[slot].modified_count = 0;
@@ -430,7 +434,7 @@ garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn,
         if (slot >= 0) {
             garry_i32 mc = eng->txn_states[slot].modified_count;
             if (mc < GARRY_MAX_MODIFIED_PAGES) {
-                eng->modified_pages[mc] = chain_page_id;
+                eng->txn_states[slot].modified_pages[mc] = chain_page_id;
             }
             eng->txn_states[slot].modified_count = mc + 1;
         }
@@ -460,7 +464,7 @@ garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn,
         if (slot >= 0) {
             garry_i32 mc = eng->txn_states[slot].modified_count;
             if (mc < GARRY_MAX_MODIFIED_PAGES) {
-                eng->modified_pages[mc] = chain_page_id;
+                eng->txn_states[slot].modified_pages[mc] = chain_page_id;
             }
             eng->txn_states[slot].modified_count = mc + 1;
         }

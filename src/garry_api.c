@@ -277,6 +277,7 @@ garry_status_t garry_get_str(garry_database *db, garry_txn txn,
     rc = garry_get(db, txn, (const garry_u8*)key, klen,
                    (garry_u8*)value, &vlen);
     if (rc == GARRY_OK) {
+        if (vlen >= value_size) vlen = value_size - 1;
         value[vlen] = '\0';
     }
     return rc;
@@ -303,18 +304,24 @@ void garry_for_each(garry_database *db, garry_txn txn,
                     garry_visitor visitor, void *user_data)
 {
     garry_cursor *cur;
-    garry_u8 key[GARRY_MAX_KEY_SIZE];
-    garry_u8 value[GARRY_MAX_RECORD_SIZE];
+    garry_u8 *key;
+    garry_u8 *value;
     garry_i32 klen, vlen;
 
     if (!db || !visitor) return;
 
+    key = (garry_u8*)malloc(GARRY_MAX_KEY_SIZE);
+    value = (garry_u8*)malloc(GARRY_MAX_RECORD_SIZE);
+    if (!key || !value) { free(key); free(value); return; }
+
     cur = garry_cursor_open(db, txn, prefix, plen);
-    if (!cur) return;
+    if (!cur) { free(key); free(value); return; }
 
     while (garry_cursor_next(cur, key, &klen, value, &vlen)) {
         visitor(key, klen, value, vlen, user_data);
     }
 
     garry_cursor_close(cur);
+    free(key);
+    free(value);
 }

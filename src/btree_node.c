@@ -44,20 +44,23 @@ static garry_i32 encode_cbor_uint(garry_byte* buf, garry_i32 pos, garry_i32 val)
     }
 }
 
-static garry_i32 decode_cbor_uint(const garry_byte* buf, garry_i32 pos, garry_i32* val)
+static garry_i32 decode_cbor_uint(const garry_byte* buf, garry_i32 pos, garry_i32 elen, garry_i32* val)
 {
     garry_i32 fb, b1, b2, b3, b4;
+    if (pos >= elen) return pos;
     fb = (garry_i32)buf[pos];
     if (fb < 0) fb += 256;
     if (fb < 24) {
         *val = fb;
         return pos + 1;
     } else if (fb == 24) {
+        if (pos + 1 >= elen) return pos + 1;
         b1 = (garry_i32)buf[pos + 1];
         if (b1 < 0) b1 += 256;
         *val = b1;
         return pos + 2;
     } else if (fb == 25) {
+        if (pos + 2 >= elen) return pos + 1;
         b1 = (garry_i32)buf[pos + 1];
         b2 = (garry_i32)buf[pos + 2];
         if (b1 < 0) b1 += 256;
@@ -65,6 +68,7 @@ static garry_i32 decode_cbor_uint(const garry_byte* buf, garry_i32 pos, garry_i3
         *val = b1 * 256 + b2;
         return pos + 3;
     } else if (fb == 26) {
+        if (pos + 4 >= elen) return pos + 1;
         b1 = (garry_i32)buf[pos + 1];
         b2 = (garry_i32)buf[pos + 2];
         b3 = (garry_i32)buf[pos + 3];
@@ -76,7 +80,7 @@ static garry_i32 decode_cbor_uint(const garry_byte* buf, garry_i32 pos, garry_i3
         *val = b1 * 16777216 + b2 * 65536 + b3 * 256 + b4;
         return pos + 5;
     }
-    return pos;
+    return pos + 1;
 }
 
 garry_i32 garry_encode_node_meta(garry_btree_node* node, garry_byte* buf)
@@ -126,9 +130,9 @@ void garry_decode_node_meta(const garry_byte* buf, garry_i32 elen, garry_btree_n
     } else {
         return;
     }
-    pos = decode_cbor_uint(buf, pos, &decoded);
+    pos = decode_cbor_uint(buf, pos, elen, &decoded);
     node->next_page = decoded - GARRY_PAGE_ID_BIAS;
-    pos = decode_cbor_uint(buf, pos, &decoded);
+    pos = decode_cbor_uint(buf, pos, elen, &decoded);
     node->prev_page = decoded - GARRY_PAGE_ID_BIAS;
     if (node->kind == GARRY_NODE_INTERNAL) {
         num_children = arr_count - 2;
@@ -137,7 +141,7 @@ void garry_decode_node_meta(const garry_byte* buf, garry_i32 elen, garry_btree_n
     }
     for (i = 0; i < num_children; i++) {
         if (pos < elen) {
-            pos = decode_cbor_uint(buf, pos, &decoded);
+            pos = decode_cbor_uint(buf, pos, elen, &decoded);
             node->children[i] = decoded - GARRY_PAGE_ID_BIAS;
         }
     }
@@ -287,7 +291,10 @@ void garry_store_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *
         meta_data[j] = rec_buf[j];
     }
     slot_idx = garry_page_insert(*buf, meta_data, meta_len, pool->page_size);
-    (void)slot_idx;
+    if (slot_idx < 0) {
+        garry_pool_release_page(pool, pid);
+        return;
+    }
 
     for (i = 0; i < node->entry_count; i++) {
         if (node->kind == GARRY_NODE_INTERNAL) {
@@ -302,7 +309,10 @@ void garry_store_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *
                 enc_data[j] = rec_buf[j];
             }
             slot_idx = garry_page_insert(*buf, enc_data, rec_len, pool->page_size);
-            (void)slot_idx;
+            if (slot_idx < 0) {
+                garry_pool_release_page(pool, pid);
+                return;
+            }
         }
     }
 

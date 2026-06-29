@@ -40,7 +40,6 @@ garry_txn_id garry_oldest_active_txid(garry_engine_handle *eng)
 
 void garry_mvcc_gc(garry_engine_handle *eng)
 {
-    garry_txn_id oldest;
     garry_i32 pid;
     garry_page_buffer *buf;
     garry_txn_id snapshot[GARRY_CHAIN_MAX_ACTIVE];
@@ -51,8 +50,6 @@ void garry_mvcc_gc(garry_engine_handle *eng)
     snapshot_count = eng->active_count;
     for (i = 0; i < snapshot_count; i++) snapshot[i] = eng->active_txns[i];
     garry_mutex_unlock(&eng->txn_slot_mutex);
-
-    oldest = garry_oldest_active_txid(eng);
 
     for (pid = 1; pid < eng->header.total_pages; pid++) {
         buf = garry_pool_try_pin(eng->pool, pid);

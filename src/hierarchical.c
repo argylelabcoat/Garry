@@ -40,12 +40,13 @@ garry_i32 garry_get_subscript_offset(const garry_byte *key, garry_i32 klen, garr
     garry_i32 i;
     garry_i32 plen;
     garry_i32 hdr_size;
-    (void)klen;
     offset = 0;
     for (i = 0; i < idx; i++) {
+        if (offset >= klen) return -1;
         plen = garry_decode_length_prefix(key, offset);
         hdr_size = garry_length_prefix_size(plen);
         offset = offset + hdr_size + plen;
+        if (offset > klen) return -1;
     }
     return offset;
 }
@@ -59,15 +60,18 @@ garry_bool garry_subscript_equal(const garry_byte *key, garry_i32 klen, garry_i3
     garry_i32 hdr_size;
     garry_i32 j;
     garry_i32 exp_len;
-    (void)klen;
     offset = 0;
     for (i = 0; i < idx; i++) {
+        if (offset >= klen) return 0;
         plen = garry_decode_length_prefix(key, offset);
         hdr_size = garry_length_prefix_size(plen);
         offset = offset + hdr_size + plen;
+        if (offset > klen) return 0;
     }
+    if (offset >= klen) return 0;
     plen = garry_decode_length_prefix(key, offset);
     hdr_size = garry_length_prefix_size(plen);
+    if (offset + hdr_size + plen > klen) return 0;
     offset = offset + hdr_size;
     exp_len = (garry_i32)strlen(expected);
     if (plen != exp_len) {

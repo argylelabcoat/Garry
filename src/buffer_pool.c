@@ -147,11 +147,18 @@ void garry_pool_release_page(garry_buffer_pool *pool, garry_i32 pid) {
 
 garry_u32 garry_pool_pin_count(garry_buffer_pool *pool, garry_i32 pid) {
     garry_u32 idx;
+    garry_u32 result;
     if (!pool) return 0;
     if (pid < 0) return 0;
+    garry_rwlock_wrlock(&pool->slot_locks[0]);
     idx = find_slot(pool, pid);
-    if (idx != GARRY_INVALID_SLOT) return pool->pin_counts[idx];
-    return 0;
+    if (idx != GARRY_INVALID_SLOT) {
+        result = pool->pin_counts[idx];
+    } else {
+        result = 0;
+    }
+    garry_rwlock_wrunlock(&pool->slot_locks[0]);
+    return result;
 }
 
 void garry_pool_mark_dirty(garry_buffer_pool *pool, garry_i32 pid) {
@@ -196,8 +203,12 @@ garry_i32 garry_pool_allocate(garry_buffer_pool *pool) {
 }
 
 garry_bool garry_pool_is_loaded(garry_buffer_pool *pool, garry_i32 pid) {
+    garry_bool result;
     if (!pool) return GARRY_FALSE;
-    return find_slot(pool, pid) != GARRY_INVALID_SLOT ? GARRY_TRUE : GARRY_FALSE;
+    garry_rwlock_wrlock(&pool->slot_locks[0]);
+    result = find_slot(pool, pid) != GARRY_INVALID_SLOT ? GARRY_TRUE : GARRY_FALSE;
+    garry_rwlock_wrunlock(&pool->slot_locks[0]);
+    return result;
 }
 
 garry_bool garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid) {

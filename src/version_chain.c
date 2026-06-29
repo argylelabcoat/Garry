@@ -466,7 +466,16 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
                     snap = active[k];
                     if (txid_created <= snap &&
                         !(txid_deleted != 0 && txid_deleted <= snap)) {
-                        visible = 1;
+                        /* Also check that the creating txn is not still active */
+                        garry_bool creating_active = GARRY_FALSE;
+                        garry_i32 k2;
+                        for (k2 = 0; k2 < active_count; k2++) {
+                            if (active[k2] == txid_created) {
+                                creating_active = GARRY_TRUE;
+                                break;
+                            }
+                        }
+                        if (!creating_active) visible = 1;
                     }
                 }
                 keep[i] = visible ? GARRY_TRUE : GARRY_FALSE;

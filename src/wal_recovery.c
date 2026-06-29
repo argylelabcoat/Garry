@@ -28,14 +28,14 @@
 #define GARRY_FALSE 0
 #endif
 
-#define GARRY_WAL_RECORD_SIZE 1552
+#define GARRY_WAL_RECORD_SIZE 784
 #define WAL_REC_KIND_OFF  0
 #define WAL_REC_TXID_OFF  4
 #define WAL_REC_KLEN_OFF  8
 #define WAL_REC_VLEN_OFF  12
 #define WAL_REC_KEY_OFF   16
-#define WAL_REC_OLD_OFF   528
-#define WAL_REC_NEW_OFF   1040
+#define WAL_REC_OLD_OFF   272
+#define WAL_REC_NEW_OFF   528
 
 #define GARRY_MAX_RECOVERY_COMMITTED 256
 
@@ -94,6 +94,8 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
 
         klen = garry_read_int32(rec, WAL_REC_KLEN_OFF);
         vlen = garry_read_int32(rec, WAL_REC_VLEN_OFF);
+        if (klen < 0 || klen > GARRY_MAX_RECORD_SIZE) continue;
+        if (vlen < 0 || vlen > GARRY_MAX_RECORD_SIZE) continue;
         memcpy(key, rec + WAL_REC_KEY_OFF, (size_t)klen);
         memcpy(val, rec + WAL_REC_NEW_OFF, (size_t)vlen);
 

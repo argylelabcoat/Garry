@@ -75,6 +75,9 @@ garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry
     count = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_COUNT);
     free_start = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_FREE_START);
     free_end = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_FREE_END);
+    if (count >= GARRY_MAX_SLOTS) {
+        return -1;
+    }
     if (free_start + GARRY_SLOT_SIZE > free_end) {
         return -1;
     }

@@ -154,6 +154,9 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
         desc_len = garry_encode_descriptor(cid, 0, desc);
         if (!garry_btree_insert(eng->pool, &eng->btree_root,
                                 key, klen, desc, desc_len)) {
+            /* NOTE: chain page allocated by garry_chain_allocate is leaked here.
+             * Reclaiming requires a free-list mechanism (not yet implemented).
+             * The page is unreachable from the B-tree but remains allocated. */
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
         }
@@ -285,8 +288,8 @@ garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn,
 
     garry_rwlock_rdunlock(&eng->root_lock);
 
-    if (val && has_children) return GARRY_DATA_HAS_BOTH;
-    if (val) return GARRY_DATA_HAS_VALUE;
+    if (val && has_children) { free(val); return GARRY_DATA_HAS_BOTH; }
+    if (val) { free(val); return GARRY_DATA_HAS_VALUE; }
     if (has_children) return GARRY_DATA_HAS_CHILDREN;
     return GARRY_DATA_NOT_FOUND;
 }

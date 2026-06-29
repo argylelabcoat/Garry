@@ -38,6 +38,7 @@ typedef struct {
     garry_txn_id txid;
     garry_txn_state state;
     garry_i32 modified_count;
+    garry_i32 modified_pages[GARRY_MAX_MODIFIED_PAGES];
 } garry_txn_info;
 
 typedef struct {
@@ -50,7 +51,6 @@ typedef struct {
     garry_txn_id *active_txns;
     garry_i32 active_count;
     garry_txn_info *txn_states;
-    garry_i32 *modified_pages;
     garry_wal_log wal;
     garry_lock_manager lock_mgr;
     garry_engine_settings settings;

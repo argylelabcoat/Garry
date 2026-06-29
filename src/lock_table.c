@@ -107,7 +107,7 @@ void garry_lock_acquire(garry_lock_manager* mgr, garry_txn_id txn,
                 *ok = 0;
                 return;
             }
-            memcpy(n->key, key, sizeof(garry_byte_array));
+            memcpy(n->key, key, (size_t)klen);
             n->key_len = klen;
             n->txn = txn;
             n->mode = mode;
