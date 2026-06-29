@@ -44,8 +44,6 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
 {
     garry_byte_array bkey;
     garry_u32 bklen;
-    garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
-    garry_i32 lookup_len;
     garry_i32 cid;
     char *val;
     garry_i32 mv_len;
@@ -57,33 +55,41 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
             return 0;
         }
 
-        lookup_len = 0;
-        memset(lookup, 0, sizeof(lookup));
-        if (!garry_leaf_find_search(cur->eng->pool, cur->eng->btree_root,
-                                   bkey, (garry_i32)bklen, lookup, &lookup_len)) {
-            continue;
-        }
+        if (!cur->btree_cur.node_loaded) continue;
 
-        cid = garry_decode_cid_from_descriptor(lookup);
-        if (cid < 0) continue;
+        {
+            garry_btree_node *node = &cur->btree_cur.current_node;
+            garry_i32 idx = (garry_i32)cur->btree_cur.current_slot - 1;
+            garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
+            garry_i32 lookup_len;
 
-        val = garry_mvcc_get(cur->eng, cur->txn, cid, &mv_len);
-        if (!val) continue;
+            if (idx < 0 || idx >= node->entry_count) continue;
 
-        if (key) {
-            memcpy(key, bkey, sizeof(garry_byte_array));
+            lookup_len = node->value_lens[idx];
+            if (lookup_len <= 0 || lookup_len > GARRY_LOOKUP_BUF_SIZE) continue;
+            memcpy(lookup, node->values[idx], (size_t)lookup_len);
+
+            cid = garry_decode_cid_from_descriptor(lookup);
+            if (cid < 0) continue;
+
+            val = garry_mvcc_get(cur->eng, cur->txn, cid, &mv_len);
+            if (!val) continue;
+
+            if (key) {
+                memcpy(key, bkey, sizeof(garry_byte_array));
+            }
+            if (klen) {
+                *klen = (garry_i32)bklen;
+            }
+            if (value && vlen) {
+                memcpy(value, val, (size_t)mv_len);
+                *vlen = mv_len;
+            } else if (vlen) {
+                *vlen = 0;
+            }
+            free(val);
+            return 1;
         }
-        if (klen) {
-            *klen = (garry_i32)bklen;
-        }
-        if (value && vlen) {
-            memcpy(value, val, (size_t)mv_len);
-            *vlen = mv_len;
-        } else if (vlen) {
-            *vlen = 0;
-        }
-        free(val);
-        return 1;
     }
 }
 

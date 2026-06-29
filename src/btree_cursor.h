@@ -30,6 +30,8 @@ typedef struct {
     garry_byte_array saved_key;
     garry_u32 saved_klen;
     garry_bool has_saved;
+    garry_bool node_loaded;
+    garry_btree_node current_node;
 } garry_btree_cursor_handle;
 
 garry_btree_cursor_handle garry_btree_cursor_open(garry_buffer_pool *pool, garry_i32 root,

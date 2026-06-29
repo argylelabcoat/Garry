@@ -86,6 +86,8 @@ garry_bool garry_btree_cursor_next(garry_buffer_pool *pool, garry_btree_cursor_h
 
     for (;;) {
         garry_load_node(pool, cur->current_page, &node);
+        memcpy(&cur->current_node, &node, sizeof(garry_btree_node));
+        cur->node_loaded = 1;
         for (i = cur->current_slot; i < node.entry_count; i++) {
             match = 0;
             if (cur->prefix_len > 0) {
@@ -105,8 +107,10 @@ garry_bool garry_btree_cursor_next(garry_buffer_pool *pool, garry_btree_cursor_h
         if (node.next_page >= 0) {
             cur->current_page = node.next_page;
             cur->current_slot = 0;
+            cur->node_loaded = 0;
         } else {
             cur->exhausted = 1;
+            cur->node_loaded = 0;
             return 0;
         }
     }
