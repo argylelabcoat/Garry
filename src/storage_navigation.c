@@ -154,7 +154,7 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
 garry_bool garry_storage_exists(garry_engine_handle *eng, garry_txn_id txn,
                                 const garry_byte *key, garry_i32 klen)
 {
-    garry_byte result[512];
+    garry_byte result[GARRY_MAX_RECORD_SIZE];
     garry_i32 result_len;
 
     if (!eng || !key || klen <= 0) return 0;

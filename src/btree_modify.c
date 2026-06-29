@@ -61,7 +61,7 @@ garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root,
                               const garry_byte *value, garry_i32 vlen)
 {
     garry_bool inserted;
-    garry_byte sep[512];
+    garry_byte sep[GARRY_MAX_RECORD_SIZE];
     garry_i32 sep_len;
     garry_i32 new_child;
     garry_btree_node new_root_node;
@@ -115,7 +115,7 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
     garry_i32 idx;
     garry_i32 child;
     garry_bool inserted;
-    garry_byte child_sep[512];
+    garry_byte child_sep[GARRY_MAX_RECORD_SIZE];
     garry_i32 child_sep_len;
     garry_i32 child_new;
     garry_i32 i;

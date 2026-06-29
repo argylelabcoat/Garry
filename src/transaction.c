@@ -48,7 +48,7 @@ garry_i32 garry_chain_id_decode(const garry_byte *encoded)
     b1 = (garry_i32)encoded[1];
     b2 = (garry_i32)encoded[2];
     b3 = (garry_i32)encoded[3];
-    return b0 + b1 * 256 + b2 * 65536 + b3 * 16777216;
+    return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 }
 
 static void remove_active_txn(garry_engine_handle *eng, garry_txn_id txn)
@@ -116,7 +116,7 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
         free(eng);
         return NULL;
     }
-    eng->pool->next_page = 2;
+    eng->pool->next_page = GARRY_FIRST_PAGE_ID;
 
     path_len = (garry_i32)strlen(path);
     if (path_len > PATH_MAX - 6) path_len = PATH_MAX - 6;
@@ -191,8 +191,8 @@ garry_engine_handle* garry_engine_open(const char *path)
     garry_file_read_page(&raw_fd, 0, hdr_raw, GARRY_MAX_PAGE_SIZE);
     tmp_hdr = garry_read_db_header(hdr_raw);
     page_size = tmp_hdr.page_size;
-    if (page_size < 512 || page_size > GARRY_MAX_PAGE_SIZE) {
-        page_size = 4096;
+    if (page_size < GARRY_MIN_PAGE_SIZE || page_size > GARRY_MAX_PAGE_SIZE) {
+        page_size = GARRY_DEFAULT_PAGE_SIZE;
     }
     garry_file_close(&raw_fd);
 
@@ -201,7 +201,7 @@ garry_engine_handle* garry_engine_open(const char *path)
         free(eng);
         return NULL;
     }
-    eng->pool->next_page = 2;
+    eng->pool->next_page = GARRY_FIRST_PAGE_ID;
 
     hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
     if (hdr_buf != NULL) {

@@ -20,13 +20,15 @@
 #include "record_codec.h"
 #include <string.h>
 
+#define CBOR_INLINE_THRESHOLD 24
+
 garry_i32 garry_cbor_encode_array_header_raw(garry_byte* out, garry_i32 pos, garry_i32 count)
 {
-    if (count < 24) {
+    if (count < CBOR_INLINE_THRESHOLD) {
         out[pos] = (garry_byte)(GARRY_CBOR_ARRAY_BASE + count);
         return pos + 1;
     } else {
-        out[pos] = (garry_byte)(GARRY_CBOR_ARRAY_BASE + 24);
+        out[pos] = (garry_byte)(GARRY_CBOR_ARRAY_BASE + CBOR_INLINE_THRESHOLD);
         out[pos + 1] = (garry_byte)count;
         return pos + 2;
     }
@@ -39,7 +41,7 @@ garry_i32 garry_cbor_encode_byte_string_raw(const garry_byte* data, garry_i32 dl
         out[pos] = (garry_byte)(GARRY_CBOR_BYTES_BASE + dlen);
         pos = pos + 1;
     } else {
-        out[pos] = (garry_byte)(GARRY_CBOR_BYTES_BASE + 24);
+        out[pos] = (garry_byte)(GARRY_CBOR_BYTES_BASE + CBOR_INLINE_THRESHOLD);
         out[pos + 1] = (garry_byte)dlen;
         pos = pos + 2;
     }
@@ -58,7 +60,7 @@ garry_i32 garry_cbor_decode_array_header_raw(const garry_byte* buf, garry_i32 bl
     ai = fb - GARRY_CBOR_ARRAY_BASE;
     if (ai < 24) {
         return ai;
-    } else if (ai == 24 && pos + 1 < blen) {
+    } else if (ai == CBOR_INLINE_THRESHOLD && pos + 1 < blen) {
         return (garry_i32)buf[pos + 1];
     }
     return 0;
@@ -71,7 +73,7 @@ garry_i32 garry_cbor_array_header_size_raw(const garry_byte* buf, garry_i32 pos)
     if (fb < 0) fb += 256;
     ai = fb - GARRY_CBOR_ARRAY_BASE;
     if (ai < 24) return 1;
-    if (ai == 24) return 2;
+    if (ai == CBOR_INLINE_THRESHOLD) return 2;
     return 1;
 }
 
@@ -85,7 +87,7 @@ garry_i32 garry_cbor_decode_byte_string_raw(const garry_byte* buf, garry_i32 ble
     if (ai < 24) {
         slen = ai;
         pos = pos + 1;
-    } else if (ai == 24 && pos + 1 < blen) {
+    } else if (ai == CBOR_INLINE_THRESHOLD && pos + 1 < blen) {
         slen = (garry_i32)buf[pos + 1];
         pos = pos + 2;
     } else {
@@ -162,7 +164,7 @@ static garry_i32 encode_uint(garry_byte* out, garry_i32 pos, garry_i32 val)
         out[pos] = (garry_byte)(GARRY_CBOR_UINT_BASE + val);
         return pos + 1;
     } else if (val >= 0 && val < 256) {
-        out[pos] = (garry_byte)(GARRY_CBOR_UINT_BASE + 24);
+        out[pos] = (garry_byte)(GARRY_CBOR_UINT_BASE + CBOR_INLINE_THRESHOLD);
         out[pos + 1] = (garry_byte)val;
         return pos + 2;
     } else if (val >= 0 && val < 65536) {
@@ -186,7 +188,7 @@ static garry_i32 encode_negint(garry_byte* out, garry_i32 pos, garry_i32 abs_val
         out[pos] = (garry_byte)(GARRY_CBOR_NEGINT_BASE + abs_val);
         return pos + 1;
     } else if (abs_val < 256) {
-        out[pos] = (garry_byte)(GARRY_CBOR_NEGINT_BASE + 24);
+        out[pos] = (garry_byte)(GARRY_CBOR_NEGINT_BASE + CBOR_INLINE_THRESHOLD);
         out[pos + 1] = (garry_byte)abs_val;
         return pos + 2;
     } else if (abs_val < 65536) {
@@ -224,11 +226,11 @@ garry_i32 garry_encode_descriptor(garry_i32 chain_id, garry_bool has_children,
     pos = pos + 1;
     out_buf[pos] = (garry_byte)(GARRY_CBOR_TEXT_BASE + 3);
     pos = pos + 1;
-    out_buf[pos] = (garry_byte)99;
+    out_buf[pos] = (garry_byte)'c';
     pos = pos + 1;
-    out_buf[pos] = (garry_byte)105;
+    out_buf[pos] = (garry_byte)'i';
     pos = pos + 1;
-    out_buf[pos] = (garry_byte)100;
+    out_buf[pos] = (garry_byte)'d';
     pos = pos + 1;
     if (chain_id >= 0) {
         pos = encode_uint(out_buf, pos, chain_id);
@@ -238,9 +240,9 @@ garry_i32 garry_encode_descriptor(garry_i32 chain_id, garry_bool has_children,
     }
     out_buf[pos] = (garry_byte)(GARRY_CBOR_TEXT_BASE + 2);
     pos = pos + 1;
-    out_buf[pos] = (garry_byte)104;
+    out_buf[pos] = (garry_byte)'h';
     pos = pos + 1;
-    out_buf[pos] = (garry_byte)99;
+    out_buf[pos] = (garry_byte)'c';
     pos = pos + 1;
     if (has_children) {
         out_buf[pos] = (garry_byte)(GARRY_CBOR_SIMPLE_BASE + GARRY_CBOR_SIMPLE_TRUE);
@@ -256,7 +258,7 @@ static garry_i32 decode_uint(const garry_byte* encoded, garry_i32 elen, garry_i3
     garry_i32 fb, b0, b1, b2, b3;
     fb = (garry_i32)encoded[pos];
     if (fb < 0) fb += 256;
-    if (fb >= GARRY_CBOR_UINT_BASE && fb < GARRY_CBOR_UINT_BASE + 24) {
+    if (fb >= GARRY_CBOR_UINT_BASE && fb < GARRY_CBOR_UINT_BASE + CBOR_INLINE_THRESHOLD) {
         *val = fb - GARRY_CBOR_UINT_BASE;
         return pos + 1;
     } else if (fb == GARRY_CBOR_UINT_BASE + 24 && pos + 1 < elen) {
@@ -291,7 +293,7 @@ static garry_i32 decode_negint(const garry_byte* encoded, garry_i32 elen, garry_
     garry_i32 fb, b0, b1, b2, b3, abs_val;
     fb = (garry_i32)encoded[pos];
     if (fb < 0) fb += 256;
-    if (fb >= GARRY_CBOR_NEGINT_BASE && fb < GARRY_CBOR_NEGINT_BASE + 24) {
+    if (fb >= GARRY_CBOR_NEGINT_BASE && fb < GARRY_CBOR_NEGINT_BASE + CBOR_INLINE_THRESHOLD) {
         *val = -1 - (fb - GARRY_CBOR_NEGINT_BASE);
         return pos + 1;
     } else if (fb == GARRY_CBOR_NEGINT_BASE + 24 && pos + 1 < elen) {

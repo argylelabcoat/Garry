@@ -34,7 +34,7 @@ garry_i32 garry_key_split(const char *str, char delimiter,
 
     while (*p && count < GARRY_MAX_SUBSCRIPTS) {
         seg_len = 0;
-        while (*p && *p != delimiter && seg_len < 255) {
+        while (*p && *p != delimiter && seg_len < GARRY_MAX_SEGMENT_LEN) {
             p++;
             seg_len++;
         }
@@ -100,7 +100,7 @@ garry_i32 garry_make_key(const char *str, garry_byte_array out)
     if (!str) return 0;
 
     len = 0;
-    while (str[len] && len < 255) {
+    while (str[len] && len < GARRY_MAX_SEGMENT_LEN) {
         len++;
     }
 
@@ -130,7 +130,7 @@ garry_i32 garry_make_key_parts(const char **parts, garry_i32 count,
         if (!parts[i]) return 0;
 
         seg_len = 0;
-        while (parts[i][seg_len] && seg_len < 255) {
+        while (parts[i][seg_len] && seg_len < GARRY_MAX_SEGMENT_LEN) {
             seg_len++;
         }
 

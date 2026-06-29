@@ -45,7 +45,7 @@ void garry_chain_page_init(garry_page_buffer buf, garry_u32 page_size)
 garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size,
                                    garry_txn_id txn, const char *value, garry_i32 vlen)
 {
-    garry_byte entry_buf[512];
+    garry_byte entry_buf[GARRY_CHAIN_ENTRY_BUF_SIZE];
     garry_i32 pos;
     garry_i32 v;
     garry_i32 i;
@@ -101,7 +101,7 @@ garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size,
 garry_bool garry_chain_page_append_tombstone(garry_page_buffer buf, garry_u32 page_size,
                                              garry_txn_id txn)
 {
-    garry_byte entry_buf[512];
+    garry_byte entry_buf[GARRY_CHAIN_ENTRY_BUF_SIZE];
     garry_i32 pos;
     garry_i32 v;
     garry_i32 slot_idx;
@@ -147,12 +147,12 @@ garry_bool garry_chain_page_append_tombstone(garry_page_buffer buf, garry_u32 pa
 
 garry_i32 garry_overflow_chunk_size(garry_u32 page_size)
 {
-    return (garry_i32)page_size - GARRY_PAGE_HEADER_SIZE - 4;
+    return (garry_i32)page_size - GARRY_PAGE_HEADER_SIZE - GARRY_OVERFLOW_PTR_SIZE;
 }
 
 garry_i32 garry_chain_inline_capacity(garry_u32 page_size)
 {
-    return (garry_i32)page_size - GARRY_PAGE_HEADER_SIZE - 4 - GARRY_CHAIN_ENTRY_HEADER_SIZE;
+    return (garry_i32)page_size - GARRY_PAGE_HEADER_SIZE - GARRY_OVERFLOW_PTR_SIZE - GARRY_CHAIN_ENTRY_HEADER_SIZE;
 }
 
 garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value,
@@ -195,7 +195,7 @@ garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value,
         }
 
         for (c = 0; c < this_chunk; c++) {
-            (*pbuf)[GARRY_PAGE_HEADER_SIZE + 4 + c] = (garry_u8)value[offset + c];
+            (*pbuf)[GARRY_PAGE_HEADER_SIZE + GARRY_OVERFLOW_PTR_SIZE + c] = (garry_u8)value[offset + c];
         }
 
         garry_write_int32((garry_byte*)*pbuf, GARRY_PAGE_HEADER_SIZE, -1);
@@ -237,7 +237,7 @@ garry_i32 garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
         }
 
         for (c = 0; c < this_chunk; c++) {
-            out_buf[copied + c] = (char)(*pbuf)[GARRY_PAGE_HEADER_SIZE + 4 + c];
+            out_buf[copied + c] = (char)(*pbuf)[GARRY_PAGE_HEADER_SIZE + GARRY_OVERFLOW_PTR_SIZE + c];
         }
 
         garry_pool_release_page(pool, pid);
@@ -252,7 +252,7 @@ garry_bool garry_chain_page_append_overflow(garry_page_buffer buf, garry_u32 pag
                                             garry_txn_id txn, garry_i32 total_len,
                                             garry_i32 head)
 {
-    garry_byte entry_buf[512];
+    garry_byte entry_buf[GARRY_CHAIN_ENTRY_BUF_SIZE];
     garry_i32 pos;
     garry_i32 v;
     garry_i32 slot_idx;
@@ -305,7 +305,7 @@ static garry_i32 read_le32(const garry_byte *buf, garry_i32 p)
     b1 = (garry_i32)buf[p + 1]; if (b1 < 0) b1 += 256;
     b2 = (garry_i32)buf[p + 2]; if (b2 < 0) b2 += 256;
     b3 = (garry_i32)buf[p + 3]; if (b3 < 0) b3 += 256;
-    return b0 + b1 * 256 + b2 * 65536 + b3 * 16777216;
+    return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 }
 
 /**
@@ -328,7 +328,7 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
     garry_page_buffer local;
     garry_i32 rec_count;
     garry_i32 i;
-    garry_byte rec_data[512];
+    garry_byte rec_data[GARRY_CHAIN_ENTRY_BUF_SIZE];
     garry_i32 rlen;
     garry_i32 txid_created;
     garry_i32 txid_deleted;
@@ -418,12 +418,12 @@ void garry_chain_page_prune(garry_page_buffer buf, garry_u32 page_size,
     garry_page_buffer local;
     garry_i32 rec_count;
     garry_i32 i, j, k;
-    garry_byte rec[512];
+    garry_byte rec[GARRY_CHAIN_ENTRY_BUF_SIZE];
     garry_i32 rlen;
     garry_i32 pos;
     garry_i32 txid_created;
     garry_i32 txid_deleted;
-    garry_bool keep[128];
+    garry_bool keep[GARRY_MAX_VERSIONS_PER_PAGE];
     garry_i32 visible;
     garry_i32 snap;
     garry_page_buffer tmp;
@@ -434,7 +434,7 @@ void garry_chain_page_prune(garry_page_buffer buf, garry_u32 page_size,
 
     for (i = 0; i < rec_count; i++) {
         rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
-        if (rlen >= 8) {
+        if (rlen >= GARRY_CHAIN_PRUNE_MIN_LEN) {
             pos = 0;
             txid_created = read_le32(rec, pos); pos += 4;
             txid_deleted = read_le32(rec, pos); pos += 4;
@@ -475,7 +475,7 @@ garry_bool garry_chain_page_has_version(garry_page_buffer buf, garry_u32 page_si
     garry_page_buffer local;
     garry_i32 rec_count;
     garry_i32 i;
-    garry_byte rec_data[512];
+    garry_byte rec_data[GARRY_CHAIN_ENTRY_BUF_SIZE];
     garry_i32 rlen;
     garry_i32 txid_created;
 

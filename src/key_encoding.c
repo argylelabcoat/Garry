@@ -63,11 +63,11 @@ garry_key_tuple garry_make_key_4(const char* p1, const char* p2, const char* p3,
 
 garry_i32 garry_encode_length_prefix(garry_byte_array result, garry_i32 offset, garry_i32 plen)
 {
-    if (plen < 128) {
+    if (plen < GARRY_LEN_PREFIX_INLINE_MAX) {
         result[offset] = (garry_byte)plen;
         return offset + 1;
     } else {
-        result[offset] = (garry_byte)255;
+        result[offset] = (garry_byte)GARRY_LEN_PREFIX_LONG_MARKER;
         result[offset + 1] = (garry_byte)((plen / 256) % 256);
         result[offset + 2] = (garry_byte)(plen % 256);
         return offset + 3;
@@ -78,7 +78,7 @@ garry_i32 garry_decode_length_prefix(const garry_byte* key, garry_i32 offset)
 {
     garry_i32 v0, v1, v2;
     v0 = (garry_i32)key[offset];
-    if (v0 != 255) {
+    if (v0 != GARRY_LEN_PREFIX_LONG_MARKER) {
         return v0;
     }
     v1 = (garry_i32)key[offset + 1];
@@ -88,7 +88,7 @@ garry_i32 garry_decode_length_prefix(const garry_byte* key, garry_i32 offset)
 
 garry_i32 garry_length_prefix_size(garry_i32 plen)
 {
-    return (plen < 128) ? 1 : 3;
+    return (plen < GARRY_LEN_PREFIX_INLINE_MAX) ? 1 : 3;
 }
 
 void garry_encode_key_tuple(garry_key_tuple* t, garry_byte_array out)
@@ -115,7 +115,7 @@ garry_key_tuple garry_decode_key_tuple(const garry_byte* encoded, garry_i32 elen
     idx = 0;
     while (offset < elen) {
         plen = garry_decode_length_prefix(encoded, offset);
-        hdr_size = (encoded[offset] == 255) ? 3 : 1;
+        hdr_size = (encoded[offset] == GARRY_LEN_PREFIX_LONG_MARKER) ? 3 : 1;
         result.parts[idx] = encoded + offset + hdr_size;
         result.counts[idx] = plen;
         result.count = result.count + 1;

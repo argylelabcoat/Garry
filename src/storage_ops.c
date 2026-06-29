@@ -38,7 +38,7 @@ garry_i32 garry_decode_cid_from_descriptor(const garry_byte *lookup_result)
     if (!lookup_result) return -1;
 
     if ((unsigned char)lookup_result[0] == (GARRY_CBOR_MAP_BASE + 2)) {
-        garry_decode_descriptor(lookup_result, 512, &chain_id, &has_children);
+        garry_decode_descriptor(lookup_result, GARRY_LOOKUP_BUF_SIZE, &chain_id, &has_children);
         return chain_id;
     }
 
@@ -56,7 +56,7 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
                              const garry_byte *key, garry_i32 klen,
                              garry_byte *result, garry_i32 *result_len)
 {
-    garry_byte lookup[512];
+    garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
     garry_i32 cid;
     char *val;
@@ -123,10 +123,10 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
                              const garry_byte *key, garry_i32 klen,
                              const garry_byte *value, garry_i32 vlen)
 {
-    garry_byte lookup[512];
+    garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
     garry_i32 cid;
-    garry_byte desc[64];
+    garry_byte desc[GARRY_DESC_BUF_SIZE];
     garry_i32 desc_len;
     garry_bool ok;
     garry_wal_record *rec;
@@ -203,7 +203,7 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
 garry_bool garry_storage_delete(garry_engine_handle *eng, garry_txn_id txn,
                                 const garry_byte *key, garry_i32 klen)
 {
-    garry_byte lookup[512];
+    garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
     garry_i32 cid;
     garry_bool ok;
@@ -254,7 +254,7 @@ garry_bool garry_storage_get_default(garry_engine_handle *eng, garry_txn_id txn,
 garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn,
                              const garry_byte *key, garry_i32 klen)
 {
-    garry_byte lookup[512];
+    garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
     garry_i32 cid;
     garry_bool has_children;
@@ -276,7 +276,7 @@ garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn,
     has_children = 0;
     cid = garry_decode_cid_from_descriptor(lookup);
     if ((unsigned char)lookup[0] == (GARRY_CBOR_MAP_BASE + 2)) {
-        garry_decode_descriptor(lookup, 512, &cid, &has_children);
+        garry_decode_descriptor(lookup, GARRY_LOOKUP_BUF_SIZE, &cid, &has_children);
     }
 
     val = garry_mvcc_get(eng, txn, cid, &vlen);

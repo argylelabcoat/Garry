@@ -44,7 +44,7 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
 {
     garry_byte_array bkey;
     garry_u32 bklen;
-    garry_byte lookup[512];
+    garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
     garry_i32 cid;
     char *val;
@@ -109,7 +109,7 @@ garry_bool garry_storage_cursor_peek(const garry_storage_cursor *cur,
 garry_bool garry_storage_cursor_skip_prefix(garry_storage_cursor *cur,
                                             const garry_byte *skip_prefix, garry_i32 skip_plen)
 {
-    garry_byte key[512];
+    garry_byte key[GARRY_MAX_KEY_SIZE];
     garry_i32 klen;
     garry_bool match;
     garry_i32 i;

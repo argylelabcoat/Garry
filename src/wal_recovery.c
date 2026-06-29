@@ -28,7 +28,7 @@
 #define GARRY_FALSE 0
 #endif
 
-#define WAL_REC_SIZE 1552
+#define GARRY_WAL_RECORD_SIZE 1552
 #define WAL_REC_KIND_OFF  0
 #define WAL_REC_TXID_OFF  4
 #define WAL_REC_KLEN_OFF  8
@@ -37,22 +37,22 @@
 #define WAL_REC_OLD_OFF   528
 #define WAL_REC_NEW_OFF   1040
 
-#define MAX_COMMITTED 256
+#define GARRY_MAX_RECOVERY_COMMITTED 256
 
 garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
 {
-    garry_byte rec[WAL_REC_SIZE];
+    garry_byte rec[GARRY_WAL_RECORD_SIZE];
     garry_i32 bytes_read;
     garry_i32 kind, txid, klen, vlen;
-    garry_byte key[512];
-    garry_byte val[512];
-    garry_byte lookup_buf[512];
+    garry_byte key[GARRY_MAX_RECORD_SIZE];
+    garry_byte val[GARRY_MAX_RECORD_SIZE];
+    garry_byte lookup_buf[GARRY_MAX_RECORD_SIZE];
     garry_i32 lookup_len;
     garry_i32 cid;
-    garry_byte desc_buf[64];
+    garry_byte desc_buf[GARRY_DESC_BUF_SIZE];
     garry_i32 desc_len;
     garry_i32 root;
-    garry_txn_id committed[MAX_COMMITTED];
+    garry_txn_id committed[GARRY_MAX_RECOVERY_COMMITTED];
     garry_i32 commit_count;
     garry_i32 i;
     garry_bool found;
@@ -60,17 +60,17 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
     if (!wal->fd.is_open) return GARRY_FALSE;
 
     commit_count = 0;
-    for (i = 0; i < MAX_COMMITTED; i++) committed[i] = 0;
+    for (i = 0; i < GARRY_MAX_RECOVERY_COMMITTED; i++) committed[i] = 0;
 
     garry_file_seek(&wal->fd, 0, 0);
     for (;;) {
-        bytes_read = garry_file_read(&wal->fd, rec, WAL_REC_SIZE);
-        if (bytes_read < WAL_REC_SIZE) break;
+        bytes_read = garry_file_read(&wal->fd, rec, GARRY_WAL_RECORD_SIZE);
+        if (bytes_read < GARRY_WAL_RECORD_SIZE) break;
 
         kind = *((garry_i32*)(rec + WAL_REC_KIND_OFF));
         txid = *((garry_i32*)(rec + WAL_REC_TXID_OFF));
 
-        if (kind == 1 && commit_count < MAX_COMMITTED) {
+        if (kind == 1 && commit_count < GARRY_MAX_RECOVERY_COMMITTED) {
             committed[commit_count] = txid;
             commit_count++;
         }
@@ -78,8 +78,8 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
 
     garry_file_seek(&wal->fd, 0, 0);
     for (;;) {
-        bytes_read = garry_file_read(&wal->fd, rec, WAL_REC_SIZE);
-        if (bytes_read < WAL_REC_SIZE) break;
+        bytes_read = garry_file_read(&wal->fd, rec, GARRY_WAL_RECORD_SIZE);
+        if (bytes_read < GARRY_WAL_RECORD_SIZE) break;
 
         kind = *((garry_i32*)(rec + WAL_REC_KIND_OFF));
         txid = *((garry_i32*)(rec + WAL_REC_TXID_OFF));

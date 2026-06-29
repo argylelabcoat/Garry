@@ -14,24 +14,22 @@
  */
 
 #include "engine_settings.h"
+#include "garry/config.h"
 
 /**
  * @brief Return the default engine settings.
- *
- * Default values: pool_size=64 pages, page_size=4096,
- * max_record_size=512, max_txns=4, max_versions=8.
  */
 garry_engine_settings garry_default_engine_settings(void)
 {
     garry_engine_settings s;
-    s.page_size       = 4096;
-    s.compression     = 0;
-    s.max_txns        = 4;
-    s.max_versions    = 64;
-    s.max_key_size    = 256;
-    s.max_subscripts  = 16;
+    s.page_size       = GARRY_DEFAULT_PAGE_SIZE;
+    s.compression     = GARRY_COMPRESS_NONE;
+    s.max_txns        = GARRY_DEFAULT_MAX_TXNS;
+    s.max_versions    = GARRY_DEFAULT_MAX_VERSIONS;
+    s.max_key_size    = GARRY_DEFAULT_MAX_KEY_SIZE;
+    s.max_subscripts  = GARRY_DEFAULT_MAX_SUBSCRIPTS;
     s.btree_flags     = 0;
-    s.pool_size       = 8;
-    s.max_record_size = 8192;
+    s.pool_size       = GARRY_DEFAULT_POOL_SIZE;
+    s.max_record_size = GARRY_DEFAULT_MAX_RECORD_SIZE;
     return s;
 }

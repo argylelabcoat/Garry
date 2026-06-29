@@ -216,9 +216,9 @@ void garry_load_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *n
     ptype_val = garry_read_int32((garry_byte*)*buf, 0);
     level_val = garry_read_int32((garry_byte*)*buf, 4);
 
-    if (ptype_val == 1) {
+    if (ptype_val == GARRY_NODE_LEAF) {
         node->kind = GARRY_NODE_LEAF;
-    } else if (ptype_val == 2) {
+    } else if (ptype_val == GARRY_NODE_OVERFLOW) {
         node->kind = GARRY_NODE_OVERFLOW;
     } else {
         node->kind = GARRY_NODE_INTERNAL;
