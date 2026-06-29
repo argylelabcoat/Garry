@@ -19,6 +19,7 @@
 #include "hierarchical.h"
 #include "key_encoding.h"
 #include <string.h>
+#include <stdlib.h>
 
 garry_bool garry_storage_first(garry_engine_handle *eng, garry_txn_id txn,
                                garry_byte *key, garry_i32 *klen)
@@ -40,40 +41,54 @@ garry_bool garry_storage_first(garry_engine_handle *eng, garry_txn_id txn,
 garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn,
                               garry_byte *key, garry_i32 *klen)
 {
-    garry_storage_cursor cur;
-    garry_byte last_key[sizeof(garry_byte_array)];
-    garry_i32 last_klen;
-    garry_bool found;
+    garry_btree_node node;
+    garry_i32 page;
 
     if (!eng) return 0;
     if (!garry_txn_is_active(txn, eng)) return 0;
 
     garry_rwlock_rdlock(&eng->root_lock);
-    cur = garry_storage_cursor_open(eng, txn, NULL, 0);
-    found = 0;
-    last_klen = 0;
-    memset(last_key, 0, sizeof(last_key));
 
+    page = eng->btree_root;
     for (;;) {
-        garry_byte k[sizeof(garry_byte_array)];
-        garry_i32 kl;
-
-        kl = 0;
-        if (!garry_storage_cursor_next(&cur, k, &kl, NULL, NULL)) {
-            break;
+        garry_load_node(eng->pool, page, &node);
+        if (node.kind == GARRY_NODE_LEAF) break;
+        if (node.entry_count == 0) {
+            garry_rwlock_rdunlock(&eng->root_lock);
+            return 0;
         }
-        memcpy(last_key, k, sizeof(last_key));
-        last_klen = kl;
-        found = 1;
+        page = node.children[node.entry_count];
     }
-    garry_storage_cursor_close(&cur);
-    garry_rwlock_rdunlock(&eng->root_lock);
 
-    if (found && key && klen) {
-        memcpy(key, last_key, sizeof(last_key));
-        *klen = last_klen;
+    if (node.entry_count > 0) {
+        garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
+        garry_i32 lookup_len;
+        garry_i32 cid;
+        char *val;
+        garry_i32 mv_len;
+        garry_i32 idx;
+
+        for (idx = node.entry_count - 1; idx >= 0; idx--) {
+            lookup_len = node.value_lens[idx];
+            if (lookup_len > 0 && lookup_len <= GARRY_LOOKUP_BUF_SIZE) {
+                memcpy(lookup, node.values[idx], (size_t)lookup_len);
+                cid = garry_decode_cid_from_descriptor(lookup);
+                if (cid >= 0) {
+                    val = garry_mvcc_get(eng, txn, cid, &mv_len);
+                    if (val) {
+                        if (key) memcpy(key, node.keys[idx], sizeof(garry_byte_array));
+                        if (klen) *klen = node.key_lens[idx];
+                        free(val);
+                        garry_rwlock_rdunlock(&eng->root_lock);
+                        return 1;
+                    }
+                }
+            }
+        }
     }
-    return found;
+
+    garry_rwlock_rdunlock(&eng->root_lock);
+    return 0;
 }
 
 garry_bool garry_storage_next_key(garry_engine_handle *eng, garry_txn_id txn,
