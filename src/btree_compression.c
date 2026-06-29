@@ -43,7 +43,7 @@ void garry_minimum_separator(garry_byte_array result,
     for (i = 0; i < sep_len; i++) {
         result[i] = right[i];
     }
-    if (garry_byte_compare(result, llen, left, llen) < 0) {
+    if (garry_byte_compare(result, sep_len, left, llen) < 0) {
         for (i = 0; i < llen; i++) {
             result[i] = left[i];
         }

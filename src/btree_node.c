@@ -21,7 +21,7 @@
 
 static garry_i32 encode_cbor_uint(garry_byte* buf, garry_i32 pos, garry_i32 val)
 {
-    if (val < 0) val = val + 256;
+    if (val < 0) return pos;
     if (val < 24) {
         buf[pos] = (garry_byte)val;
         return pos + 1;
@@ -201,7 +201,7 @@ void garry_load_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *n
     garry_byte rec_data[GARRY_MAX_RECORD_SIZE];
     garry_byte rec_buf[GARRY_MAX_RECORD_SIZE];
     garry_i32 rlen, j, k, entry_idx, vlen_out;
-    garry_byte ckey[512];
+    garry_byte ckey[GARRY_MAX_KEY_SIZE];
     garry_i32 ckey_len;
 
     buf = garry_pool_try_pin(pool, pid);

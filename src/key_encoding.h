@@ -14,14 +14,9 @@
 
 #include "garry/config.h"
 #include "garry/types.h"
+#include "garry/encoding.h"
 #include "storage_types.h"
 #include <string.h>
-
-typedef struct {
-    const garry_byte* parts[GARRY_MAX_SUBSCRIPTS];
-    garry_i32 counts[GARRY_MAX_SUBSCRIPTS];
-    garry_i32 count;
-} garry_key_tuple;
 
 /**
  * @brief Calculate the total encoded length of a key tuple.

@@ -30,7 +30,6 @@ garry_wal_record* garry_make_update_record(garry_txn_id txn,
     }
     rec->key_len = klen;
     if (vlen > 0 && new_val != NULL) {
-        memcpy(rec->old_data, new_val, (size_t)vlen);
         memcpy(rec->new_data, new_val, (size_t)vlen);
     }
     rec->value_len = vlen;

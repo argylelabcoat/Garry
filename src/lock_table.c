@@ -121,25 +121,15 @@ void garry_lock_acquire(garry_lock_manager* mgr, garry_txn_id txn,
 
 void garry_lock_release(garry_lock_manager* mgr, garry_txn_id txn)
 {
-    garry_lock_node* pp;
-    /* Release from head first (matches original's head-pass removal). */
-    while (mgr->head != NULL && mgr->head->txn == txn) {
-        garry_lock_node* tmp = mgr->head;
-        mgr->head = mgr->head->next;
-        mgr->count = mgr->count - 1;
-        free(tmp);
-    }
-    /* Then remove from middle/tail. */
-    pp = mgr->head;
-    while (pp != NULL && pp->next != NULL) {
-        if (pp->next->txn == txn) {
-            garry_lock_node* tmp = pp->next;
-            pp->next = pp->next->next;
+    garry_lock_node **pp = &mgr->head;
+    while (*pp != NULL) {
+        if ((*pp)->txn == txn) {
+            garry_lock_node *tmp = *pp;
+            *pp = tmp->next;
             mgr->count = mgr->count - 1;
             free(tmp);
-            /* Don't advance — re-check current position for consecutive nodes. */
         } else {
-            pp = pp->next;
+            pp = &(*pp)->next;
         }
     }
 }

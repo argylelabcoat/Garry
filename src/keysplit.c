@@ -112,7 +112,7 @@ garry_i32 garry_make_key(const char *str, garry_byte_array out)
     memcpy(&out[pos], str, (size_t)len);
     pos += len;
 
-    return 1;
+    return pos;
 }
 
 garry_i32 garry_make_key_parts(const char **parts, garry_i32 count,

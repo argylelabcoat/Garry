@@ -129,7 +129,6 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
     garry_byte desc[GARRY_DESC_BUF_SIZE];
     garry_i32 desc_len;
     garry_bool ok;
-    garry_wal_record *rec;
 
     if (!eng || !key || klen <= 0 || !value || vlen <= 0) return 0;
     if (klen > GARRY_MAX_KEY_SIZE) return 0;
@@ -138,12 +137,6 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
     garry_lock_acquire(&eng->lock_mgr, txn, key, klen,
                        GARRY_LOCK_EXCLUSIVE, &ok);
     if (!ok) return 0;
-
-    rec = garry_make_update_record(txn, key, klen, value, vlen);
-    if (rec) {
-        garry_wal_log_append(&eng->wal, rec);
-        garry_wal_record_free(rec);
-    }
 
     garry_rwlock_wrlock(&eng->root_lock);
 
@@ -185,6 +178,15 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
         if (!garry_mvcc_set(eng, txn, cid, (const char*)value, vlen)) {
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
+        }
+    }
+
+    {
+        garry_wal_record *rec;
+        rec = garry_make_update_record(txn, key, klen, value, vlen);
+        if (rec) {
+            garry_wal_log_append(&eng->wal, rec);
+            garry_wal_record_free(rec);
         }
     }
 
