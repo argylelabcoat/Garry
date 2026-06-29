@@ -70,6 +70,7 @@ garry_database* garry_database_create_with_config(const char *path, garry_config
     settings.page_size       = config.page_size;
     settings.max_txns        = config.max_txns;
     settings.max_versions    = config.max_versions;
+    settings.compression     = config.compression;
 
     eng = garry_storage_init(path, settings);
     if (!eng) return NULL;

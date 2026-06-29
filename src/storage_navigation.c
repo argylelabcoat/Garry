@@ -41,7 +41,7 @@ garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn,
                               garry_byte *key, garry_i32 *klen)
 {
     garry_storage_cursor cur;
-    garry_byte last_key[512];
+    garry_byte last_key[sizeof(garry_byte_array)];
     garry_i32 last_klen;
     garry_bool found;
 
@@ -55,14 +55,14 @@ garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn,
     memset(last_key, 0, sizeof(last_key));
 
     for (;;) {
-        garry_byte k[512];
+        garry_byte k[sizeof(garry_byte_array)];
         garry_i32 kl;
 
         kl = 0;
         if (!garry_storage_cursor_next(&cur, k, &kl, NULL, NULL)) {
             break;
         }
-        memcpy(last_key, k, 512);
+        memcpy(last_key, k, sizeof(last_key));
         last_klen = kl;
         found = 1;
     }
@@ -70,7 +70,7 @@ garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn,
     garry_rwlock_rdunlock(&eng->root_lock);
 
     if (found && key && klen) {
-        memcpy(key, last_key, 512);
+        memcpy(key, last_key, sizeof(last_key));
         *klen = last_klen;
     }
     return found;
@@ -81,7 +81,7 @@ garry_bool garry_storage_next_key(garry_engine_handle *eng, garry_txn_id txn,
                                   garry_byte *key, garry_i32 *klen)
 {
     garry_storage_cursor cur;
-    garry_byte k[512];
+    garry_byte k[sizeof(garry_byte_array)];
     garry_i32 kl;
 
     if (!eng) return 0;
@@ -99,7 +99,7 @@ garry_bool garry_storage_next_key(garry_engine_handle *eng, garry_txn_id txn,
             return 0;
         }
         if (garry_byte_compare(k, kl, after, after_len) > 0) {
-            if (key) memcpy(key, k, 512);
+            if (key) memcpy(key, k, sizeof(garry_byte_array));
             if (klen) *klen = kl;
             garry_storage_cursor_close(&cur);
             garry_rwlock_rdunlock(&eng->root_lock);
@@ -113,7 +113,7 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
                                   garry_byte *key, garry_i32 *klen)
 {
     garry_storage_cursor cur;
-    garry_byte prev_key[512];
+    garry_byte prev_key[sizeof(garry_byte_array)];
     garry_i32 prev_klen;
     garry_bool found;
 
@@ -128,7 +128,7 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
     memset(prev_key, 0, sizeof(prev_key));
 
     for (;;) {
-        garry_byte k[512];
+        garry_byte k[sizeof(garry_byte_array)];
         garry_i32 kl;
 
         kl = 0;
@@ -136,7 +136,7 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
             break;
         }
         if (garry_byte_compare(k, kl, before, before_len) < 0) {
-            memcpy(prev_key, k, 512);
+            memcpy(prev_key, k, sizeof(prev_key));
             prev_klen = kl;
             found = 1;
         }
@@ -145,7 +145,7 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
     garry_rwlock_rdunlock(&eng->root_lock);
 
     if (found && key && klen) {
-        memcpy(key, prev_key, 512);
+        memcpy(key, prev_key, sizeof(prev_key));
         *klen = prev_klen;
     }
     return found;

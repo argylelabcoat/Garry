@@ -60,6 +60,9 @@ garry_i32 len = garry_key_unsplit(key, n, '/', buf, sizeof(buf));
 ### Cursor Iteration
 
 ```c
+garry_u8 key[GARRY_MAX_KEY_SIZE], val[GARRY_MAX_KEY_SIZE];
+garry_i32 klen, vlen;
+
 garry_txn txn = garry_txn_begin(db);
 garry_cursor *cur = garry_cursor_open(db, txn, NULL, 0);
 while (garry_cursor_next(cur, key, &klen, val, &vlen)) {
@@ -88,11 +91,19 @@ garry_for_each(db, txn, NULL, 0, my_visitor, NULL);
 ### Navigation
 
 ```c
-garry_u8 key[256];
+garry_u8 key[GARRY_MAX_KEY_SIZE];
 garry_i32 klen;
+
+memset(key, 0, sizeof(key));
+klen = 0;
 if (garry_first(db, txn, key, &klen)) { /* found first */ }
+
+memset(key, 0, sizeof(key));
+klen = 0;
 if (garry_last(db, txn, key, &klen)) { /* found last */ }
-if (garry_next_key(db, txn, key, klen, key, &klen)) { /* next */ }
+
+if (garry_next_key(db, txn, (const garry_u8*)"aaa", 3, key, &klen)) { /* next */ }
+
 if (garry_exists(db, txn, key, klen)) { /* exists */ }
 garry_i32 count = garry_count(db, txn);
 ```
@@ -101,7 +112,7 @@ garry_i32 count = garry_count(db, txn);
 
 ```c
 garry_config cfg = garry_config_default();
-cfg.pool_size = 16;
+cfg.pool_size = 4;
 cfg.compression = GARRY_COMPRESS_LZ4;
 garry_database *db = garry_database_create_with_config("my.db", cfg);
 ```

@@ -62,6 +62,13 @@ typedef int      garry_bool;
 /// Fixed-size byte buffer for keys and values (sized to @ref GARRY_MAX_KEY_SIZE).
 typedef garry_u8 garry_byte_array[GARRY_MAX_KEY_SIZE];
 
+/* ---- Compression modes ---- */
+
+/// No compression (default).
+#define GARRY_COMPRESS_NONE 0
+/// LZ4 block compression.
+#define GARRY_COMPRESS_LZ4  1
+
 /* ---- Status codes ---- */
 
 /**

@@ -30,5 +30,6 @@ garry_config garry_config_default(void)
     c.page_size       = s.page_size;
     c.max_txns        = s.max_txns;
     c.max_versions    = s.max_versions;
+    c.compression     = s.compression;
     return c;
 }

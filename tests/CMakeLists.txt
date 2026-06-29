@@ -41,3 +41,5 @@ garry_add_test(test_large_values)
 garry_add_test(test_blog_storage)
 garry_add_test(test_public_api_full)
 garry_add_test(test_data_structures)
+
+add_subdirectory(readme)

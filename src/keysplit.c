@@ -50,7 +50,7 @@ garry_i32 garry_key_split(const char *str, char delimiter,
         if (*p == delimiter) p++;
     }
 
-    return count;
+    return pos;
 }
 
 garry_i32 garry_key_unsplit(const garry_byte *key, garry_i32 klen,
@@ -73,18 +73,16 @@ garry_i32 garry_key_unsplit(const garry_byte *key, garry_i32 klen,
         pos++;
 
         if (pos + seg_len > klen) break;
-        if (seg_len > 0) {
-            if (out_pos > 0) {
-                if (out_pos >= out_size) break;
-                out[out_pos] = delimiter;
-                out_pos++;
-            }
-            if (out_pos + seg_len > out_size) break;
-            memcpy(&out[out_pos], &key[pos], (size_t)seg_len);
-            out_pos += seg_len;
-            pos += seg_len;
-            count++;
+        if (out_pos > 0) {
+            if (out_pos >= out_size) break;
+            out[out_pos] = delimiter;
+            out_pos++;
         }
+        if (out_pos + seg_len > out_size) break;
+        memcpy(&out[out_pos], &key[pos], (size_t)seg_len);
+        out_pos += seg_len;
+        pos += seg_len;
+        count++;
     }
 
     if (out_pos < out_size) {
@@ -144,5 +142,5 @@ garry_i32 garry_make_key_parts(const char **parts, garry_i32 count,
         pos += seg_len;
     }
 
-    return i;
+    return pos;
 }

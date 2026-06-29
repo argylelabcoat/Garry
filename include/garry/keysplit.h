@@ -26,10 +26,10 @@
  * @param str        Input string (null-terminated).
  * @param delimiter  Character that separates parts (e.g. '/').
  * @param out        Output buffer for the encoded key.
- * @return Number of subscripts written to @p out, or 0 on error.
+ * @return Byte length of the encoded key, or 0 on error.
  *
  * Example: @c garry_key_split("users/matthew/articles", '/', buf)
- * produces a 3-part key. The delimiter itself is not stored.
+ * produces a 3-part key of 20 bytes. The delimiter itself is not stored.
  */
 GARRY_API garry_i32 garry_key_split(const char *str, char delimiter,
                                      garry_byte_array out);
@@ -41,8 +41,7 @@ GARRY_API garry_i32 garry_key_split(const char *str, char delimiter,
  * @param delimiter  Character to insert between parts.
  * @param out       Output buffer for the reconstructed string.
  * @param out_size  Capacity of @p out in bytes.
- * @return Number of bytes written to @p out (excluding null terminator),
- *         or 0 if @p out_size is too small.
+ * @return Number of segments decoded, or 0 if @p out_size is too small.
  */
 GARRY_API garry_i32 garry_key_unsplit(const garry_byte *key, garry_i32 klen,
                                         char delimiter, char *out, garry_i32 out_size);
@@ -62,7 +61,7 @@ GARRY_API garry_i32 garry_make_key(const char *str, garry_byte_array out);
  * @param parts   Array of null-terminated C strings.
  * @param count   Number of parts in the array.
  * @param out     Output buffer for the encoded key.
- * @return Number of subscripts written to @p out, or 0 on error.
+ * @return Byte length of the encoded key, or 0 on error.
  *
  * General-purpose variant when the number of parts is not known at
  * compile time.
