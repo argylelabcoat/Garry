@@ -413,6 +413,54 @@ static void test_cursor_open_close_smoke(void)
     cleanup();
 }
 
+/* HIGH FIX: navigation functions don't nested-lock (first/next_key/prev_key) */
+static void test_navigation_no_nested_lock(void)
+{
+    garry_database *db;
+    garry_txn txn;
+    garry_u8 key[256], found[256];
+    garry_i32 klen, flen;
+    garry_bool ok;
+    cleanup();
+    db = garry_database_create(TEST_DB);
+    GARRY_CHECK(db != NULL);
+
+    txn = garry_txn_begin(db);
+    klen = garry_make_key("aaa", key);
+    garry_set(db, txn, key, klen, (const garry_u8*)"1", 1);
+    klen = garry_make_key("bbb", key);
+    garry_set(db, txn, key, klen, (const garry_u8*)"2", 1);
+    klen = garry_make_key("ccc", key);
+    garry_set(db, txn, key, klen, (const garry_u8*)"3", 1);
+    garry_txn_commit(db, txn);
+
+    txn = garry_txn_begin(db);
+
+    /* garry_first — exercises cursor_open + cursor_next without outer lock */
+    flen = 0;
+    ok = garry_first(db, txn, found, &flen);
+    GARRY_CHECK(ok);
+    GARRY_CHECK(flen > 0);
+
+    /* garry_next_key — exercises cursor scan */
+    klen = garry_make_key("aaa", key);
+    flen = 0;
+    ok = garry_next_key(db, txn, key, klen, found, &flen);
+    GARRY_CHECK(ok);
+    GARRY_CHECK(flen > 0);
+
+    /* garry_prev_key — exercises cursor scan */
+    klen = garry_make_key("ccc", key);
+    flen = 0;
+    ok = garry_prev_key(db, txn, key, klen, found, &flen);
+    GARRY_CHECK(ok);
+    GARRY_CHECK(flen > 0);
+
+    garry_txn_rollback(db, txn);
+    garry_database_close(db);
+    cleanup();
+}
+
 int main(void)
 {
     test_garry_data_returns();
@@ -433,6 +481,7 @@ int main(void)
     test_overflow_read_returns_bool();
     test_find_visible_uses_heap_not_stack();
     test_cursor_open_close_smoke();
+    test_navigation_no_nested_lock();
     if (garry_test_failures == 0) printf("test_inquisitor_fixes: ALL PASSED\n");
     return garry_test_failures;
 }

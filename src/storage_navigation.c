@@ -31,11 +31,12 @@ garry_bool garry_storage_first(garry_engine_handle *eng, garry_txn_id txn,
     if (!eng) return 0;
     if (!garry_txn_is_active(txn, eng)) return 0;
 
-    garry_rwlock_rdlock(&eng->root_lock);
+    /* cursor_open and cursor_next manage their own root_lock internally.
+     * Do NOT wrap in an outer rdlock — that would nested-lock the rwlock,
+     * which deadlocks on non-recursive implementations (macOS, most Linux). */
     cur = garry_storage_cursor_open(eng, txn, NULL, 0);
     ok = garry_storage_cursor_next(&cur, key, klen, NULL, NULL);
     garry_storage_cursor_close(&cur);
-    garry_rwlock_rdunlock(&eng->root_lock);
     return ok;
 }
 
@@ -104,21 +105,19 @@ garry_bool garry_storage_next_key(garry_engine_handle *eng, garry_txn_id txn,
     if (!garry_txn_is_active(txn, eng)) return 0;
     if (!after || after_len <= 0) return 0;
 
-    garry_rwlock_rdlock(&eng->root_lock);
+    /* cursor_open and cursor_next manage their own root_lock internally. */
     cur = garry_storage_cursor_open(eng, txn, NULL, 0);
 
     for (;;) {
         kl = 0;
         if (!garry_storage_cursor_next(&cur, k, &kl, NULL, NULL)) {
             garry_storage_cursor_close(&cur);
-            garry_rwlock_rdunlock(&eng->root_lock);
             return 0;
         }
         if (garry_byte_compare(k, kl, after, after_len) > 0) {
             if (key) memcpy(key, k, sizeof(garry_byte_array));
             if (klen) *klen = kl;
             garry_storage_cursor_close(&cur);
-            garry_rwlock_rdunlock(&eng->root_lock);
             return 1;
         }
     }
@@ -137,7 +136,7 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
     if (!garry_txn_is_active(txn, eng)) return 0;
     if (!before || before_len <= 0) return 0;
 
-    garry_rwlock_rdlock(&eng->root_lock);
+    /* cursor_open and cursor_next manage their own root_lock internally. */
     cur = garry_storage_cursor_open(eng, txn, NULL, 0);
     found = 0;
     prev_klen = 0;
@@ -158,7 +157,6 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
         }
     }
     garry_storage_cursor_close(&cur);
-    garry_rwlock_rdunlock(&eng->root_lock);
 
     if (found && key && klen) {
         memcpy(key, prev_key, sizeof(prev_key));
