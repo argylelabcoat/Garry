@@ -41,7 +41,7 @@ garry_u32 garry_pool_pin_count(garry_buffer_pool *pool, garry_i32 pid);
 void garry_pool_mark_dirty(garry_buffer_pool *pool, garry_i32 pid);
 garry_i32 garry_pool_allocate(garry_buffer_pool *pool);
 garry_bool garry_pool_is_loaded(garry_buffer_pool *pool, garry_i32 pid);
-void garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid);
+garry_bool garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid);
 void garry_pool_flush_all(garry_buffer_pool *pool);
 void garry_pool_close(garry_buffer_pool *pool);
 

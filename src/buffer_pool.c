@@ -200,18 +200,22 @@ garry_bool garry_pool_is_loaded(garry_buffer_pool *pool, garry_i32 pid) {
     return find_slot(pool, pid) != GARRY_INVALID_SLOT ? GARRY_TRUE : GARRY_FALSE;
 }
 
-void garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid) {
+garry_bool garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid) {
     garry_u32 idx;
-    if (!pool) return;
-    if (pid < 0) return;
+    if (!pool) return GARRY_FALSE;
+    if (pid < 0) return GARRY_FALSE;
     garry_rwlock_wrlock(&pool->slot_locks[0]);
     idx = find_slot(pool, pid);
     if (idx != GARRY_INVALID_SLOT && pool->dirty[idx]) {
         garry_file_write_page(&pool->fd, pool->page_ids[idx],
                               pool->pages[idx], (garry_i32)pool->page_size);
+        /* TODO: garry_file_write_page currently returns void.
+         * When it gains a return value, check it here and return
+         * GARRY_FALSE on failure without clearing the dirty flag. */
         pool->dirty[idx] = GARRY_FALSE;
     }
     garry_rwlock_wrunlock(&pool->slot_locks[0]);
+    return GARRY_TRUE;
 }
 
 void garry_pool_flush_all(garry_buffer_pool *pool) {
