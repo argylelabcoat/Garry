@@ -59,6 +59,10 @@ typedef unsigned char garry_u8;
 typedef garry_u8 garry_byte;
 /// Boolean type — 0 is false, nonzero is true.
 typedef int      garry_bool;
+/// Boolean true value.
+#define GARRY_TRUE  1
+/// Boolean false value.
+#define GARRY_FALSE 0
 /// Fixed-size byte buffer for keys and values (sized to @ref GARRY_MAX_KEY_SIZE).
 typedef garry_u8 garry_byte_array[GARRY_MAX_KEY_SIZE];
 

@@ -26,13 +26,6 @@
 #include <string.h>
 #include <limits.h>
 
-#ifndef GARRY_TRUE
-#define GARRY_TRUE 1
-#endif
-#ifndef GARRY_FALSE
-#define GARRY_FALSE 0
-#endif
-
 garry_i32 garry_chain_id_encode(garry_i32 chain_id, garry_byte *out)
 {
     out[0] = (garry_byte)(chain_id & 0xFF);

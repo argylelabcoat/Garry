@@ -49,4 +49,14 @@ garry_wal_record* garry_make_checkpoint_record(garry_txn_id txn);
 /* Free a heap-allocated WAL record. */
 void garry_wal_record_free(garry_wal_record* rec);
 
+/* WAL record on-disk format constants. */
+#define GARRY_WAL_RECORD_SIZE 784
+#define WAL_REC_KIND_OFF  0
+#define WAL_REC_TXID_OFF  4
+#define WAL_REC_KLEN_OFF  8
+#define WAL_REC_VLEN_OFF  12
+#define WAL_REC_KEY_OFF   16
+#define WAL_REC_OLD_OFF   272
+#define WAL_REC_NEW_OFF   528
+
 #endif /* GARRY_WAL_RECORD_H */

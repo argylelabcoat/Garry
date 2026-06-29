@@ -84,9 +84,10 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
 
     val = garry_mvcc_get(eng, txn, cid, &vlen);
 
-    garry_rwlock_rdunlock(&eng->root_lock);
-
-    if (!val) return 0;
+    if (!val) {
+        garry_rwlock_rdunlock(&eng->root_lock);
+        return 0;
+    }
 
     if (eng->compression == GARRY_COMPRESS_LZ4) {
         size_t decompressed_len = 0;
@@ -94,9 +95,13 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
                                            (size_t)GARRY_MAX_RECORD_SIZE,
                                            &decompressed_len);
         free(val);
-        if (!decompressed) return 0;
+        if (!decompressed) {
+            garry_rwlock_rdunlock(&eng->root_lock);
+            return 0;
+        }
         if (decompressed_len > (size_t)GARRY_MAX_RECORD_SIZE) {
             lz4_free(decompressed);
+            garry_rwlock_rdunlock(&eng->root_lock);
             return 0;
         }
         memcpy(result, decompressed, decompressed_len);
@@ -108,6 +113,7 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
         free(val);
         *result_len = vlen;
     }
+    garry_rwlock_rdunlock(&eng->root_lock);
     return 1;
 }
 
@@ -278,8 +284,14 @@ garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn,
 
     has_children = 0;
     cid = garry_decode_cid_from_descriptor(lookup);
+    if (cid < 0) {
+        garry_rwlock_rdunlock(&eng->root_lock);
+        return GARRY_DATA_NOT_FOUND;
+    }
+    /* Extract has_children from descriptor if present */
     if ((unsigned char)lookup[0] == (GARRY_CBOR_MAP_BASE + 2)) {
-        garry_decode_descriptor(lookup, GARRY_LOOKUP_BUF_SIZE, &cid, &has_children);
+        garry_i32 dummy_cid;
+        garry_decode_descriptor(lookup, GARRY_LOOKUP_BUF_SIZE, &dummy_cid, &has_children);
     }
 
     val = garry_mvcc_get(eng, txn, cid, &vlen);

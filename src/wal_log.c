@@ -17,13 +17,6 @@
 #include "wal_log.h"
 #include <string.h>
 
-#ifndef GARRY_TRUE
-#define GARRY_TRUE  1
-#endif
-#ifndef GARRY_FALSE
-#define GARRY_FALSE 0
-#endif
-
 garry_status_t garry_wal_log_init(garry_wal_log* wal, const char* log_path,
                                   const char* checkpoint_path)
 {
@@ -45,27 +38,22 @@ garry_status_t garry_wal_log_init(garry_wal_log* wal, const char* log_path,
 
 static garry_bool wal_write_record(garry_wal_log* wal, const garry_wal_record* rec)
 {
+    garry_byte buf[GARRY_WAL_RECORD_SIZE];
     garry_i32 kind = (garry_i32)rec->kind;
     garry_i32 txid = rec->txid;
-    garry_i32 klen = rec->key_len;
-    garry_i32 vlen = rec->value_len;
     garry_i32 n;
 
-    n = garry_file_write_bytes(&wal->fd, (const garry_byte*)&kind, (garry_i32)sizeof(garry_i32));
-    if (n != (garry_i32)sizeof(garry_i32)) return GARRY_FALSE;
-    n = garry_file_write_bytes(&wal->fd, (const garry_byte*)&txid, (garry_i32)sizeof(garry_i32));
-    if (n != (garry_i32)sizeof(garry_i32)) return GARRY_FALSE;
-    n = garry_file_write_bytes(&wal->fd, (const garry_byte*)&klen, (garry_i32)sizeof(garry_i32));
-    if (n != (garry_i32)sizeof(garry_i32)) return GARRY_FALSE;
-    n = garry_file_write_bytes(&wal->fd, (const garry_byte*)&vlen, (garry_i32)sizeof(garry_i32));
-    if (n != (garry_i32)sizeof(garry_i32)) return GARRY_FALSE;
-    n = garry_file_write_bytes(&wal->fd, rec->key, (garry_i32)sizeof(garry_byte_array));
-    if (n != (garry_i32)sizeof(garry_byte_array)) return GARRY_FALSE;
-    n = garry_file_write_bytes(&wal->fd, rec->old_data, (garry_i32)sizeof(garry_byte_array));
-    if (n != (garry_i32)sizeof(garry_byte_array)) return GARRY_FALSE;
-    n = garry_file_write_bytes(&wal->fd, rec->new_data, (garry_i32)sizeof(garry_byte_array));
-    if (n != (garry_i32)sizeof(garry_byte_array)) return GARRY_FALSE;
-    return GARRY_TRUE;
+    memset(buf, 0, sizeof(buf));
+    memcpy(buf + WAL_REC_KIND_OFF, &kind, sizeof(garry_i32));
+    memcpy(buf + WAL_REC_TXID_OFF, &txid, sizeof(garry_i32));
+    memcpy(buf + WAL_REC_KLEN_OFF, &rec->key_len, sizeof(garry_i32));
+    memcpy(buf + WAL_REC_VLEN_OFF, &rec->value_len, sizeof(garry_i32));
+    memcpy(buf + WAL_REC_KEY_OFF, rec->key, sizeof(garry_byte_array));
+    memcpy(buf + WAL_REC_OLD_OFF, rec->old_data, sizeof(garry_byte_array));
+    memcpy(buf + WAL_REC_NEW_OFF, rec->new_data, sizeof(garry_byte_array));
+
+    n = garry_file_write_bytes(&wal->fd, buf, GARRY_WAL_RECORD_SIZE);
+    return (n == GARRY_WAL_RECORD_SIZE) ? GARRY_TRUE : GARRY_FALSE;
 }
 
 garry_log_sequence_number garry_wal_log_append(garry_wal_log* wal,

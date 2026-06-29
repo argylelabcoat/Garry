@@ -16,6 +16,7 @@
 #include "storage_navigation.h"
 #include "storage_cursor.h"
 #include "storage_ops.h"
+#include "btree_search.h"
 #include "hierarchical.h"
 #include "key_encoding.h"
 #include <string.h>
@@ -169,12 +170,27 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
 garry_bool garry_storage_exists(garry_engine_handle *eng, garry_txn_id txn,
                                 const garry_byte *key, garry_i32 klen)
 {
-    garry_byte result[GARRY_MAX_RECORD_SIZE];
-    garry_i32 result_len;
+    garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
+    garry_i32 lookup_len;
+    garry_i32 cid;
 
     if (!eng || !key || klen <= 0) return 0;
-    result_len = 0;
-    return garry_storage_get(eng, txn, key, klen, result, &result_len);
+    if (!garry_txn_is_active(txn, eng)) return 0;
+
+    garry_rwlock_rdlock(&eng->root_lock);
+
+    lookup_len = 0;
+    memset(lookup, 0, sizeof(lookup));
+    if (!garry_leaf_find_search(eng->pool, eng->btree_root,
+                                key, klen, lookup, &lookup_len)) {
+        garry_rwlock_rdunlock(&eng->root_lock);
+        return 0;
+    }
+
+    cid = garry_decode_cid_from_descriptor(lookup);
+    garry_rwlock_rdunlock(&eng->root_lock);
+
+    return (cid >= 0) ? 1 : 0;
 }
 
 garry_i32 garry_storage_count(garry_engine_handle *eng, garry_txn_id txn)

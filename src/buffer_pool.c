@@ -22,13 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef GARRY_TRUE
-#define GARRY_TRUE  1
-#endif
-#ifndef GARRY_FALSE
-#define GARRY_FALSE 0
-#endif
-
 static garry_u32 find_slot(garry_buffer_pool *pool, garry_i32 pid) {
     garry_u32 i;
     for (i = 0; i < pool->capacity; i++) {

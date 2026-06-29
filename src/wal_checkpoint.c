@@ -18,13 +18,6 @@
 #include "buffer_pool.h"
 #include "version_chain.h"
 
-#ifndef GARRY_TRUE
-#define GARRY_TRUE 1
-#endif
-#ifndef GARRY_FALSE
-#define GARRY_FALSE 0
-#endif
-
 garry_bool garry_wal_checkpoint(garry_wal_log *wal, garry_engine_handle *eng,
                                 garry_log_sequence_number *checkpoint_lsn)
 {

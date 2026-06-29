@@ -16,11 +16,8 @@
 #include "gc.h"
 #include "version_chain.h"
 #include "slotted_page.h"
+#include "garry_threading.h"
 #include <string.h>
-
-#ifndef GARRY_TRUE
-#define GARRY_TRUE 1
-#endif
 
 garry_txn_id garry_oldest_active_txid(garry_engine_handle *eng)
 {
@@ -57,9 +54,11 @@ void garry_mvcc_gc(garry_engine_handle *eng)
             garry_page_type pt;
             pt = ((garry_page_header*)*buf)->page_type;
             if (pt == GARRY_NODE_CHAIN) {
+                garry_rwlock_wrlock(&eng->root_lock);
                 garry_chain_page_prune(eng->pool, *buf, (garry_u32)eng->page_size,
                                        snapshot, snapshot_count);
                 garry_pool_mark_dirty(eng->pool, pid);
+                garry_rwlock_wrunlock(&eng->root_lock);
             }
             garry_pool_release_page(eng->pool, pid);
         }

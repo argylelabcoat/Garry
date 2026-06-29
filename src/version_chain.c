@@ -30,13 +30,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef GARRY_TRUE
-#define GARRY_TRUE  1
-#endif
-#ifndef GARRY_FALSE
-#define GARRY_FALSE 0
-#endif
-
 void garry_chain_page_init(garry_page_buffer buf, garry_u32 page_size)
 {
     garry_page_init(buf, GARRY_NODE_CHAIN, 0, (garry_i32)page_size);
@@ -507,7 +500,9 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
     for (i = 0; i < rec_count; i++) {
         if (keep[i]) {
             rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
-            garry_page_insert(tmp, rec, rlen, (garry_i32)page_size);
+            if (garry_page_insert(tmp, rec, rlen, (garry_i32)page_size) < 0) {
+                break;
+            }
         }
     }
     for (j = 0; j < (garry_i32)page_size; j++) {
