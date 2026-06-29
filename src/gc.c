@@ -27,6 +27,11 @@ void garry_mvcc_gc(garry_engine_handle *eng)
     garry_i32 snapshot_count;
     garry_i32 i;
 
+    /* Lock ordering: root_lock first, then mutex (matching storage ops).
+     * Take a snapshot of active txns under the mutex, then do GC work
+     * under root_lock only. The snapshot is valid because any new txns
+     * that appear after the snapshot have higher IDs and don't affect
+     * visibility of older versions. */
     garry_mutex_lock(&eng->txn_slot_mutex);
     snapshot_count = eng->active_count;
     for (i = 0; i < snapshot_count; i++) snapshot[i] = eng->active_txns[i];

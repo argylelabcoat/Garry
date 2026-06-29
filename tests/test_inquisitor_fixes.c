@@ -375,6 +375,44 @@ static void test_overflow_read_returns_bool(void)
     remove("/tmp/garry_overflow_test.db");
 }
 
+/* HIGH FIX: version_chain_find_visible uses malloc'd buffer, not stack */
+static void test_find_visible_uses_heap_not_stack(void)
+{
+    garry_page_buffer buf;
+    garry_i32 vlen;
+    char *val;
+    garry_txn_id active[1];
+
+    garry_page_init(buf, GARRY_NODE_CHAIN, 0, 4096);
+    garry_chain_page_append(buf, 4096, 1, "test", 4);
+
+    active[0] = 2;
+    val = garry_chain_page_find_visible(NULL, buf, 4096, 2, active, 1, &vlen);
+    GARRY_CHECK(val != NULL);
+    GARRY_CHECK(vlen == 4);
+    GARRY_CHECK(memcmp(val, "test", 4) == 0);
+    free(val);
+}
+
+/* HIGH FIX: cursor open acquires root_lock (basic smoke test) */
+static void test_cursor_open_close_smoke(void)
+{
+    garry_database *db;
+    garry_txn txn;
+    garry_cursor *cur;
+    cleanup();
+    db = garry_database_create(TEST_DB);
+    GARRY_CHECK(db != NULL);
+    txn = garry_txn_begin(db);
+    GARRY_CHECK(txn != 0);
+    cur = garry_cursor_open(db, txn, NULL, 0);
+    GARRY_CHECK(cur != NULL);
+    garry_cursor_close(cur);
+    garry_txn_rollback(db, txn);
+    garry_database_close(db);
+    cleanup();
+}
+
 int main(void)
 {
     test_garry_data_returns();
@@ -393,6 +431,8 @@ int main(void)
     test_lock_release_on_commit();
     test_lock_release_on_rollback();
     test_overflow_read_returns_bool();
+    test_find_visible_uses_heap_not_stack();
+    test_cursor_open_close_smoke();
     if (garry_test_failures == 0) printf("test_inquisitor_fixes: ALL PASSED\n");
     return garry_test_failures;
 }

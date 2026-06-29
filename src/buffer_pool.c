@@ -253,11 +253,12 @@ void garry_pool_free_page(garry_buffer_pool *pool, garry_i32 pid) {
     idx = find_slot(pool, pid);
     if (idx != GARRY_INVALID_SLOT) {
         if (pool->dirty[idx]) {
-            if (!garry_file_write_page(&pool->fd, pool->page_ids[idx],
-                                   pool->pages[idx], (garry_i32)pool->page_size)) {
-                /* Write failed — mark clean anyway to avoid infinite retry loops */
-                pool->dirty[idx] = GARRY_FALSE;
-            }
+            /* Best-effort flush. On failure the in-memory page data is
+             * abandoned — this is a data loss path. Callers should ensure
+             * critical pages are flushed via garry_pool_flush_page before
+             * calling free_page. */
+            (void)garry_file_write_page(&pool->fd, pool->page_ids[idx],
+                                   pool->pages[idx], (garry_i32)pool->page_size);
         }
         pool->loaded[idx] = GARRY_FALSE;
         pool->pin_counts[idx] = 0;

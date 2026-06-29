@@ -314,7 +314,7 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
                                     garry_txn_id_ptr active, garry_i32 active_count,
                                     garry_i32 *vlen)
 {
-    garry_page_buffer local;
+    garry_page_buffer *local;
     garry_i32 rec_count;
     garry_i32 i;
     garry_byte rec_data[GARRY_CHAIN_ENTRY_BUF_SIZE];
@@ -331,14 +331,16 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
     garry_i32 visible;
     garry_i32 done;
 
-    memcpy(local, buf, (size_t)page_size);
-    rec_count = garry_page_record_count(&local);
+    local = (garry_page_buffer*)malloc(sizeof(garry_page_buffer));
+    if (local == NULL) return NULL;
+    memcpy(*local, buf, (size_t)page_size);
+    rec_count = garry_page_record_count(local);
     i = rec_count - 1;
     *vlen = 0;
     done = 0;
 
     while (i >= 0 && result == NULL && !done) {
-        rlen = garry_page_get(&local, i, rec_data, (garry_i32)page_size);
+        rlen = garry_page_get(local, i, rec_data, (garry_i32)page_size);
         if (rlen >= GARRY_CHAIN_ENTRY_HEADER_SIZE) {
             pos = 0;
             txid_created = garry_read_le32(rec_data, pos); pos += 4;
@@ -396,6 +398,7 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
         i--;
     }
 
+    free(local);
     return result;
 }
 

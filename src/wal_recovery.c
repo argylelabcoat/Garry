@@ -21,8 +21,9 @@
 #include "storage_ops.h"
 #include "garry_threading.h"
 #include <string.h>
+#include <stdlib.h>
 
-#define GARRY_MAX_RECOVERY_COMMITTED 256
+#define GARRY_MAX_RECOVERY_COMMITTED 1024
 
 garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
 {
@@ -37,16 +38,22 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
     garry_byte desc_buf[GARRY_DESC_BUF_SIZE];
     garry_i32 desc_len;
     garry_i32 root;
-    garry_txn_id committed[GARRY_MAX_RECOVERY_COMMITTED];
+    garry_txn_id *committed;
     garry_i32 commit_count;
+    garry_i32 commit_cap;
     garry_i32 i;
     garry_bool found;
 
     if (!wal->fd.is_open) return GARRY_FALSE;
 
-    commit_count = 0;
-    for (i = 0; i < GARRY_MAX_RECOVERY_COMMITTED; i++) committed[i] = 0;
+    commit_cap = GARRY_MAX_RECOVERY_COMMITTED;
+    committed = (garry_txn_id*)malloc(sizeof(garry_txn_id) * commit_cap);
+    if (!committed) return GARRY_FALSE;
 
+    commit_count = 0;
+    for (i = 0; i < commit_cap; i++) committed[i] = 0;
+
+    /* First pass: collect all committed transaction IDs */
     garry_file_seek(&wal->fd, 0, 0);
     for (;;) {
         bytes_read = garry_file_read(&wal->fd, rec, GARRY_WAL_RECORD_SIZE);
@@ -55,12 +62,22 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
         kind = garry_read_int32(rec, WAL_REC_KIND_OFF);
         txid = garry_read_int32(rec, WAL_REC_TXID_OFF);
 
-        if (kind == 1 && commit_count < GARRY_MAX_RECOVERY_COMMITTED) {
+        if (kind == 1) {
+            if (commit_count >= commit_cap) {
+                garry_i32 new_cap = commit_cap * 2;
+                garry_txn_id *tmp = (garry_txn_id*)realloc(
+                    committed, sizeof(garry_txn_id) * new_cap);
+                if (!tmp) { free(committed); return GARRY_FALSE; }
+                committed = tmp;
+                for (i = commit_count; i < new_cap; i++) committed[i] = 0;
+                commit_cap = new_cap;
+            }
             committed[commit_count] = txid;
             commit_count++;
         }
     }
 
+    /* Second pass: replay update records for committed transactions */
     garry_file_seek(&wal->fd, 0, 0);
     for (;;) {
         bytes_read = garry_file_read(&wal->fd, rec, GARRY_WAL_RECORD_SIZE);
@@ -99,6 +116,7 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
             cid = garry_chain_allocate(eng, key, klen);
             if (cid < 0) {
                 garry_rwlock_wrunlock(&eng->root_lock);
+                free(committed);
                 return GARRY_FALSE;
             }
             desc_len = garry_encode_descriptor(cid, GARRY_FALSE, desc_buf);
@@ -109,11 +127,13 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
 
         if (!garry_mvcc_recovery_apply(eng, cid, txid, (const char*)val, vlen)) {
             garry_rwlock_wrunlock(&eng->root_lock);
+            free(committed);
             return GARRY_FALSE;
         }
 
         garry_rwlock_wrunlock(&eng->root_lock);
     }
 
+    free(committed);
     return GARRY_TRUE;
 }

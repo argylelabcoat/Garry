@@ -33,7 +33,11 @@ garry_storage_cursor garry_storage_cursor_open(garry_engine_handle *eng, garry_t
         memcpy(pfx, prefix, (size_t)plen);
     }
     uplen = (garry_u32)plen;
+
+    garry_rwlock_rdlock(&eng->root_lock);
     cur.btree_cur = garry_btree_cursor_open(eng->pool, eng->btree_root, &pfx, uplen);
+    garry_rwlock_rdunlock(&eng->root_lock);
+
     cur.eng = eng;
     cur.txn = txn;
     return cur;
