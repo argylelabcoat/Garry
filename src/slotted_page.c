@@ -102,6 +102,7 @@ garry_i32 garry_page_get(garry_page_buffer* buf, garry_i32 slot_idx, garry_byte*
     garry_slot_entry entry;
     garry_i32 i;
     (void)page_size;
+    if (slot_idx < 0 || slot_idx >= garry_page_record_count(buf)) return -1;
     entry = garry_read_slot(buf, slot_idx);
     for (i = 0; i < entry.length; i++) {
         data[i] = (*buf)[entry.offset + i];

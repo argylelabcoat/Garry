@@ -41,7 +41,7 @@ int main(void)
 
     t2 = garry_make_key_2("table", "row");
     v0 = garry_tuple_length(&t2);
-    GARRY_CHECK(v0 == 2);
+    GARRY_CHECK(v0 == 10);
 
     { garry_key_tuple t2e = garry_make_key_2("table", "row"); garry_encode_key_tuple(&t2e, k2); }
     v0 = garry_decode_length_prefix(k2, 0);

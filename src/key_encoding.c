@@ -19,7 +19,11 @@
 
 garry_i32 garry_tuple_length(garry_key_tuple* t)
 {
-    return t->count;
+    garry_i32 total = 0, i;
+    for (i = 0; i < t->count; i++) {
+        total += garry_length_prefix_size(t->counts[i]) + t->counts[i];
+    }
+    return total;
 }
 
 garry_key_tuple garry_make_key_2(const char* p1, const char* p2)
@@ -113,7 +117,7 @@ garry_key_tuple garry_decode_key_tuple(const garry_byte* encoded, garry_i32 elen
     result.count = 0;
     offset = 0;
     idx = 0;
-    while (offset < elen) {
+    while (offset < elen && idx < GARRY_MAX_SUBSCRIPTS) {
         plen = garry_decode_length_prefix(encoded, offset);
         hdr_size = (encoded[offset] == GARRY_LEN_PREFIX_LONG_MARKER) ? 3 : 1;
         result.parts[idx] = encoded + offset + hdr_size;
@@ -161,14 +165,10 @@ void garry_encode_integer_subscript(garry_i32 n, garry_byte_array out)
 
 garry_i32 garry_decode_integer_subscript(const garry_byte* encoded, garry_i32 offset)
 {
-    garry_i32 result;
+    garry_i32 result = 0;
     garry_i32 i;
-    garry_i32 byte_val;
-    result = 0;
-    /* Read 8 little-endian bytes. */
     for (i = 8; i >= 1; i--) {
-        byte_val = (garry_i32)encoded[offset + i];
-        result = result * 256 + byte_val;
+        result = result * 256 + (garry_i32)(garry_u8)encoded[offset + i];
     }
     return result;
 }

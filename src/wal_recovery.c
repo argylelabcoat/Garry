@@ -92,8 +92,8 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
         }
         if (!found) continue;
 
-        klen = *((garry_i32*)(rec + WAL_REC_KLEN_OFF));
-        vlen = *((garry_i32*)(rec + WAL_REC_VLEN_OFF));
+        klen = garry_read_int32(rec, WAL_REC_KLEN_OFF);
+        vlen = garry_read_int32(rec, WAL_REC_VLEN_OFF);
         memcpy(key, rec + WAL_REC_KEY_OFF, (size_t)klen);
         memcpy(val, rec + WAL_REC_NEW_OFF, (size_t)vlen);
 

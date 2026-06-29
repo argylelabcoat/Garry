@@ -43,8 +43,12 @@ void garry_minimum_separator(garry_byte_array result,
     for (i = 0; i < sep_len; i++) {
         result[i] = right[i];
     }
-    if (garry_byte_compare(result, sep_len, left, llen) < 0) {
-        for (i = 0; i < llen; i++) {
+    if (garry_byte_compare(result, sep_len, left, llen) <= 0) {
+        /* Separator must be strictly greater than left.
+         * Use the full left key as the separator. */
+        sep_len = llen;
+        if (sep_len > GARRY_MAX_KEY_SIZE) sep_len = GARRY_MAX_KEY_SIZE;
+        for (i = 0; i < sep_len; i++) {
             result[i] = left[i];
         }
     }

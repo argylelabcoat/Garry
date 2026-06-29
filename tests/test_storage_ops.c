@@ -241,7 +241,7 @@ static void test_storage_data_returns_correct_flags(void)
 
     ENCODE_KEY(key, "hasval");
     GARRY_CHECK(garry_storage_set(eng, txn, key, 6, (const garry_byte*)"x", 1));
-    GARRY_CHECK(garry_storage_data(eng, txn, key, 6) == 2);
+    GARRY_CHECK(garry_storage_data(eng, txn, key, 6) == GARRY_DATA_HAS_VALUE);
 
     garry_storage_commit(eng, txn);
     garry_storage_close(eng);

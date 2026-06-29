@@ -120,6 +120,7 @@ void garry_decode_kv(const garry_byte* encoded, garry_i32 elen,
                      garry_byte* value, garry_i32* vlen)
 {
     garry_i32 pos, arr_count;
+    if (!encoded || elen <= 0) { *klen = 0; *vlen = 0; return; }
     pos = 0;
     *klen = 0;
     *vlen = 0;

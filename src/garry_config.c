@@ -31,5 +31,6 @@ garry_config garry_config_default(void)
     c.max_txns        = s.max_txns;
     c.max_versions    = s.max_versions;
     c.compression     = s.compression;
+    c.btree_flags     = s.btree_flags;
     return c;
 }

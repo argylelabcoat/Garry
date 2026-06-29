@@ -185,7 +185,7 @@ static void test_slotted_page_invalid_slot_read(void)
     garry_page_init(buf, GARRY_NODE_LEAF, 0, 4096);
 
     rlen = garry_page_get(&buf, 0, out, 4096);
-    GARRY_CHECK(rlen == 0);
+    GARRY_CHECK(rlen == -1);
 }
 
 static void test_version_chain_prune_with_active(void)
