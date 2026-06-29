@@ -29,6 +29,7 @@ typedef struct {
     garry_u32 last_access[GARRY_MAX_POOL_SIZE];
     garry_file_descriptor fd;
     garry_i32 next_page;
+    garry_i32 free_list_head;
     garry_u32 access_counter;
     garry_rwlock slot_locks[GARRY_MAX_POOL_SIZE];
 } garry_buffer_pool;
@@ -40,6 +41,7 @@ void garry_pool_release_page(garry_buffer_pool *pool, garry_i32 pid);
 garry_u32 garry_pool_pin_count(garry_buffer_pool *pool, garry_i32 pid);
 void garry_pool_mark_dirty(garry_buffer_pool *pool, garry_i32 pid);
 garry_i32 garry_pool_allocate(garry_buffer_pool *pool);
+void garry_pool_free_page(garry_buffer_pool *pool, garry_i32 pid);
 garry_bool garry_pool_is_loaded(garry_buffer_pool *pool, garry_i32 pid);
 garry_bool garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid);
 void garry_pool_flush_all(garry_buffer_pool *pool);

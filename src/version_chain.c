@@ -418,6 +418,7 @@ void garry_overflow_free(garry_buffer_pool *pool, garry_i32 head)
         if (pbuf == NULL) break;
         next = garry_read_int32((garry_byte*)*pbuf, GARRY_PAGE_HEADER_SIZE);
         garry_pool_release_page(pool, pid);
+        garry_pool_free_page(pool, pid);
         pid = next;
     }
 }

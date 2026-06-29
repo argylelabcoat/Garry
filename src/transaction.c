@@ -114,6 +114,7 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
         return NULL;
     }
     eng->pool->next_page = GARRY_FIRST_PAGE_ID;
+    eng->pool->free_list_head = -1;
 
     path_len = (garry_i32)strlen(path);
     if (path_len > PATH_MAX - 6) path_len = PATH_MAX - 6;
@@ -205,10 +206,13 @@ garry_engine_handle* garry_engine_open(const char *path)
         return NULL;
     }
     eng->pool->next_page = GARRY_FIRST_PAGE_ID;
+    eng->pool->free_list_head = -1;
 
     hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
     if (hdr_buf != NULL) {
         eng->header = garry_read_db_header((garry_byte*)*hdr_buf);
+        eng->pool->free_list_head = eng->header.free_list_head;
+        eng->pool->next_page = eng->header.total_pages;
         garry_pool_release_page(eng->pool, GARRY_HEADER_PAGE);
     } else {
         free(eng->pool);
@@ -271,7 +275,17 @@ garry_engine_handle* garry_engine_open(const char *path)
 void garry_engine_close(garry_engine_handle *eng)
 {
     garry_lock_node *node, *next;
+    garry_page_buffer *hdr_buf;
     if (!eng) return;
+    /* Persist free-list state to the DB header before flushing */
+    eng->header.free_list_head = eng->pool->free_list_head;
+    eng->header.total_pages = eng->pool->next_page;
+    hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
+    if (hdr_buf != NULL) {
+        garry_write_db_header((garry_byte*)*hdr_buf, &eng->header);
+        garry_pool_mark_dirty(eng->pool, GARRY_HEADER_PAGE);
+        garry_pool_release_page(eng->pool, GARRY_HEADER_PAGE);
+    }
     garry_pool_flush_all(eng->pool);
     garry_wal_log_close(&eng->wal);
     garry_pool_close(eng->pool);

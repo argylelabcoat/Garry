@@ -154,9 +154,7 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
         desc_len = garry_encode_descriptor(cid, 0, desc);
         if (!garry_btree_insert(eng->pool, &eng->btree_root,
                                 key, klen, desc, desc_len)) {
-            /* NOTE: chain page allocated by garry_chain_allocate is leaked here.
-             * Reclaiming requires a free-list mechanism (not yet implemented).
-             * The page is unreachable from the B-tree but remains allocated. */
+            garry_pool_free_page(eng->pool, cid);
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
         }
