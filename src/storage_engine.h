@@ -14,8 +14,8 @@
 
 #include "transaction.h"
 
-garry_engine_handle* garry_storage_init(const char *path, garry_engine_settings settings);
-garry_engine_handle* garry_storage_open(const char *path);
+garry_engine_handle *garry_storage_init(const char *path, garry_engine_settings settings);
+garry_engine_handle *garry_storage_open(const char *path);
 void garry_storage_close(garry_engine_handle *eng);
 
 #endif /* GARRY_STORAGE_ENGINE_H */

@@ -18,20 +18,24 @@
 #include "db_header.h"
 #include <string.h>
 
-garry_slot_entry garry_read_slot(garry_page_buffer* buf, garry_i32 idx)
+garry_slot_entry garry_read_slot(garry_page_buffer *buf, garry_i32 idx)
 {
     garry_slot_entry entry;
     garry_i32 slot_offset, lo, hi;
     slot_offset = GARRY_PAGE_HEADER_SIZE + idx * GARRY_SLOT_SIZE;
     lo = (garry_i32)(*buf)[slot_offset];
     hi = (garry_i32)(*buf)[slot_offset + 1];
-    if (lo < 0) lo += 256;
-    if (hi < 0) hi += 256;
+    if (lo < 0)
+        lo += 256;
+    if (hi < 0)
+        hi += 256;
     entry.offset = lo + hi * 256;
     lo = (garry_i32)(*buf)[slot_offset + 2];
     hi = (garry_i32)(*buf)[slot_offset + 3];
-    if (lo < 0) lo += 256;
-    if (hi < 0) hi += 256;
+    if (lo < 0)
+        lo += 256;
+    if (hi < 0)
+        hi += 256;
     entry.length = lo + hi * 256;
     return entry;
 }
@@ -40,21 +44,23 @@ void garry_write_slot(garry_page_buffer buf, garry_i32 idx, garry_slot_entry ent
 {
     garry_i32 slot_offset;
     slot_offset = GARRY_PAGE_HEADER_SIZE + idx * GARRY_SLOT_SIZE;
-    buf[slot_offset]     = (garry_byte)(entry.offset % 256);
+    buf[slot_offset] = (garry_byte)(entry.offset % 256);
     buf[slot_offset + 1] = (garry_byte)((entry.offset / 256) % 256);
     buf[slot_offset + 2] = (garry_byte)(entry.length % 256);
     buf[slot_offset + 3] = (garry_byte)((entry.length / 256) % 256);
 }
 
-garry_i32 garry_page_record_count(garry_page_buffer* buf)
+garry_i32 garry_page_record_count(garry_page_buffer *buf)
 {
-    return garry_read_int32((garry_byte*)*buf, GARRY_PAGE_HDR_OFF_COUNT);
+    return garry_read_int32((garry_byte *)*buf, GARRY_PAGE_HDR_OFF_COUNT);
 }
 
-void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 level, garry_i32 page_size)
+void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 level,
+                     garry_i32 page_size)
 {
     garry_i32 i;
-    for (i = 0; i < page_size; i++) {
+    for (i = 0; i < page_size; i++)
+    {
         buf[i] = 0;
     }
     garry_write_int32(buf, GARRY_PAGE_HDR_OFF_TYPE, (garry_i32)ptype);
@@ -67,27 +73,33 @@ void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 lev
     garry_write_int32(buf, GARRY_PAGE_HDR_OFF_CHECKSUM, 0);
 }
 
-garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry_i32 dlen, garry_i32 page_size)
+garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte *data, garry_i32 dlen,
+                            garry_i32 page_size)
 {
     garry_i32 count, free_start, free_end, needed;
     garry_slot_entry slot;
     count = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_COUNT);
     free_start = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_FREE_START);
     free_end = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_FREE_END);
-    if (count >= GARRY_MAX_SLOTS) {
+    if (count >= GARRY_MAX_SLOTS)
+    {
         return -1;
     }
-    if (free_start + GARRY_SLOT_SIZE > free_end) {
+    if (free_start + GARRY_SLOT_SIZE > free_end)
+    {
         return -1;
     }
-    if (free_end - dlen < GARRY_PAGE_HEADER_SIZE) {
+    if (free_end - dlen < GARRY_PAGE_HEADER_SIZE)
+    {
         return -1;
     }
     needed = dlen + GARRY_SLOT_SIZE;
-    if (free_end - free_start < needed) {
+    if (free_end - free_start < needed)
+    {
         return -1;
     }
-    if (free_end - dlen < free_start + GARRY_SLOT_SIZE) {
+    if (free_end - dlen < free_start + GARRY_SLOT_SIZE)
+    {
         return -1;
     }
     free_end = free_end - dlen;
@@ -102,23 +114,29 @@ garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry
     return count;
 }
 
-garry_i32 garry_page_get(garry_page_buffer* buf, garry_i32 slot_idx, garry_byte* data, garry_i32 page_size)
+garry_i32 garry_page_get(garry_page_buffer *buf, garry_i32 slot_idx, garry_byte *data,
+                         garry_i32 page_size)
 {
     garry_slot_entry entry;
     garry_i32 i;
-    if (slot_idx < 0 || slot_idx >= garry_page_record_count(buf)) return -1;
+    if (slot_idx < 0 || slot_idx >= garry_page_record_count(buf))
+        return -1;
     entry = garry_read_slot(buf, slot_idx);
-    if (entry.length > page_size - GARRY_PAGE_HEADER_SIZE) return -1;
-    for (i = 0; i < entry.length; i++) {
+    if (entry.length > page_size - GARRY_PAGE_HEADER_SIZE)
+        return -1;
+    for (i = 0; i < entry.length; i++)
+    {
         data[i] = (*buf)[entry.offset + i];
     }
     return entry.length;
 }
 
-void garry_copy_bytes_in(garry_page_buffer buf, garry_i32 offset, const garry_byte* src, garry_i32 len)
+void garry_copy_bytes_in(garry_page_buffer buf, garry_i32 offset, const garry_byte *src,
+                         garry_i32 len)
 {
     garry_i32 i;
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < len; i++)
+    {
         buf[offset + i] = src[i];
     }
 }

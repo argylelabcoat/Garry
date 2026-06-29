@@ -20,26 +20,26 @@
 
 typedef garry_i32 garry_log_sequence_number;
 
-typedef struct {
+typedef struct
+{
     garry_file_descriptor fd;
     garry_log_sequence_number last_lsn;
-    const char* path;
-    const char* ckpt_path;
+    const char *path;
+    const char *ckpt_path;
     garry_mutex append_mutex;
 } garry_wal_log;
 
 /* WAL_INIT(log_path, checkpoint_path) RET wal_handle */
-garry_status_t garry_wal_log_init(garry_wal_log* wal, const char* log_path,
-                                  const char* checkpoint_path);
+garry_status_t garry_wal_log_init(garry_wal_log *wal, const char *log_path,
+                                  const char *checkpoint_path);
 
 /* WAL_APPEND(wal, record) RET log_sequence_number */
-garry_log_sequence_number garry_wal_log_append(garry_wal_log* wal,
-                                               const garry_wal_record* record);
+garry_log_sequence_number garry_wal_log_append(garry_wal_log *wal, const garry_wal_record *record);
 
 /* WAL_FLUSH(wal) */
-void garry_wal_log_flush(garry_wal_log* wal);
+void garry_wal_log_flush(garry_wal_log *wal);
 
 /* WAL_CLOSE(wal) */
-void garry_wal_log_close(garry_wal_log* wal);
+void garry_wal_log_close(garry_wal_log *wal);
 
 #endif /* GARRY_WAL_LOG_H */

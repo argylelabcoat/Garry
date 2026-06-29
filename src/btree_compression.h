@@ -27,8 +27,8 @@
  * @param blen  Length of second array
  * @return Number of bytes in common prefix
  */
-garry_i32 garry_common_prefix_length(const garry_byte* a, garry_i32 alen,
-                                     const garry_byte* b, garry_i32 blen);
+garry_i32 garry_common_prefix_length(const garry_byte *a, garry_i32 alen, const garry_byte *b,
+                                     garry_i32 blen);
 
 /**
  * @brief Compute the minimum separator key between two adjacent keys.
@@ -42,9 +42,8 @@ garry_i32 garry_common_prefix_length(const garry_byte* a, garry_i32 alen,
  * @param right   Right key bytes
  * @param rlen    Right key length
  */
-void garry_minimum_separator(garry_byte_array result,
-                             const garry_byte* left, garry_i32 llen,
-                             const garry_byte* right, garry_i32 rlen);
+void garry_minimum_separator(garry_byte_array result, const garry_byte *left, garry_i32 llen,
+                             const garry_byte *right, garry_i32 rlen);
 
 /**
  * @brief Compress a key by removing its common prefix.
@@ -57,8 +56,7 @@ void garry_minimum_separator(garry_byte_array result,
  * @param klen       Full key length in bytes
  * @param prefix_len Number of prefix bytes to strip
  */
-void garry_compress_key(garry_byte_array result,
-                        const garry_byte* full_key, garry_i32 klen,
+void garry_compress_key(garry_byte_array result, const garry_byte *full_key, garry_i32 klen,
                         garry_i32 prefix_len);
 
 /**
@@ -73,9 +71,8 @@ void garry_compress_key(garry_byte_array result,
  * @param prev_key  Previous key (provides the prefix)
  * @param prev_len  Previous key length
  */
-void garry_decompress_key(garry_byte_array result,
-                          const garry_byte* compressed, garry_i32 clen,
-                          const garry_byte* prev_key, garry_i32 prev_len);
+void garry_decompress_key(garry_byte_array result, const garry_byte *compressed, garry_i32 clen,
+                          const garry_byte *prev_key, garry_i32 prev_len);
 
 /**
  * @brief Check if two byte arrays are equal.
@@ -88,7 +85,7 @@ void garry_decompress_key(garry_byte_array result,
  * @param blen  Length of second array
  * @return GARRY_TRUE if arrays are identical
  */
-garry_bool garry_byte_equal(const garry_byte* a, garry_i32 alen,
-                            const garry_byte* b, garry_i32 blen);
+garry_bool garry_byte_equal(const garry_byte *a, garry_i32 alen, const garry_byte *b,
+                            garry_i32 blen);
 
 #endif /* GARRY_BTREE_COMPRESSION_H */

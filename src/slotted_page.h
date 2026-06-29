@@ -16,7 +16,8 @@
 #include "garry/types.h"
 #include "storage_core.h"
 
-typedef struct {
+typedef struct
+{
     garry_i32 offset;
     garry_i32 length;
 } garry_slot_entry;
@@ -28,7 +29,7 @@ typedef struct {
  * @param idx  Slot index to read
  * @return Slot entry with offset and length fields
  */
-garry_slot_entry garry_read_slot(garry_page_buffer* buf, garry_i32 idx);
+garry_slot_entry garry_read_slot(garry_page_buffer *buf, garry_i32 idx);
 
 /**
  * @brief Write a slot entry to the page's slot directory.
@@ -47,7 +48,7 @@ void garry_write_slot(garry_page_buffer buf, garry_i32 idx, garry_slot_entry ent
  * @param buf  Page buffer to query
  * @return Number of records in the page
  */
-garry_i32 garry_page_record_count(garry_page_buffer* buf);
+garry_i32 garry_page_record_count(garry_page_buffer *buf);
 
 /**
  * @brief Initialize a page with the given type and level.
@@ -60,7 +61,8 @@ garry_i32 garry_page_record_count(garry_page_buffer* buf);
  * @param level     B-tree level (0 = leaf)
  * @param page_size Total page size in bytes
  */
-void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 level, garry_i32 page_size);
+void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 level,
+                     garry_i32 page_size);
 
 /**
  * @brief Insert a record into a slotted page.
@@ -74,7 +76,8 @@ void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 lev
  * @param page_size  Total page size in bytes
  * @return Slot index of the inserted record, or -1 if page is full
  */
-garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry_i32 dlen, garry_i32 page_size);
+garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte *data, garry_i32 dlen,
+                            garry_i32 page_size);
 
 /**
  * @brief Read a record from a slotted page by slot index.
@@ -87,7 +90,8 @@ garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry
  * @param page_size Total page size in bytes
  * @return Number of bytes copied, or -1 if slot is invalid
  */
-garry_i32 garry_page_get(garry_page_buffer* buf, garry_i32 slot_idx, garry_byte* data, garry_i32 page_size);
+garry_i32 garry_page_get(garry_page_buffer *buf, garry_i32 slot_idx, garry_byte *data,
+                         garry_i32 page_size);
 
 /**
  * @brief Copy raw bytes into a page at a specific offset.
@@ -99,6 +103,7 @@ garry_i32 garry_page_get(garry_page_buffer* buf, garry_i32 slot_idx, garry_byte*
  * @param src     Source bytes to copy
  * @param len     Number of bytes to copy
  */
-void garry_copy_bytes_in(garry_page_buffer buf, garry_i32 offset, const garry_byte* src, garry_i32 len);
+void garry_copy_bytes_in(garry_page_buffer buf, garry_i32 offset, const garry_byte *src,
+                         garry_i32 len);
 
 #endif /* GARRY_SLOTTED_PAGE_H */

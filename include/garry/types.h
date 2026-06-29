@@ -24,43 +24,43 @@
 /* ---- Fixed-width integer types (C89 has no <stdint.h>) ---- */
 
 /// Signed 8-bit integer.
-typedef signed   char garry_i8;
+typedef signed char garry_i8;
 /// Unsigned 8-bit integer.
 typedef unsigned char garry_u8;
 
 #if USHRT_MAX == 0xFFFFu
-  /// Unsigned 16-bit integer.
-  typedef unsigned short garry_u16;
+/// Unsigned 16-bit integer.
+typedef unsigned short garry_u16;
 #elif UINT_MAX == 0xFFFFu
-  typedef unsigned int   garry_u16;
+typedef unsigned int garry_u16;
 #else
-#  error "Garry: no 16-bit unsigned integer type available"
+#error "Garry: no 16-bit unsigned integer type available"
 #endif
 
 #if UINT_MAX == 0xFFFFFFFFu
-  /// Unsigned 32-bit integer.
-  typedef unsigned int   garry_u32;
+/// Unsigned 32-bit integer.
+typedef unsigned int garry_u32;
 #elif ULONG_MAX == 0xFFFFFFFFu
-  typedef unsigned long  garry_u32;
+typedef unsigned long garry_u32;
 #else
-#  error "Garry: no 32-bit unsigned integer type available"
+#error "Garry: no 32-bit unsigned integer type available"
 #endif
 
 #if INT_MAX == 0x7FFFFFFF
-  /// Signed 32-bit integer.
-  typedef int            garry_i32;
+/// Signed 32-bit integer.
+typedef int garry_i32;
 #elif LONG_MAX == 0x7FFFFFFFL
-  typedef long           garry_i32;
+typedef long garry_i32;
 #else
-#  error "Garry: no 32-bit signed integer type available"
+#error "Garry: no 32-bit signed integer type available"
 #endif
 
 /// Unsigned byte — alias for @ref garry_u8, used for raw data.
 typedef garry_u8 garry_byte;
 /// Boolean type — 0 is false, nonzero is true.
-typedef int      garry_bool;
+typedef int garry_bool;
 /// Boolean true value.
-#define GARRY_TRUE  1
+#define GARRY_TRUE 1
 /// Boolean false value.
 #define GARRY_FALSE 0
 /// Fixed-size byte buffer for keys and values (sized to @ref GARRY_MAX_KEY_SIZE).
@@ -71,7 +71,7 @@ typedef garry_u8 garry_byte_array[GARRY_MAX_KEY_SIZE];
 /// No compression (default).
 #define GARRY_COMPRESS_NONE 0
 /// LZ4 block compression.
-#define GARRY_COMPRESS_LZ4  1
+#define GARRY_COMPRESS_LZ4 1
 
 /* ---- Status codes ---- */
 
@@ -81,15 +81,16 @@ typedef garry_u8 garry_byte_array[GARRY_MAX_KEY_SIZE];
  * Every function that can fail returns a @ref garry_status_t. Check the
  * return value before using any output parameters.
  */
-typedef enum {
-    GARRY_OK = 0,                ///< Success.
-    GARRY_ERR_NOT_FOUND,         ///< Key does not exist.
-    GARRY_ERR_LOCK_CONFLICT,     ///< Transaction lock conflict.
-    GARRY_ERR_IO,                ///< I/O error (disk failure, write error).
-    GARRY_ERR_CORRUPT,           ///< Database corruption detected.
-    GARRY_ERR_INVALID_ARG,       ///< Invalid argument passed to function.
-    GARRY_ERR_NOMEM,             ///< Out of memory.
-    GARRY_ERR_BUFFER_TOO_SMALL   ///< Output buffer is too small for result.
+typedef enum
+{
+    GARRY_OK = 0,              ///< Success.
+    GARRY_ERR_NOT_FOUND,       ///< Key does not exist.
+    GARRY_ERR_LOCK_CONFLICT,   ///< Transaction lock conflict.
+    GARRY_ERR_IO,              ///< I/O error (disk failure, write error).
+    GARRY_ERR_CORRUPT,         ///< Database corruption detected.
+    GARRY_ERR_INVALID_ARG,     ///< Invalid argument passed to function.
+    GARRY_ERR_NOMEM,           ///< Out of memory.
+    GARRY_ERR_BUFFER_TOO_SMALL ///< Output buffer is too small for result.
 } garry_status_t;
 
 /* ---- Opaque public handles (definitions live in src/) ---- */
@@ -97,15 +98,15 @@ typedef enum {
 /// Opaque handle to a storage engine instance.
 typedef struct garry_storage garry_storage_t;
 /// Opaque handle to an active transaction.
-typedef struct garry_txn     garry_txn_t;
+typedef struct garry_txn garry_txn_t;
 /// Opaque handle to a cursor for prefix-scoped iteration.
-typedef struct garry_cursor  garry_cursor_t;
+typedef struct garry_cursor garry_cursor_t;
 
 /**
  * @brief Return a human-readable string for a status code.
  * @param status  The status code to convert.
  * @return Pointer to a static string (e.g. "OK", "not found"). Never NULL.
  */
-const char* garry_strerror(garry_status_t status);
+const char *garry_strerror(garry_status_t status);
 
 #endif /* GARRY_TYPES_H */

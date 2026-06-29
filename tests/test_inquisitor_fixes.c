@@ -44,7 +44,7 @@ static void test_garry_data_returns(void)
     GARRY_CHECK(txn != 0);
     klen = garry_make_key("mykey", key);
     GARRY_CHECK(klen > 0);
-    garry_set(db, txn, key, klen, (const garry_u8*)"val", 3);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"val", 3);
     garry_txn_commit(db, txn);
     txn = garry_txn_begin(db);
     result = garry_data(db, txn, key, klen);
@@ -68,7 +68,7 @@ static void test_tuple_length(void)
     GARRY_CHECK(len == 6);
     t = garry_make_key_2("hello", "world");
     len = garry_tuple_length(&t);
-    GARRY_CHECK(len == (1+5)+(1+5));
+    GARRY_CHECK(len == (1 + 5) + (1 + 5));
 }
 
 static void test_page_get_validation(void)
@@ -77,7 +77,9 @@ static void test_page_get_validation(void)
     garry_byte_array data;
     garry_i32 idx, rlen;
     garry_page_init(buf, GARRY_NODE_LEAF, 0, 4096);
-    data[0] = 65; data[1] = 66; data[2] = 67;
+    data[0] = 65;
+    data[1] = 66;
+    data[2] = 67;
     idx = garry_page_insert(buf, data, 3, 4096);
     GARRY_CHECK(idx == 0);
     memset(data, 0, sizeof(data));
@@ -96,14 +98,14 @@ static void test_decode_kv_returns_bool(void)
     GARRY_CHECK(klen == 0);
     GARRY_CHECK(vlen == 0);
 
-    ok = garry_decode_kv((const garry_byte*)"x", 1, key_out, &klen, val_out, &vlen);
+    ok = garry_decode_kv((const garry_byte *)"x", 1, key_out, &klen, val_out, &vlen);
     GARRY_CHECK(ok == GARRY_FALSE);
     GARRY_CHECK(klen == 0);
 
     {
         garry_byte buf[256];
         garry_i32 len;
-        len = garry_encode_kv((const garry_byte*)"k", 1, (const garry_byte*)"v", 1, buf);
+        len = garry_encode_kv((const garry_byte *)"k", 1, (const garry_byte *)"v", 1, buf);
         ok = garry_decode_kv(buf, len, key_out, &klen, val_out, &vlen);
         GARRY_CHECK(ok == GARRY_TRUE);
         GARRY_CHECK(klen == 1);
@@ -118,7 +120,8 @@ static void test_util_endian_roundtrip(void)
     garry_byte buf[8];
     garry_i32 vals[4] = {0, 1, 0x7FFFFFFF, -1};
     int i;
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 4; i++)
+    {
         garry_write_le32(buf, 0, vals[i]);
         GARRY_CHECK(garry_read_le32(buf, 0) == vals[i]);
     }
@@ -138,7 +141,8 @@ static void test_version_chain_prune_preserves_on_full_page(void)
 
     garry_page_init(buf, GARRY_NODE_CHAIN, 0, 4096);
 
-    for (i = 1; i <= 20; i++) {
+    for (i = 1; i <= 20; i++)
+    {
         garry_chain_page_append(buf, 4096, i, "x", 1);
     }
 
@@ -234,11 +238,11 @@ static void test_count_is_o1(void)
 
     txn = garry_txn_begin(db);
     klen = garry_make_key("k1", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"v1", 2);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"v1", 2);
     klen = garry_make_key("k2", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"v2", 2);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"v2", 2);
     klen = garry_make_key("k3", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"v3", 2);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"v3", 2);
     garry_txn_commit(db, txn);
 
     txn = garry_txn_begin(db);
@@ -249,7 +253,7 @@ static void test_count_is_o1(void)
     /* Update existing key — count should not change */
     txn = garry_txn_begin(db);
     klen = garry_make_key("k1", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"v1_new", 6);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"v1_new", 6);
     garry_txn_commit(db, txn);
 
     txn = garry_txn_begin(db);
@@ -276,9 +280,9 @@ static void test_btree_delete_root_shrink(void)
     GARRY_CHECK(txn != 0);
 
     klen = garry_make_key("a", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"1", 1);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"1", 1);
     klen = garry_make_key("b", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"2", 1);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"2", 1);
     garry_txn_commit(db, txn);
 
     txn = garry_txn_begin(db);
@@ -309,7 +313,8 @@ static void test_integer_subscript_roundtrip(void)
     garry_i32 dec;
     garry_i32 vals[3] = {42, -10, 300};
     int i;
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 3; i++)
+    {
         garry_encode_integer_subscript(vals[i], enc);
         dec = garry_decode_integer_subscript(enc, 0);
         GARRY_CHECK(dec == vals[i]);
@@ -323,16 +328,16 @@ static void test_lock_release_on_commit(void)
 
     mgr = garry_create_lock_manager();
 
-    garry_lock_acquire(&mgr, 1, (const garry_byte*)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
+    garry_lock_acquire(&mgr, 1, (const garry_byte *)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
     GARRY_CHECK(ok == 1);
 
-    GARRY_CHECK(garry_lock_held(&mgr, 1, (const garry_byte*)"key1", 4) == 1);
+    GARRY_CHECK(garry_lock_held(&mgr, 1, (const garry_byte *)"key1", 4) == 1);
 
     garry_lock_release(&mgr, 1);
 
-    GARRY_CHECK(garry_lock_held(&mgr, 1, (const garry_byte*)"key1", 4) == 0);
+    GARRY_CHECK(garry_lock_held(&mgr, 1, (const garry_byte *)"key1", 4) == 0);
 
-    garry_lock_acquire(&mgr, 2, (const garry_byte*)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
+    garry_lock_acquire(&mgr, 2, (const garry_byte *)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
     GARRY_CHECK(ok == 1);
 
     garry_lock_release(&mgr, 2);
@@ -345,15 +350,15 @@ static void test_lock_release_on_rollback(void)
 
     mgr = garry_create_lock_manager();
 
-    garry_lock_acquire(&mgr, 1, (const garry_byte*)"key1", 4, GARRY_LOCK_SHARED, &ok);
+    garry_lock_acquire(&mgr, 1, (const garry_byte *)"key1", 4, GARRY_LOCK_SHARED, &ok);
     GARRY_CHECK(ok == 1);
 
-    garry_lock_acquire(&mgr, 2, (const garry_byte*)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
+    garry_lock_acquire(&mgr, 2, (const garry_byte *)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
     GARRY_CHECK(ok == 0);
 
     garry_lock_release(&mgr, 1);
 
-    garry_lock_acquire(&mgr, 2, (const garry_byte*)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
+    garry_lock_acquire(&mgr, 2, (const garry_byte *)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
     GARRY_CHECK(ok == 1);
 
     garry_lock_release(&mgr, 2);
@@ -427,11 +432,11 @@ static void test_navigation_no_nested_lock(void)
 
     txn = garry_txn_begin(db);
     klen = garry_make_key("aaa", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"1", 1);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"1", 1);
     klen = garry_make_key("bbb", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"2", 1);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"2", 1);
     klen = garry_make_key("ccc", key);
-    garry_set(db, txn, key, klen, (const garry_u8*)"3", 1);
+    garry_set(db, txn, key, klen, (const garry_u8 *)"3", 1);
     garry_txn_commit(db, txn);
 
     txn = garry_txn_begin(db);
@@ -482,6 +487,7 @@ int main(void)
     test_find_visible_uses_heap_not_stack();
     test_cursor_open_close_smoke();
     test_navigation_no_nested_lock();
-    if (garry_test_failures == 0) printf("test_inquisitor_fixes: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_inquisitor_fixes: ALL PASSED\n");
     return garry_test_failures;
 }

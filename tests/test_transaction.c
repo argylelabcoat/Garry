@@ -65,8 +65,10 @@ static void test_mvcc_commit_marks_state(void)
     slot = -1;
     {
         garry_i32 i;
-        for (i = 0; i < eng->active_count; i++) {
-            if (eng->active_txns[i] == txn) slot = i;
+        for (i = 0; i < eng->active_count; i++)
+        {
+            if (eng->active_txns[i] == txn)
+                slot = i;
         }
     }
     GARRY_CHECK(slot >= 0);
@@ -135,6 +137,7 @@ int main(void)
     test_mvcc_rollback_marks_state();
     test_txn_is_active_check();
 
-    if (garry_test_failures == 0) printf("test_transaction: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_transaction: ALL PASSED\n");
     return garry_test_failures;
 }

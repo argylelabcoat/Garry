@@ -40,9 +40,8 @@ typedef struct garry_database garry_database;
  * If @p value is @c NULL, the function still returns the value size in
  * @p vlen, allowing callers to allocate a correctly sized buffer.
  */
-GARRY_API garry_status_t garry_get(garry_database *db, garry_txn txn,
-                                    const garry_u8 *key, garry_i32 klen,
-                                    garry_u8 *value, garry_i32 *vlen);
+GARRY_API garry_status_t garry_get(garry_database *db, garry_txn txn, const garry_u8 *key,
+                                   garry_i32 klen, garry_u8 *value, garry_i32 *vlen);
 
 /**
  * @brief Insert or update a key-value pair.
@@ -56,9 +55,8 @@ GARRY_API garry_status_t garry_get(garry_database *db, garry_txn txn,
  *
  * If the key already exists, its value is overwritten atomically.
  */
-GARRY_API garry_status_t garry_set(garry_database *db, garry_txn txn,
-                                    const garry_u8 *key, garry_i32 klen,
-                                    const garry_u8 *value, garry_i32 vlen);
+GARRY_API garry_status_t garry_set(garry_database *db, garry_txn txn, const garry_u8 *key,
+                                   garry_i32 klen, const garry_u8 *value, garry_i32 vlen);
 
 /**
  * @brief Delete a key and its associated value.
@@ -72,8 +70,8 @@ GARRY_API garry_status_t garry_set(garry_database *db, garry_txn txn,
  * Deleting a nonexistent key is not an error — this function returns
  * @ref GARRY_ERR_NOT_FOUND in that case, consistent with @ref garry_get.
  */
-GARRY_API garry_status_t garry_delete(garry_database *db, garry_txn txn,
-                                       const garry_u8 *key, garry_i32 klen);
+GARRY_API garry_status_t garry_delete(garry_database *db, garry_txn txn, const garry_u8 *key,
+                                      garry_i32 klen);
 
 /**
  * @brief Retrieve a value, returning a default if the key is absent.
@@ -90,10 +88,9 @@ GARRY_API garry_status_t garry_delete(garry_database *db, garry_txn txn,
  * Convenience wrapper: if the key exists, its value is returned; otherwise
  * @p def is copied into @p value and @p vlen is set to @p dlen.
  */
-GARRY_API garry_status_t garry_get_default(garry_database *db, garry_txn txn,
-                                            const garry_u8 *key, garry_i32 klen,
-                                            const garry_u8 *def, garry_i32 dlen,
-                                            garry_u8 *value, garry_i32 *vlen);
+GARRY_API garry_status_t garry_get_default(garry_database *db, garry_txn txn, const garry_u8 *key,
+                                           garry_i32 klen, const garry_u8 *def, garry_i32 dlen,
+                                           garry_u8 *value, garry_i32 *vlen);
 
 /**
  * @brief Inspect whether a key has a value, children, or both.
@@ -108,7 +105,7 @@ GARRY_API garry_status_t garry_get_default(garry_database *db, garry_txn txn,
  * reading the full value — e.g. to distinguish a directory node from
  * a leaf node.
  */
-GARRY_API garry_i32 garry_data(garry_database *db, garry_txn txn,
-                                const garry_u8 *key, garry_i32 klen);
+GARRY_API garry_i32 garry_data(garry_database *db, garry_txn txn, const garry_u8 *key,
+                               garry_i32 klen);
 
 #endif /* GARRY_OPERATIONS_H */

@@ -8,7 +8,10 @@
 
 #define TEST_DB "/tmp/garry_readme_basic.db"
 
-static void cleanup(void) { remove(TEST_DB); }
+static void cleanup(void)
+{
+    remove(TEST_DB);
+}
 
 int main(void)
 {
@@ -33,7 +36,8 @@ int main(void)
     garry_database_close(db);
     /* --- end README example --- */
 
-    if (strcmp(result, "world") != 0) {
+    if (strcmp(result, "world") != 0)
+    {
         printf("FAIL: expected \"world\", got \"%s\"\n", result);
         cleanup();
         return 1;

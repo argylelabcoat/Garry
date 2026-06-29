@@ -17,22 +17,22 @@
 #include "util_endian.h"
 #include <string.h>
 
-void garry_write_int32(garry_byte* buf, garry_i32 offset, garry_i32 val)
+void garry_write_int32(garry_byte *buf, garry_i32 offset, garry_i32 val)
 {
     garry_write_le32(buf, offset, val);
 }
 
-garry_i32 garry_read_int32(garry_byte* buf, garry_i32 offset)
+garry_i32 garry_read_int32(garry_byte *buf, garry_i32 offset)
 {
-    return garry_read_le32((const garry_byte*)buf, offset);
+    return garry_read_le32((const garry_byte *)buf, offset);
 }
 
-garry_db_header garry_create_db_header(garry_engine_settings* settings)
+garry_db_header garry_create_db_header(garry_engine_settings *settings)
 {
     garry_db_header hdr;
-    if (settings->page_size >= GARRY_MIN_PAGE_SIZE &&
-        settings->page_size <= GARRY_MAX_PAGE_SIZE &&
-        settings->page_size % GARRY_MIN_PAGE_SIZE == 0) {
+    if (settings->page_size >= GARRY_MIN_PAGE_SIZE && settings->page_size <= GARRY_MAX_PAGE_SIZE &&
+        settings->page_size % GARRY_MIN_PAGE_SIZE == 0)
+    {
         hdr.magic = GARRY_DB_MAGIC;
         hdr.version = GARRY_DB_VERSION;
         hdr.page_size = settings->page_size;
@@ -46,18 +46,20 @@ garry_db_header garry_create_db_header(garry_engine_settings* settings)
         hdr.max_subscripts = settings->max_subscripts;
         hdr.btree_flags = 0;
         hdr.checksum = 0;
-    } else {
+    }
+    else
+    {
         memset(&hdr, 0, sizeof(hdr));
     }
     return hdr;
 }
 
-garry_db_header garry_make_db_header_from_settings(garry_engine_settings* settings)
+garry_db_header garry_make_db_header_from_settings(garry_engine_settings *settings)
 {
     return garry_create_db_header(settings);
 }
 
-void garry_write_db_header(garry_byte* buf, garry_db_header* hdr)
+void garry_write_db_header(garry_byte *buf, garry_db_header *hdr)
 {
     garry_i32 cs;
     garry_write_int32(buf, GARRY_HDR_OFF_MAGIC, hdr->magic);
@@ -76,7 +78,7 @@ void garry_write_db_header(garry_byte* buf, garry_db_header* hdr)
     garry_write_int32(buf, GARRY_HDR_OFF_CHECKSUM, cs);
 }
 
-garry_db_header garry_read_db_header(garry_byte* buf)
+garry_db_header garry_read_db_header(garry_byte *buf)
 {
     garry_db_header hdr;
     garry_i32 stored_cs, computed_cs;
@@ -95,28 +97,36 @@ garry_db_header garry_read_db_header(garry_byte* buf)
     hdr.checksum = garry_read_int32(buf, GARRY_HDR_OFF_CHECKSUM);
     stored_cs = hdr.checksum;
     computed_cs = garry_compute_header_checksum(buf);
-    if (stored_cs != computed_cs) {
+    if (stored_cs != computed_cs)
+    {
         hdr.magic = 0;
     }
     return hdr;
 }
 
-garry_bool garry_validate_db_header(garry_db_header* hdr)
+garry_bool garry_validate_db_header(garry_db_header *hdr)
 {
-    if (hdr->magic != GARRY_DB_MAGIC) return 0;
-    if (hdr->version != GARRY_DB_VERSION) return 0;
-    if (hdr->page_size < GARRY_MIN_PAGE_SIZE) return 0;
-    if (hdr->page_size > GARRY_MAX_PAGE_SIZE) return 0;
-    if (hdr->max_txns <= 0) return 0;
-    if (hdr->max_versions <= 0) return 0;
+    if (hdr->magic != GARRY_DB_MAGIC)
+        return 0;
+    if (hdr->version != GARRY_DB_VERSION)
+        return 0;
+    if (hdr->page_size < GARRY_MIN_PAGE_SIZE)
+        return 0;
+    if (hdr->page_size > GARRY_MAX_PAGE_SIZE)
+        return 0;
+    if (hdr->max_txns <= 0)
+        return 0;
+    if (hdr->max_versions <= 0)
+        return 0;
     return 1;
 }
 
-garry_i32 garry_compute_header_checksum(garry_byte* buf)
+garry_i32 garry_compute_header_checksum(garry_byte *buf)
 {
     garry_u32 hash = GARRY_FNV1A_OFFSET_BASIS;
     garry_i32 i;
-    for (i = 0; i < GARRY_HEADER_CHECKSUM_LEN; i++) {
+    for (i = 0; i < GARRY_HEADER_CHECKSUM_LEN; i++)
+    {
         hash ^= (garry_u32)buf[i];
         hash *= GARRY_FNV1A_PRIME;
     }

@@ -36,8 +36,8 @@ void garry_chain_page_init(garry_page_buffer buf, garry_u32 page_size)
     garry_page_init(buf, GARRY_NODE_CHAIN, 0, (garry_i32)page_size);
 }
 
-garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size,
-                                   garry_txn_id txn, const char *value, garry_i32 vlen)
+garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size, garry_txn_id txn,
+                                   const char *value, garry_i32 vlen)
 {
     garry_byte entry_buf[GARRY_MAX_RECORD_SIZE];
     garry_i32 pos;
@@ -47,7 +47,8 @@ garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size,
     garry_i32 inline_cap;
 
     inline_cap = garry_chain_inline_capacity(page_size);
-    if (vlen > inline_cap) {
+    if (vlen > inline_cap)
+    {
         return GARRY_FALSE;
     }
 
@@ -55,40 +56,57 @@ garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size,
 
     /* txid_created (LE) */
     v = txn;
-    entry_buf[pos] = (garry_u8)(v & 0xFF);           pos++;
-    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);    pos++;
-    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);   pos++;
-    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);   pos++;
+    entry_buf[pos] = (garry_u8)(v & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);
+    pos++;
 
     /* txid_deleted = 0 (NIL) */
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
 
     /* value_len (LE) */
     v = vlen;
-    entry_buf[pos] = (garry_u8)(v & 0xFF);           pos++;
-    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);    pos++;
-    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);   pos++;
-    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);   pos++;
+    entry_buf[pos] = (garry_u8)(v & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);
+    pos++;
 
     /* is_tombstone = 0 */
-    entry_buf[pos] = 0; pos++;
+    entry_buf[pos] = 0;
+    pos++;
 
     /* flags = 0 (inline) */
-    entry_buf[pos] = 0; pos++;
+    entry_buf[pos] = 0;
+    pos++;
 
     /* value bytes */
-    if (value != NULL && vlen > 0) {
-        for (i = 0; i < vlen; i++) {
+    if (value != NULL && vlen > 0)
+    {
+        for (i = 0; i < vlen; i++)
+        {
             entry_buf[pos + i] = (garry_u8)value[i];
         }
         pos += vlen;
     }
 
     slot_idx = garry_page_insert(buf, entry_buf, pos, (garry_i32)page_size);
-    if (slot_idx < 0) {
+    if (slot_idx < 0)
+    {
         return GARRY_FALSE;
     }
     return GARRY_TRUE;
@@ -111,31 +129,46 @@ garry_bool garry_chain_page_append_tombstone(garry_page_buffer buf, garry_u32 pa
 
     /* txid_created (LE) */
     v = txn;
-    entry_buf[pos] = (garry_u8)(v & 0xFF);           pos++;
-    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);    pos++;
-    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);   pos++;
-    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);   pos++;
+    entry_buf[pos] = (garry_u8)(v & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);
+    pos++;
 
     /* txid_deleted = 0 (NIL) */
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
 
     /* value_len = 0 */
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
 
     /* is_tombstone = 1 */
-    entry_buf[pos] = 1; pos++;
+    entry_buf[pos] = 1;
+    pos++;
 
     /* flags = 0 */
-    entry_buf[pos] = 0; pos++;
+    entry_buf[pos] = 0;
+    pos++;
 
     slot_idx = garry_page_insert(buf, entry_buf, pos, (garry_i32)page_size);
-    if (slot_idx < 0) {
+    if (slot_idx < 0)
+    {
         return GARRY_FALSE;
     }
     return GARRY_TRUE;
@@ -148,11 +181,11 @@ garry_i32 garry_overflow_chunk_size(garry_u32 page_size)
 
 garry_i32 garry_chain_inline_capacity(garry_u32 page_size)
 {
-    return (garry_i32)page_size - GARRY_PAGE_HEADER_SIZE - GARRY_OVERFLOW_PTR_SIZE - GARRY_CHAIN_ENTRY_HEADER_SIZE;
+    return (garry_i32)page_size - GARRY_PAGE_HEADER_SIZE - GARRY_OVERFLOW_PTR_SIZE -
+           GARRY_CHAIN_ENTRY_HEADER_SIZE;
 }
 
-garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value,
-                               garry_i32 vlen)
+garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value, garry_i32 vlen)
 {
     garry_i32 head = -1;
     garry_i32 prev_pid = -1;
@@ -161,47 +194,56 @@ garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value,
 
     chunk_cap = garry_overflow_chunk_size(pool->page_size);
 
-    while (offset < vlen) {
+    while (offset < vlen)
+    {
         garry_i32 this_pid;
         garry_page_buffer *pbuf;
         garry_i32 this_chunk;
         garry_i32 c;
 
         this_pid = garry_pool_allocate(pool);
-        if (this_pid < 0) return -1;
+        if (this_pid < 0)
+            return -1;
 
         pbuf = garry_pool_pin_page(pool, this_pid);
-        if (pbuf == NULL) {
+        if (pbuf == NULL)
+        {
             garry_pool_free_page(pool, this_pid);
             return -1;
         }
 
         garry_page_init(*pbuf, GARRY_NODE_OVERFLOW, 0, (garry_i32)pool->page_size);
 
-        if (prev_pid >= 0) {
+        if (prev_pid >= 0)
+        {
             garry_page_buffer *ppbuf;
             ppbuf = garry_pool_pin_page(pool, prev_pid);
-            if (ppbuf != NULL) {
-                garry_write_int32((garry_byte*)*ppbuf, GARRY_PAGE_HEADER_SIZE, this_pid);
+            if (ppbuf != NULL)
+            {
+                garry_write_int32((garry_byte *)*ppbuf, GARRY_PAGE_HEADER_SIZE, this_pid);
                 garry_pool_mark_dirty(pool, prev_pid);
                 garry_pool_release_page(pool, prev_pid);
             }
         }
 
         this_chunk = chunk_cap;
-        if (vlen - offset < this_chunk) {
+        if (vlen - offset < this_chunk)
+        {
             this_chunk = vlen - offset;
         }
 
-        for (c = 0; c < this_chunk; c++) {
-            (*pbuf)[GARRY_PAGE_HEADER_SIZE + GARRY_OVERFLOW_PTR_SIZE + c] = (garry_u8)value[offset + c];
+        for (c = 0; c < this_chunk; c++)
+        {
+            (*pbuf)[GARRY_PAGE_HEADER_SIZE + GARRY_OVERFLOW_PTR_SIZE + c] =
+                (garry_u8)value[offset + c];
         }
 
-        garry_write_int32((garry_byte*)*pbuf, GARRY_PAGE_HEADER_SIZE, -1);
+        garry_write_int32((garry_byte *)*pbuf, GARRY_PAGE_HEADER_SIZE, -1);
         garry_pool_mark_dirty(pool, this_pid);
         garry_pool_release_page(pool, this_pid);
 
-        if (head == -1) head = this_pid;
+        if (head == -1)
+            head = this_pid;
         prev_pid = this_pid;
         offset += this_chunk;
     }
@@ -209,8 +251,8 @@ garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value,
     return head;
 }
 
-garry_bool garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
-                              garry_i32 total_len, char *out_buf)
+garry_bool garry_overflow_read(garry_buffer_pool *pool, garry_i32 head, garry_i32 total_len,
+                               char *out_buf)
 {
     garry_i32 pid;
     garry_i32 copied = 0;
@@ -219,24 +261,29 @@ garry_bool garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
     chunk_cap = garry_overflow_chunk_size(pool->page_size);
     pid = head;
 
-    while (pid >= 0 && copied < total_len) {
+    while (pid >= 0 && copied < total_len)
+    {
         garry_page_buffer *pbuf;
         garry_i32 next;
         garry_i32 this_chunk;
         garry_i32 c;
 
         pbuf = garry_pool_pin_page(pool, pid);
-        if (pbuf == NULL) return GARRY_FALSE;
+        if (pbuf == NULL)
+            return GARRY_FALSE;
 
-        next = garry_read_int32((garry_byte*)*pbuf, GARRY_PAGE_HEADER_SIZE);
+        next = garry_read_int32((garry_byte *)*pbuf, GARRY_PAGE_HEADER_SIZE);
 
         this_chunk = chunk_cap;
-        if (total_len - copied < this_chunk) {
+        if (total_len - copied < this_chunk)
+        {
             this_chunk = total_len - copied;
         }
 
-        for (c = 0; c < this_chunk; c++) {
-            out_buf[copied + c] = (char)(*pbuf)[GARRY_PAGE_HEADER_SIZE + GARRY_OVERFLOW_PTR_SIZE + c];
+        for (c = 0; c < this_chunk; c++)
+        {
+            out_buf[copied + c] =
+                (char)(*pbuf)[GARRY_PAGE_HEADER_SIZE + GARRY_OVERFLOW_PTR_SIZE + c];
         }
 
         garry_pool_release_page(pool, pid);
@@ -248,8 +295,7 @@ garry_bool garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
 }
 
 garry_bool garry_chain_page_append_overflow(garry_page_buffer buf, garry_u32 page_size,
-                                            garry_txn_id txn, garry_i32 total_len,
-                                            garry_i32 head)
+                                            garry_txn_id txn, garry_i32 total_len, garry_i32 head)
 {
     garry_byte entry_buf[GARRY_CHAIN_ENTRY_BUF_SIZE];
     garry_i32 pos;
@@ -260,38 +306,57 @@ garry_bool garry_chain_page_append_overflow(garry_page_buffer buf, garry_u32 pag
 
     /* txid_created (LE) */
     v = txn;
-    entry_buf[pos] = (garry_u8)(v & 0xFF);           pos++;
-    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);    pos++;
-    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);   pos++;
-    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);   pos++;
+    entry_buf[pos] = (garry_u8)(v & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);
+    pos++;
 
     /* txid_deleted = 0 */
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
-    entry_buf[pos] = 0; pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
+    entry_buf[pos] = 0;
+    pos++;
 
     /* value_len (LE) */
     v = total_len;
-    entry_buf[pos] = (garry_u8)(v & 0xFF);           pos++;
-    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);    pos++;
-    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);   pos++;
-    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);   pos++;
+    entry_buf[pos] = (garry_u8)(v & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 8) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 16) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((v >> 24) & 0xFF);
+    pos++;
 
     /* is_tombstone = 0 */
-    entry_buf[pos] = 0; pos++;
+    entry_buf[pos] = 0;
+    pos++;
 
     /* flags = overflow */
-    entry_buf[pos] = GARRY_CHAIN_FLAG_OVERFLOW; pos++;
+    entry_buf[pos] = GARRY_CHAIN_FLAG_OVERFLOW;
+    pos++;
 
     /* head page_id (LE) */
-    entry_buf[pos] = (garry_u8)(head & 0xFF);           pos++;
-    entry_buf[pos] = (garry_u8)((head >> 8) & 0xFF);    pos++;
-    entry_buf[pos] = (garry_u8)((head >> 16) & 0xFF);   pos++;
-    entry_buf[pos] = (garry_u8)((head >> 24) & 0xFF);   pos++;
+    entry_buf[pos] = (garry_u8)(head & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((head >> 8) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((head >> 16) & 0xFF);
+    pos++;
+    entry_buf[pos] = (garry_u8)((head >> 24) & 0xFF);
+    pos++;
 
     slot_idx = garry_page_insert(buf, entry_buf, pos, (garry_i32)page_size);
-    if (slot_idx < 0) {
+    if (slot_idx < 0)
+    {
         return GARRY_FALSE;
     }
     return GARRY_TRUE;
@@ -308,9 +373,8 @@ garry_bool garry_chain_page_append_overflow(garry_page_buffer buf, garry_u32 pag
  * Returns a malloc'd copy of the value, or NULL if the latest visible
  * version is a tombstone or no version exists. Caller must free().
  */
-char* garry_chain_page_find_visible(garry_buffer_pool *pool,
-                                    garry_page_buffer buf, garry_u32 page_size,
-                                    garry_txn_id snap_txid,
+char *garry_chain_page_find_visible(garry_buffer_pool *pool, garry_page_buffer buf,
+                                    garry_u32 page_size, garry_txn_id snap_txid,
                                     garry_txn_id_ptr active, garry_i32 active_count,
                                     garry_i32 *vlen)
 {
@@ -331,61 +395,90 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
     garry_i32 visible;
     garry_i32 done;
 
-    local = (garry_page_buffer*)malloc(sizeof(garry_page_buffer));
-    if (local == NULL) return NULL;
+    local = (garry_page_buffer *)malloc(sizeof(garry_page_buffer));
+    if (local == NULL)
+        return NULL;
     memcpy(*local, buf, (size_t)page_size);
     rec_count = garry_page_record_count(local);
     i = rec_count - 1;
     *vlen = 0;
     done = 0;
 
-    while (i >= 0 && result == NULL && !done) {
+    while (i >= 0 && result == NULL && !done)
+    {
         rlen = garry_page_get(local, i, rec_data, (garry_i32)page_size);
-        if (rlen >= GARRY_CHAIN_ENTRY_HEADER_SIZE) {
+        if (rlen >= GARRY_CHAIN_ENTRY_HEADER_SIZE)
+        {
             pos = 0;
-            txid_created = garry_read_le32(rec_data, pos); pos += 4;
-            txid_deleted = garry_read_le32(rec_data, pos);  pos += 4;
-            value_len    = garry_read_le32(rec_data, pos);  pos += 4;
-            is_tombstone = (rec_data[pos] != 0) ? 1 : 0; pos++;
-            fb = (garry_i32)rec_data[pos]; if (fb < 0) fb += 256; pos++;
+            txid_created = garry_read_le32(rec_data, pos);
+            pos += 4;
+            txid_deleted = garry_read_le32(rec_data, pos);
+            pos += 4;
+            value_len = garry_read_le32(rec_data, pos);
+            pos += 4;
+            is_tombstone = (rec_data[pos] != 0) ? 1 : 0;
+            pos++;
+            fb = (garry_i32)rec_data[pos];
+            if (fb < 0)
+                fb += 256;
+            pos++;
             is_overflow = (fb & 0x1) == GARRY_CHAIN_FLAG_OVERFLOW ? 1 : 0;
 
             visible = 1;
-            if (txid_created > snap_txid) visible = 0;
-            if (visible && txid_deleted != 0 && txid_deleted <= snap_txid) visible = 0;
-            if (visible) {
-                for (k = 0; k < active_count; k++) {
-                    if (active[k] == txid_created && active[k] != snap_txid) {
+            if (txid_created > snap_txid)
+                visible = 0;
+            if (visible && txid_deleted != 0 && txid_deleted <= snap_txid)
+                visible = 0;
+            if (visible)
+            {
+                for (k = 0; k < active_count; k++)
+                {
+                    if (active[k] == txid_created && active[k] != snap_txid)
+                    {
                         visible = 0;
                         break;
                     }
                 }
             }
 
-            if (visible) {
-                if (is_tombstone) {
+            if (visible)
+            {
+                if (is_tombstone)
+                {
                     done = 1;
-                } else {
-                    if (is_overflow) {
+                }
+                else
+                {
+                    if (is_overflow)
+                    {
                         garry_i32 head_id;
                         garry_bool read_ok;
-                        head_id = garry_read_le32(rec_data, pos); pos += 4;
-                        result = (char*)malloc((size_t)value_len + 1);
-                        if (result != NULL) {
+                        head_id = garry_read_le32(rec_data, pos);
+                        pos += 4;
+                        result = (char *)malloc((size_t)value_len + 1);
+                        if (result != NULL)
+                        {
                             read_ok = garry_overflow_read(pool, head_id, value_len, result);
-                            if (read_ok) {
+                            if (read_ok)
+                            {
                                 result[value_len] = '\0';
                                 *vlen = value_len;
-                            } else {
+                            }
+                            else
+                            {
                                 free(result);
                                 result = NULL;
                             }
                         }
-                    } else {
-                        result = (char*)malloc((size_t)value_len + 1);
-                        if (result != NULL) {
+                    }
+                    else
+                    {
+                        result = (char *)malloc((size_t)value_len + 1);
+                        if (result != NULL)
+                        {
                             garry_i32 j;
-                            for (j = 0; j < value_len; j++) {
+                            for (j = 0; j < value_len; j++)
+                            {
                                 result[j] = (char)rec_data[pos + j];
                             }
                             result[value_len] = '\0';
@@ -405,12 +498,14 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
 void garry_overflow_free(garry_buffer_pool *pool, garry_i32 head)
 {
     garry_i32 pid = head;
-    while (pid >= 0) {
+    while (pid >= 0)
+    {
         garry_page_buffer *pbuf;
         garry_i32 next;
         pbuf = garry_pool_try_pin(pool, pid);
-        if (pbuf == NULL) break;
-        next = garry_read_int32((garry_byte*)*pbuf, GARRY_PAGE_HEADER_SIZE);
+        if (pbuf == NULL)
+            break;
+        next = garry_read_int32((garry_byte *)*pbuf, GARRY_PAGE_HEADER_SIZE);
         garry_pool_release_page(pool, pid);
         garry_pool_free_page(pool, pid);
         pid = next;
@@ -425,8 +520,7 @@ void garry_overflow_free(garry_buffer_pool *pool, garry_i32 head)
  * into a fresh page buffer and overwrites the original. Frees overflow
  * pages from discarded entries.
  */
-void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
-                            garry_u32 page_size,
+void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf, garry_u32 page_size,
                             garry_txn_id_ptr active, garry_i32 active_count)
 {
     garry_page_buffer local;
@@ -442,57 +536,82 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
     garry_i32 snap;
     garry_page_buffer *tmp;
 
-    tmp = (garry_page_buffer*)malloc(sizeof(garry_page_buffer));
-    if (tmp == NULL) return;
+    tmp = (garry_page_buffer *)malloc(sizeof(garry_page_buffer));
+    if (tmp == NULL)
+        return;
 
     memcpy(local, buf, (size_t)page_size);
     rec_count = garry_page_record_count(&local);
-    if (rec_count <= 1) { free(tmp); return; }
+    if (rec_count <= 1)
+    {
+        free(tmp);
+        return;
+    }
 
-    for (i = 0; i < rec_count; i++) {
+    for (i = 0; i < rec_count; i++)
+    {
         rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
-        if (rlen >= GARRY_CHAIN_PRUNE_MIN_LEN) {
+        if (rlen >= GARRY_CHAIN_PRUNE_MIN_LEN)
+        {
             pos = 0;
-            txid_created = garry_read_le32(rec, pos); pos += 4;
-            txid_deleted = garry_read_le32(rec, pos); pos += 4;
+            txid_created = garry_read_le32(rec, pos);
+            pos += 4;
+            txid_deleted = garry_read_le32(rec, pos);
+            pos += 4;
 
-            if (i == rec_count - 1) {
+            if (i == rec_count - 1)
+            {
                 keep[i] = GARRY_TRUE;
-            } else {
+            }
+            else
+            {
                 visible = 0;
-                for (k = 0; k < active_count; k++) {
+                for (k = 0; k < active_count; k++)
+                {
                     snap = active[k];
-                    if (txid_created <= snap &&
-                        !(txid_deleted != 0 && txid_deleted <= snap)) {
+                    if (txid_created <= snap && !(txid_deleted != 0 && txid_deleted <= snap))
+                    {
                         /* Also check that the creating txn is not still active */
                         garry_bool creating_active = GARRY_FALSE;
                         garry_i32 k2;
-                        for (k2 = 0; k2 < active_count; k2++) {
-                            if (active[k2] == txid_created) {
+                        for (k2 = 0; k2 < active_count; k2++)
+                        {
+                            if (active[k2] == txid_created)
+                            {
                                 creating_active = GARRY_TRUE;
                                 break;
                             }
                         }
-                        if (!creating_active) visible = 1;
+                        if (!creating_active)
+                            visible = 1;
                     }
                 }
                 keep[i] = visible ? GARRY_TRUE : GARRY_FALSE;
             }
-        } else {
+        }
+        else
+        {
             keep[i] = GARRY_TRUE;
         }
     }
 
-    for (i = 0; i < rec_count; i++) {
-        if (!keep[i]) {
+    for (i = 0; i < rec_count; i++)
+    {
+        if (!keep[i])
+        {
             rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
-            if (rlen >= GARRY_CHAIN_ENTRY_HEADER_SIZE + 4) {
+            if (rlen >= GARRY_CHAIN_ENTRY_HEADER_SIZE + 4)
+            {
                 garry_i32 fb2;
-                fb2 = (garry_i32)rec[13]; if (fb2 < 0) fb2 += 256;
-                if ((fb2 & GARRY_CHAIN_FLAG_OVERFLOW) != 0) {
+                fb2 = (garry_i32)rec[13];
+                if (fb2 < 0)
+                    fb2 += 256;
+                if ((fb2 & GARRY_CHAIN_FLAG_OVERFLOW) != 0)
+                {
                     garry_i32 head_id;
                     head_id = garry_read_le32(rec, 14);
-                    if (pool != NULL && head_id >= 0) {
+                    if (pool != NULL && head_id >= 0)
+                    {
                         garry_overflow_free(pool, head_id);
                     }
                 }
@@ -501,16 +620,20 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
     }
 
     garry_page_init(*tmp, GARRY_NODE_CHAIN, 0, (garry_i32)page_size);
-    for (i = 0; i < rec_count; i++) {
-        if (keep[i]) {
+    for (i = 0; i < rec_count; i++)
+    {
+        if (keep[i])
+        {
             rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
-            if (garry_page_insert(*tmp, rec, rlen, (garry_i32)page_size) < 0) {
+            if (garry_page_insert(*tmp, rec, rlen, (garry_i32)page_size) < 0)
+            {
                 free(tmp);
                 return;
             }
         }
     }
-    for (j = 0; j < (garry_i32)page_size; j++) {
+    for (j = 0; j < (garry_i32)page_size; j++)
+    {
         buf[j] = (*tmp)[j];
     }
     free(tmp);
@@ -528,11 +651,14 @@ garry_bool garry_chain_page_has_version(garry_page_buffer buf, garry_u32 page_si
 
     memcpy(local, buf, (size_t)page_size);
     rec_count = garry_page_record_count(&local);
-    for (i = 0; i < rec_count; i++) {
+    for (i = 0; i < rec_count; i++)
+    {
         rlen = garry_page_get(&local, i, rec_data, (garry_i32)page_size);
-        if (rlen >= 4) {
+        if (rlen >= 4)
+        {
             txid_created = garry_read_le32(rec_data, 0);
-            if (txid_created == txn) return GARRY_TRUE;
+            if (txid_created == txn)
+                return GARRY_TRUE;
         }
     }
     return GARRY_FALSE;

@@ -105,15 +105,24 @@ static int test_store_load_multiple_entries(void)
     node.next_page = -1;
     node.prev_page = -1;
     node.entry_count = 3;
-    ENCODE_KEY(k1, "a"); ENCODE_KEY(v1, "v1");
-    ENCODE_KEY(k2, "b"); ENCODE_KEY(v2, "v2");
-    ENCODE_KEY(k3, "c"); ENCODE_KEY(v3, "v3");
-    memcpy(node.keys[0], k1, sizeof(garry_byte_array)); node.key_lens[0] = 1;
-    memcpy(node.values[0], v1, sizeof(garry_byte_array)); node.value_lens[0] = 2;
-    memcpy(node.keys[1], k2, sizeof(garry_byte_array)); node.key_lens[1] = 1;
-    memcpy(node.values[1], v2, sizeof(garry_byte_array)); node.value_lens[1] = 2;
-    memcpy(node.keys[2], k3, sizeof(garry_byte_array)); node.key_lens[2] = 1;
-    memcpy(node.values[2], v3, sizeof(garry_byte_array)); node.value_lens[2] = 2;
+    ENCODE_KEY(k1, "a");
+    ENCODE_KEY(v1, "v1");
+    ENCODE_KEY(k2, "b");
+    ENCODE_KEY(v2, "v2");
+    ENCODE_KEY(k3, "c");
+    ENCODE_KEY(v3, "v3");
+    memcpy(node.keys[0], k1, sizeof(garry_byte_array));
+    node.key_lens[0] = 1;
+    memcpy(node.values[0], v1, sizeof(garry_byte_array));
+    node.value_lens[0] = 2;
+    memcpy(node.keys[1], k2, sizeof(garry_byte_array));
+    node.key_lens[1] = 1;
+    memcpy(node.values[1], v2, sizeof(garry_byte_array));
+    node.value_lens[1] = 2;
+    memcpy(node.keys[2], k3, sizeof(garry_byte_array));
+    node.key_lens[2] = 1;
+    memcpy(node.values[2], v3, sizeof(garry_byte_array));
+    node.value_lens[2] = 2;
 
     garry_store_node(pool, pid, &node);
 
@@ -137,6 +146,7 @@ int main(void)
     r += test_allocate_internal_roundtrip();
     r += test_store_load_single_entry();
     r += test_store_load_multiple_entries();
-    if (r == 0) printf("test_btree_node_pool: ALL PASSED\n");
+    if (r == 0)
+        printf("test_btree_node_pool: ALL PASSED\n");
     return r;
 }

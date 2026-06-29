@@ -8,14 +8,22 @@
 
 #define TEST_DB "/tmp/garry_readme_foreach.db"
 
-static void cleanup(void) { remove(TEST_DB); }
+static void cleanup(void)
+{
+    remove(TEST_DB);
+}
 
 static int visit_count;
 
 /* --- README example --- */
-static void my_visitor(const garry_u8 *key, garry_i32 klen,
-                       const garry_u8 *val, garry_i32 vlen, void *ud) {
-    (void)key; (void)klen; (void)val; (void)vlen; (void)ud;
+static void my_visitor(const garry_u8 *key, garry_i32 klen, const garry_u8 *val, garry_i32 vlen,
+                       void *ud)
+{
+    (void)key;
+    (void)klen;
+    (void)val;
+    (void)vlen;
+    (void)ud;
     visit_count++;
 }
 /* --- end README example --- */
@@ -44,7 +52,8 @@ int main(void)
 
     garry_database_close(db);
 
-    if (visit_count != 3) {
+    if (visit_count != 3)
+    {
         printf("FAIL: visitor called %d times, expected 3\n", visit_count);
         cleanup();
         return 1;

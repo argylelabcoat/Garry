@@ -16,14 +16,15 @@
 #include "storage_core.h"
 #include "engine_settings.h"
 
-#define GARRY_DB_MAGIC        0x52435350
-#define GARRY_DB_VERSION      2
-#define GARRY_HEADER_PAGE     0
+#define GARRY_DB_MAGIC           0x52435350
+#define GARRY_DB_VERSION         2
+#define GARRY_HEADER_PAGE        0
 #define GARRY_HEADER_FIELD_COUNT 13
-#define GARRY_HEADER_SIZE     52
-#define GARRY_CHECKSUM_OFFSET 48
+#define GARRY_HEADER_SIZE        52
+#define GARRY_CHECKSUM_OFFSET    48
 
-typedef struct {
+typedef struct
+{
     garry_i32 magic;
     garry_i32 version;
     garry_i32 page_size;
@@ -46,7 +47,7 @@ typedef struct {
  * @param offset  Byte offset where integer is written
  * @param val     32-bit integer value to write
  */
-void garry_write_int32(garry_byte* buf, garry_i32 offset, garry_i32 val);
+void garry_write_int32(garry_byte *buf, garry_i32 offset, garry_i32 val);
 
 /**
  * @brief Read a 32-bit integer from a buffer in little-endian byte order.
@@ -55,7 +56,7 @@ void garry_write_int32(garry_byte* buf, garry_i32 offset, garry_i32 val);
  * @param offset  Byte offset where integer is stored
  * @return Decoded 32-bit integer value
  */
-garry_i32 garry_read_int32(garry_byte* buf, garry_i32 offset);
+garry_i32 garry_read_int32(garry_byte *buf, garry_i32 offset);
 
 /**
  * @brief Create a database header from engine settings.
@@ -66,7 +67,7 @@ garry_i32 garry_read_int32(garry_byte* buf, garry_i32 offset);
  * @param settings  Engine settings to populate header from
  * @return Initialized database header
  */
-garry_db_header garry_create_db_header(garry_engine_settings* settings);
+garry_db_header garry_create_db_header(garry_engine_settings *settings);
 
 /**
  * @brief Create a database header from engine settings (alias).
@@ -76,7 +77,7 @@ garry_db_header garry_create_db_header(garry_engine_settings* settings);
  * @param settings  Engine settings to populate header from
  * @return Initialized database header
  */
-garry_db_header garry_make_db_header_from_settings(garry_engine_settings* settings);
+garry_db_header garry_make_db_header_from_settings(garry_engine_settings *settings);
 
 /**
  * @brief Serialize a database header to a byte buffer.
@@ -87,7 +88,7 @@ garry_db_header garry_make_db_header_from_settings(garry_engine_settings* settin
  * @param buf  Output buffer (must be at least GARRY_HEADER_SIZE bytes)
  * @param hdr  Header struct to serialize
  */
-void garry_write_db_header(garry_byte* buf, garry_db_header* hdr);
+void garry_write_db_header(garry_byte *buf, garry_db_header *hdr);
 
 /**
  * @brief Deserialize a database header from a byte buffer.
@@ -98,7 +99,7 @@ void garry_write_db_header(garry_byte* buf, garry_db_header* hdr);
  * @param buf  Input buffer containing serialized header
  * @return Deserialized header struct
  */
-garry_db_header garry_read_db_header(garry_byte* buf);
+garry_db_header garry_read_db_header(garry_byte *buf);
 
 /**
  * @brief Validate a database header's magic, version, and checksum.
@@ -109,7 +110,7 @@ garry_db_header garry_read_db_header(garry_byte* buf);
  * @param hdr  Header to validate
  * @return GARRY_TRUE if header is valid
  */
-garry_bool garry_validate_db_header(garry_db_header* hdr);
+garry_bool garry_validate_db_header(garry_db_header *hdr);
 
 /**
  * @brief Compute the checksum for the first GARRY_CHECKSUM_OFFSET bytes.
@@ -120,6 +121,6 @@ garry_bool garry_validate_db_header(garry_db_header* hdr);
  * @param buf  Buffer containing the header (first 48 bytes used)
  * @return Computed checksum value
  */
-garry_i32 garry_compute_header_checksum(garry_byte* buf);
+garry_i32 garry_compute_header_checksum(garry_byte *buf);
 
 #endif /* GARRY_DB_HEADER_H */

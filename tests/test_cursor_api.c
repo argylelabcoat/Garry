@@ -47,7 +47,8 @@ static void test_cursor_iterates_single_key(void)
 
     txn = garry_storage_begin(eng);
     cur = garry_storage_cursor_open(eng, txn, NULL, 0);
-    while (garry_storage_cursor_next(&cur, ck, &klen, cv, &vlen)) count++;
+    while (garry_storage_cursor_next(&cur, ck, &klen, cv, &vlen))
+        count++;
     garry_storage_cursor_close(&cur);
     GARRY_CHECK(count == 1);
     garry_storage_rollback(eng, txn);
@@ -76,7 +77,8 @@ static void test_cursor_sees_own_uncommitted(void)
     GARRY_CHECK(garry_storage_set(eng, txn, key, 5, value, 2));
 
     cur = garry_storage_cursor_open(eng, txn, NULL, 0);
-    while (garry_storage_cursor_next(&cur, ck, &klen, cv, &vlen)) count++;
+    while (garry_storage_cursor_next(&cur, ck, &klen, cv, &vlen))
+        count++;
     garry_storage_cursor_close(&cur);
     GARRY_CHECK(count == 1);
     garry_storage_commit(eng, txn);
@@ -84,7 +86,8 @@ static void test_cursor_sees_own_uncommitted(void)
     txn = garry_storage_begin(eng);
     count = 0;
     cur = garry_storage_cursor_open(eng, txn, NULL, 0);
-    while (garry_storage_cursor_next(&cur, ck, &klen, cv, &vlen)) count++;
+    while (garry_storage_cursor_next(&cur, ck, &klen, cv, &vlen))
+        count++;
     garry_storage_cursor_close(&cur);
     GARRY_CHECK(count == 1);
     garry_storage_rollback(eng, txn);
@@ -108,7 +111,8 @@ static void test_cursor_empty_on_fresh_db(void)
 
     txn = garry_storage_begin(eng);
     cur = garry_storage_cursor_open(eng, txn, NULL, 0);
-    while (garry_storage_cursor_next(&cur, ck, &klen, cv, &vlen)) count++;
+    while (garry_storage_cursor_next(&cur, ck, &klen, cv, &vlen))
+        count++;
     garry_storage_cursor_close(&cur);
     GARRY_CHECK(count == 0);
     garry_storage_rollback(eng, txn);
@@ -122,6 +126,7 @@ int main(void)
     test_cursor_iterates_single_key();
     test_cursor_sees_own_uncommitted();
     test_cursor_empty_on_fresh_db();
-    if (garry_test_failures == 0) printf("test_cursor_api: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_cursor_api: ALL PASSED\n");
     return garry_test_failures;
 }

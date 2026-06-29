@@ -19,8 +19,8 @@
 
 #define GARRY_MAX_TXNS 4
 
-typedef garry_i32 garry_txn_id;      /**< Active transaction identifier. */
-typedef garry_i32 garry_txn_id_opt;  /**< Optional transaction ID (0 = none). */
-typedef garry_txn_id garry_txn_set[GARRY_MAX_TXNS];  /**< Fixed set of active TXN IDs. */
+typedef garry_i32 garry_txn_id;                     /**< Active transaction identifier. */
+typedef garry_i32 garry_txn_id_opt;                 /**< Optional transaction ID (0 = none). */
+typedef garry_txn_id garry_txn_set[GARRY_MAX_TXNS]; /**< Fixed set of active TXN IDs. */
 
 #endif /* GARRY_STORAGE_TYPES_H */

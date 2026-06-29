@@ -9,7 +9,10 @@
 
 #define TEST_DB "/tmp/garry_readme_keysplit.db"
 
-static void cleanup(void) { remove(TEST_DB); }
+static void cleanup(void)
+{
+    remove(TEST_DB);
+}
 
 int main(void)
 {
@@ -30,7 +33,7 @@ int main(void)
     /* Use with set/get */
     db = garry_database_create(TEST_DB);
     txn = garry_txn_begin(db);
-    garry_set(db, txn, key, n, (const garry_u8*)"test-value", 10);
+    garry_set(db, txn, key, n, (const garry_u8 *)"test-value", 10);
     garry_txn_commit(db, txn);
 
     txn = garry_txn_begin(db);
@@ -46,17 +49,20 @@ int main(void)
 
     garry_database_close(db);
 
-    if (n == 0) {
+    if (n == 0)
+    {
         printf("FAIL: garry_key_split returned 0\n");
         cleanup();
         return 1;
     }
-    if (vlen != 10 || memcmp(result, "test-value", 10) != 0) {
+    if (vlen != 10 || memcmp(result, "test-value", 10) != 0)
+    {
         printf("FAIL: round-trip value mismatch\n");
         cleanup();
         return 1;
     }
-    if (strcmp(buf, "users/matthew/articles/A04") != 0) {
+    if (strcmp(buf, "users/matthew/articles/A04") != 0)
+    {
         printf("FAIL: unsplit got \"%s\", expected \"users/matthew/articles/A04\"\n", buf);
         cleanup();
         return 1;

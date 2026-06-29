@@ -22,30 +22,43 @@
 static int tests_run = 0;
 static int tests_passed = 0;
 
-#define ASSERT(cond, msg) do { \
-    tests_run++; \
-    if (!(cond)) { \
-        printf("  FAIL: %s (line %d)\n", msg, __LINE__); \
-    } else { \
-        tests_passed++; \
-    } \
-} while (0)
+#define ASSERT(cond, msg)                                    \
+    do                                                       \
+    {                                                        \
+        tests_run++;                                         \
+        if (!(cond))                                         \
+        {                                                    \
+            printf("  FAIL: %s (line %d)\n", msg, __LINE__); \
+        }                                                    \
+        else                                                 \
+        {                                                    \
+            tests_passed++;                                  \
+        }                                                    \
+    } while (0)
 
-static char* read_file(const char *path, long *out_len)
+static char *read_file(const char *path, long *out_len)
 {
     FILE *f;
     long len;
     char *buf;
 
     f = fopen(path, "rb");
-    if (!f) return NULL;
+    if (!f)
+        return NULL;
     fseek(f, 0, SEEK_END);
     len = ftell(f);
     fseek(f, 0, SEEK_SET);
-    buf = (char*)malloc(len + 1);
-    if (!buf) { fclose(f); return NULL; }
-    if ((long)fread(buf, 1, len, f) != len) {
-        free(buf); fclose(f); return NULL;
+    buf = (char *)malloc(len + 1);
+    if (!buf)
+    {
+        fclose(f);
+        return NULL;
+    }
+    if ((long)fread(buf, 1, len, f) != len)
+    {
+        free(buf);
+        fclose(f);
+        return NULL;
     }
     buf[len] = '\0';
     fclose(f);
@@ -53,7 +66,7 @@ static char* read_file(const char *path, long *out_len)
     return buf;
 }
 
-static char* content_path(char *buf, size_t bufsz, const char *filename)
+static char *content_path(char *buf, size_t bufsz, const char *filename)
 {
     snprintf(buf, bufsz, "%s/%s", GARRY_TEST_CONTENT_DIR, filename);
     return buf;
@@ -117,7 +130,8 @@ static void test_compression_ratio(void)
 
     printf("test_compression_ratio\n");
 
-    for (i = 0; i < sizeof(input); i++) {
+    for (i = 0; i < sizeof(input); i++)
+    {
         input[i] = (char)('A' + (i % 26));
     }
     in_len = sizeof(input);
@@ -184,7 +198,8 @@ static void test_max_input_size(void)
 
     printf("test_max_input_size\n");
 
-    for (i = 0; i < in_len; i++) {
+    for (i = 0; i < in_len; i++)
+    {
         input[i] = (char)(i & 0xFF);
     }
 
@@ -210,7 +225,8 @@ static void test_corrupt_decompress(void)
     printf("test_corrupt_decompress\n");
     result = lz4_decompress(garbage, sizeof(garbage), 1024, &decompressed_len);
     ASSERT(1, "corrupt decompress did not crash");
-    if (result) {
+    if (result)
+    {
         lz4_free(result);
     }
 }
@@ -250,7 +266,8 @@ static void test_real_file_round_trip(void)
     content_path(path, sizeof(path), "keynesian-economics-daily-life-mental-health.md");
     file_data = read_file(path, &file_len);
     ASSERT(file_data != NULL, "file read succeeds");
-    if (!file_data) return;
+    if (!file_data)
+        return;
 
     in_len = (size_t)file_len;
 
@@ -286,11 +303,13 @@ static void test_multiple_compress_decompress_cycles(void)
     content_path(path, sizeof(path), "zen-and-the-algorithmic-garden.md");
     file_data = read_file(path, &file_len);
     ASSERT(file_data != NULL, "file read succeeds");
-    if (!file_data) return;
+    if (!file_data)
+        return;
 
     in_len = (size_t)file_len;
 
-    for (cycle = 0; cycle < 5; cycle++) {
+    for (cycle = 0; cycle < 5; cycle++)
+    {
         compressed = lz4_compress(file_data, in_len, &compressed_len);
         ASSERT(compressed != NULL, "compress cycle succeeds");
 
@@ -321,7 +340,8 @@ static void test_compress_bound_real_file(void)
     content_path(path, sizeof(path), "sarah-connor-vs-trad-wife-2030.md");
     file_data = read_file(path, &file_len);
     ASSERT(file_data != NULL, "file read succeeds");
-    if (!file_data) return;
+    if (!file_data)
+        return;
 
     in_len = (size_t)file_len;
     bound = lz4_compress_bound(in_len);

@@ -29,24 +29,29 @@ garry_lock_manager garry_create_lock_manager(void)
     return m;
 }
 
-garry_bool garry_lock_held(garry_lock_manager* mgr, garry_txn_id txn,
-                           const garry_byte* key, garry_i32 klen)
+garry_bool garry_lock_held(garry_lock_manager *mgr, garry_txn_id txn, const garry_byte *key,
+                           garry_i32 klen)
 {
-    garry_lock_node* p;
+    garry_lock_node *p;
     garry_i32 j;
     garry_bool same;
     p = mgr->head;
-    while (p != NULL) {
-        if (p->txn == txn && p->key_len == klen) {
+    while (p != NULL)
+    {
+        if (p->txn == txn && p->key_len == klen)
+        {
             same = 1;
             j = 0;
-            while (j < klen && same) {
-                if (p->key[j] != key[j]) {
+            while (j < klen && same)
+            {
+                if (p->key[j] != key[j])
+                {
                     same = 0;
                 }
                 j = j + 1;
             }
-            if (same) {
+            if (same)
+            {
                 return 1;
             }
         }
@@ -55,11 +60,10 @@ garry_bool garry_lock_held(garry_lock_manager* mgr, garry_txn_id txn,
     return 0;
 }
 
-garry_bool garry_has_conflict(garry_lock_manager* mgr, garry_txn_id txn,
-                              const garry_byte* key, garry_i32 klen,
-                              garry_lock_mode mode)
+garry_bool garry_has_conflict(garry_lock_manager *mgr, garry_txn_id txn, const garry_byte *key,
+                              garry_i32 klen, garry_lock_mode mode)
 {
-    garry_lock_node* p;
+    garry_lock_node *p;
     garry_i32 j;
     garry_bool same_key;
     garry_bool conflict;
@@ -67,18 +71,24 @@ garry_bool garry_has_conflict(garry_lock_manager* mgr, garry_txn_id txn,
     conflict = 0;
     found = 0;
     p = mgr->head;
-    while (p != NULL && !found) {
-        if (p->key_len == klen) {
+    while (p != NULL && !found)
+    {
+        if (p->key_len == klen)
+        {
             same_key = 1;
             j = 0;
-            while (j < klen && same_key) {
-                if (p->key[j] != key[j]) {
+            while (j < klen && same_key)
+            {
+                if (p->key[j] != key[j])
+                {
                     same_key = 0;
                 }
                 j = j + 1;
             }
-            if (same_key && p->txn != txn) {
-                if (p->mode == GARRY_LOCK_EXCLUSIVE || mode == GARRY_LOCK_EXCLUSIVE) {
+            if (same_key && p->txn != txn)
+            {
+                if (p->mode == GARRY_LOCK_EXCLUSIVE || mode == GARRY_LOCK_EXCLUSIVE)
+                {
                     conflict = 1;
                     found = 1;
                 }
@@ -89,25 +99,32 @@ garry_bool garry_has_conflict(garry_lock_manager* mgr, garry_txn_id txn,
     return conflict;
 }
 
-void garry_lock_acquire(garry_lock_manager* mgr, garry_txn_id txn,
-                        const garry_byte* key, garry_i32 klen,
-                        garry_lock_mode mode, garry_bool* ok)
+void garry_lock_acquire(garry_lock_manager *mgr, garry_txn_id txn, const garry_byte *key,
+                        garry_i32 klen, garry_lock_mode mode, garry_bool *ok)
 {
-    garry_lock_node* n;
+    garry_lock_node *n;
     garry_bool conflict;
-    if (garry_lock_held(mgr, txn, key, klen)) {
+    if (garry_lock_held(mgr, txn, key, klen))
+    {
         *ok = 1;
-    } else {
+    }
+    else
+    {
         conflict = garry_has_conflict(mgr, txn, key, klen, mode);
-        if (conflict) {
+        if (conflict)
+        {
             *ok = 0;
-        } else {
-            n = (garry_lock_node*)malloc(sizeof(garry_lock_node));
-            if (!n) {
+        }
+        else
+        {
+            n = (garry_lock_node *)malloc(sizeof(garry_lock_node));
+            if (!n)
+            {
                 *ok = 0;
                 return;
             }
-            if (klen > GARRY_MAX_KEY_SIZE) {
+            if (klen > GARRY_MAX_KEY_SIZE)
+            {
                 free(n);
                 *ok = 0;
                 return;
@@ -124,16 +141,20 @@ void garry_lock_acquire(garry_lock_manager* mgr, garry_txn_id txn,
     }
 }
 
-void garry_lock_release(garry_lock_manager* mgr, garry_txn_id txn)
+void garry_lock_release(garry_lock_manager *mgr, garry_txn_id txn)
 {
     garry_lock_node **pp = &mgr->head;
-    while (*pp != NULL) {
-        if ((*pp)->txn == txn) {
+    while (*pp != NULL)
+    {
+        if ((*pp)->txn == txn)
+        {
             garry_lock_node *tmp = *pp;
             *pp = tmp->next;
             mgr->count = mgr->count - 1;
             free(tmp);
-        } else {
+        }
+        else
+        {
             pp = &(*pp)->next;
         }
     }

@@ -36,8 +36,8 @@ static void test_value_at_inline_limit(void)
     printf("test_value_at_inline_limit\n");
     cleanup();
 
-    value = (garry_u8*)malloc(val_size);
-    result = (garry_u8*)malloc(val_size);
+    value = (garry_u8 *)malloc(val_size);
+    result = (garry_u8 *)malloc(val_size);
     GARRY_CHECK(value != NULL);
     GARRY_CHECK(result != NULL);
 
@@ -46,8 +46,12 @@ static void test_value_at_inline_limit(void)
     txn = garry_txn_begin(db);
 
     memset(key, 0, sizeof(key));
-    key[0] = 'n'; key[1] = 'e'; key[2] = 'a'; key[3] = 'r';
-    for (i = 0; i < val_size; i++) value[i] = (garry_u8)('A' + (i % 26));
+    key[0] = 'n';
+    key[1] = 'e';
+    key[2] = 'a';
+    key[3] = 'r';
+    for (i = 0; i < val_size; i++)
+        value[i] = (garry_u8)('A' + (i % 26));
 
     ok = garry_set(db, txn, key, 4, value, val_size);
     GARRY_CHECK(ok == GARRY_OK);
@@ -80,8 +84,8 @@ static void test_value_just_under_limit(void)
     printf("test_value_just_under_limit\n");
     cleanup();
 
-    value = (garry_u8*)malloc(val_size);
-    result = (garry_u8*)malloc(val_size);
+    value = (garry_u8 *)malloc(val_size);
+    result = (garry_u8 *)malloc(val_size);
     GARRY_CHECK(value != NULL);
     GARRY_CHECK(result != NULL);
 
@@ -90,8 +94,11 @@ static void test_value_just_under_limit(void)
     txn = garry_txn_begin(db);
 
     memset(key, 0, sizeof(key));
-    key[0] = 'u'; key[1] = 'n'; key[2] = 'd';
-    for (i = 0; i < val_size; i++) value[i] = (garry_u8)(i & 0xFF);
+    key[0] = 'u';
+    key[1] = 'n';
+    key[2] = 'd';
+    for (i = 0; i < val_size; i++)
+        value[i] = (garry_u8)(i & 0xFF);
 
     ok = garry_set(db, txn, key, 3, value, val_size);
     GARRY_CHECK(ok == GARRY_OK);
@@ -122,8 +129,8 @@ static void test_overwrite_large_with_small(void)
     printf("test_overwrite_large_with_small\n");
     cleanup();
 
-    large_val = (garry_u8*)malloc(498);
-    result = (garry_u8*)malloc(512);
+    large_val = (garry_u8 *)malloc(498);
+    result = (garry_u8 *)malloc(512);
     GARRY_CHECK(large_val != NULL);
     GARRY_CHECK(result != NULL);
 
@@ -132,9 +139,11 @@ static void test_overwrite_large_with_small(void)
     txn = garry_txn_begin(db);
 
     memset(key, 0, sizeof(key));
-    key[0] = 'o'; key[1] = 'w';
+    key[0] = 'o';
+    key[1] = 'w';
 
-    for (i = 0; i < 498; i++) large_val[i] = (garry_u8)('L');
+    for (i = 0; i < 498; i++)
+        large_val[i] = (garry_u8)('L');
     ok = garry_set(db, txn, key, 2, large_val, 498);
     GARRY_CHECK(ok == GARRY_OK);
 
@@ -168,7 +177,7 @@ static void test_delete_large_value(void)
     printf("test_delete_large_value\n");
     cleanup();
 
-    large_val = (garry_u8*)malloc(498);
+    large_val = (garry_u8 *)malloc(498);
     GARRY_CHECK(large_val != NULL);
 
     db = garry_database_create(TEST_DB);
@@ -176,8 +185,10 @@ static void test_delete_large_value(void)
     txn = garry_txn_begin(db);
 
     memset(key, 0, sizeof(key));
-    key[0] = 'd'; key[1] = 'l';
-    for (i = 0; i < 498; i++) large_val[i] = (garry_u8)('D');
+    key[0] = 'd';
+    key[1] = 'l';
+    for (i = 0; i < 498; i++)
+        large_val[i] = (garry_u8)('D');
 
     ok = garry_set(db, txn, key, 2, large_val, 498);
     GARRY_CHECK(ok == GARRY_OK);
@@ -207,10 +218,11 @@ static void test_lz4_round_trip_large(void)
 
     printf("test_lz4_round_trip_large\n");
 
-    input = (char*)malloc(in_len);
+    input = (char *)malloc(in_len);
     GARRY_CHECK(input != NULL);
 
-    for (i = 0; i < in_len; i++) {
+    for (i = 0; i < in_len; i++)
+    {
         input[i] = (char)('A' + (i % 26));
     }
 
@@ -235,6 +247,7 @@ int main(void)
     test_overwrite_large_with_small();
     test_delete_large_value();
     test_lz4_round_trip_large();
-    if (garry_test_failures == 0) printf("test_large_values: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_large_values: ALL PASSED\n");
     return garry_test_failures;
 }

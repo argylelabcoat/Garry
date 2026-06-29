@@ -36,8 +36,7 @@ typedef struct garry_database garry_database;
  * @return @ref GARRY_TRUE if a key was found, @ref GARRY_FALSE if the
  *         database is empty.
  */
-GARRY_API garry_bool garry_first(garry_database *db, garry_txn txn,
-                                   garry_u8 *key, garry_i32 *klen);
+GARRY_API garry_bool garry_first(garry_database *db, garry_txn txn, garry_u8 *key, garry_i32 *klen);
 
 /**
  * @brief Retrieve the lexicographically last key in the database.
@@ -48,8 +47,7 @@ GARRY_API garry_bool garry_first(garry_database *db, garry_txn txn,
  * @return @ref GARRY_TRUE if a key was found, @ref GARRY_FALSE if the
  *         database is empty.
  */
-GARRY_API garry_bool garry_last(garry_database *db, garry_txn txn,
-                                  garry_u8 *key, garry_i32 *klen);
+GARRY_API garry_bool garry_last(garry_database *db, garry_txn txn, garry_u8 *key, garry_i32 *klen);
 
 /**
  * @brief Find the next key after a given key.
@@ -62,9 +60,8 @@ GARRY_API garry_bool garry_last(garry_database *db, garry_txn txn,
  * @return @ref GARRY_TRUE if a next key exists, @ref GARRY_FALSE if
  *         @p after is the last key.
  */
-GARRY_API garry_bool garry_next_key(garry_database *db, garry_txn txn,
-                                     const garry_u8 *after, garry_i32 after_len,
-                                     garry_u8 *key, garry_i32 *klen);
+GARRY_API garry_bool garry_next_key(garry_database *db, garry_txn txn, const garry_u8 *after,
+                                    garry_i32 after_len, garry_u8 *key, garry_i32 *klen);
 
 /**
  * @brief Find the previous key before a given key.
@@ -77,9 +74,8 @@ GARRY_API garry_bool garry_next_key(garry_database *db, garry_txn txn,
  * @return @ref GARRY_TRUE if a previous key exists, @ref GARRY_FALSE if
  *         @p before is the first key.
  */
-GARRY_API garry_bool garry_prev_key(garry_database *db, garry_txn txn,
-                                     const garry_u8 *before, garry_i32 before_len,
-                                     garry_u8 *key, garry_i32 *klen);
+GARRY_API garry_bool garry_prev_key(garry_database *db, garry_txn txn, const garry_u8 *before,
+                                    garry_i32 before_len, garry_u8 *key, garry_i32 *klen);
 
 /**
  * @brief Check whether a key exists in the database.
@@ -92,8 +88,8 @@ GARRY_API garry_bool garry_prev_key(garry_database *db, garry_txn txn,
  * This is a lightweight check — it does not read the value, only the
  * key's presence in the B-tree.
  */
-GARRY_API garry_bool garry_exists(garry_database *db, garry_txn txn,
-                                    const garry_u8 *key, garry_i32 klen);
+GARRY_API garry_bool garry_exists(garry_database *db, garry_txn txn, const garry_u8 *key,
+                                  garry_i32 klen);
 
 /**
  * @brief Count the total number of keys in the database.

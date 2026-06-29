@@ -35,9 +35,11 @@ garry_i32 garry_decode_cid_from_descriptor(const garry_byte *lookup_result)
     garry_i32 chain_id;
     garry_bool has_children;
 
-    if (!lookup_result) return -1;
+    if (!lookup_result)
+        return -1;
 
-    if ((unsigned char)lookup_result[0] == (GARRY_CBOR_MAP_BASE + 2)) {
+    if ((unsigned char)lookup_result[0] == (GARRY_CBOR_MAP_BASE + 2))
+    {
         garry_decode_descriptor(lookup_result, GARRY_LOOKUP_BUF_SIZE, &chain_id, &has_children);
         return chain_id;
     }
@@ -52,9 +54,8 @@ garry_i32 garry_decode_cid_from_descriptor(const garry_byte *lookup_result)
  * Acquires a read lock on the root to prevent concurrent tree mutations.
  * Returns true if the key exists and has a visible, non-tombstone value.
  */
-garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
-                             const garry_byte *key, garry_i32 klen,
-                             garry_byte *result, garry_i32 *result_len)
+garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn, const garry_byte *key,
+                             garry_i32 klen, garry_byte *result, garry_i32 *result_len)
 {
     garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
@@ -62,44 +63,51 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
     char *val;
     garry_i32 vlen;
 
-    if (!eng || !key || klen <= 0) return 0;
-    if (klen > GARRY_MAX_KEY_SIZE) return 0;
-    if (!garry_txn_is_active(txn, eng)) return 0;
+    if (!eng || !key || klen <= 0)
+        return 0;
+    if (klen > GARRY_MAX_KEY_SIZE)
+        return 0;
+    if (!garry_txn_is_active(txn, eng))
+        return 0;
 
     garry_rwlock_rdlock(&eng->root_lock);
 
     lookup_len = 0;
     memset(lookup, 0, sizeof(lookup));
-    if (!garry_leaf_find_search(eng->pool, eng->btree_root,
-                                key, klen, lookup, &lookup_len)) {
+    if (!garry_leaf_find_search(eng->pool, eng->btree_root, key, klen, lookup, &lookup_len))
+    {
         garry_rwlock_rdunlock(&eng->root_lock);
         return 0;
     }
 
     cid = garry_decode_cid_from_descriptor(lookup);
-    if (cid < 0) {
+    if (cid < 0)
+    {
         garry_rwlock_rdunlock(&eng->root_lock);
         return 0;
     }
 
     val = garry_mvcc_get(eng, txn, cid, &vlen);
 
-    if (!val) {
+    if (!val)
+    {
         garry_rwlock_rdunlock(&eng->root_lock);
         return 0;
     }
 
-    if (eng->compression == GARRY_COMPRESS_LZ4) {
+    if (eng->compression == GARRY_COMPRESS_LZ4)
+    {
         size_t decompressed_len = 0;
-        char *decompressed = lz4_decompress(val, (size_t)vlen,
-                                           (size_t)GARRY_MAX_RECORD_SIZE,
-                                           &decompressed_len);
+        char *decompressed =
+            lz4_decompress(val, (size_t)vlen, (size_t)GARRY_MAX_RECORD_SIZE, &decompressed_len);
         free(val);
-        if (!decompressed) {
+        if (!decompressed)
+        {
             garry_rwlock_rdunlock(&eng->root_lock);
             return 0;
         }
-        if (decompressed_len > (size_t)GARRY_MAX_RECORD_SIZE) {
+        if (decompressed_len > (size_t)GARRY_MAX_RECORD_SIZE)
+        {
             lz4_free(decompressed);
             garry_rwlock_rdunlock(&eng->root_lock);
             return 0;
@@ -108,7 +116,8 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
         lz4_free(decompressed);
         *result_len = (garry_i32)decompressed_len;
     }
-    else {
+    else
+    {
         memcpy(result, val, (size_t)vlen);
         free(val);
         *result_len = vlen;
@@ -125,9 +134,8 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
  * allocates a new version chain and inserts a B-tree descriptor.
  * The WAL record is written before the data mutation for crash recovery.
  */
-garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
-                             const garry_byte *key, garry_i32 klen,
-                             const garry_byte *value, garry_i32 vlen)
+garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn, const garry_byte *key,
+                             garry_i32 klen, const garry_byte *value, garry_i32 vlen)
 {
     garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
@@ -137,32 +145,38 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
     garry_bool ok;
     garry_bool new_key;
 
-    if (!eng || !key || klen <= 0 || !value || vlen <= 0) return 0;
-    if (klen > GARRY_MAX_KEY_SIZE) return 0;
-    if (!garry_txn_is_active(txn, eng)) return 0;
+    if (!eng || !key || klen <= 0 || !value || vlen <= 0)
+        return 0;
+    if (klen > GARRY_MAX_KEY_SIZE)
+        return 0;
+    if (!garry_txn_is_active(txn, eng))
+        return 0;
 
-    garry_lock_acquire(&eng->lock_mgr, txn, key, klen,
-                       GARRY_LOCK_EXCLUSIVE, &ok);
-    if (!ok) return 0;
+    garry_lock_acquire(&eng->lock_mgr, txn, key, klen, GARRY_LOCK_EXCLUSIVE, &ok);
+    if (!ok)
+        return 0;
 
     garry_rwlock_wrlock(&eng->root_lock);
 
     lookup_len = 0;
     new_key = 0;
     memset(lookup, 0, sizeof(lookup));
-    if (garry_leaf_find_search(eng->pool, eng->btree_root,
-                               key, klen, lookup, &lookup_len)) {
+    if (garry_leaf_find_search(eng->pool, eng->btree_root, key, klen, lookup, &lookup_len))
+    {
         cid = garry_decode_cid_from_descriptor(lookup);
-    } else {
+    }
+    else
+    {
         new_key = 1;
         cid = garry_chain_allocate(eng, key, klen);
-        if (cid < 0) {
+        if (cid < 0)
+        {
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
         }
         desc_len = garry_encode_descriptor(cid, 0, desc);
-        if (!garry_btree_insert(eng->pool, &eng->btree_root,
-                                key, klen, desc, desc_len)) {
+        if (!garry_btree_insert(eng->pool, &eng->btree_root, key, klen, desc, desc_len))
+        {
             garry_pool_free_page(eng->pool, cid);
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
@@ -172,35 +186,41 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
     {
         garry_wal_record *rec;
         rec = garry_make_update_record(txn, key, klen, value, vlen);
-        if (rec) {
+        if (rec)
+        {
             garry_wal_log_append(&eng->wal, rec);
             garry_wal_record_free(rec);
         }
     }
 
-    if (eng->compression == GARRY_COMPRESS_LZ4) {
+    if (eng->compression == GARRY_COMPRESS_LZ4)
+    {
         size_t compressed_len = 0;
-        char *compressed = lz4_compress((const char*)value, (size_t)vlen,
-                                        &compressed_len);
-        if (!compressed) {
+        char *compressed = lz4_compress((const char *)value, (size_t)vlen, &compressed_len);
+        if (!compressed)
+        {
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
         }
-        if (!garry_mvcc_set(eng, txn, cid, compressed, (garry_i32)compressed_len)) {
+        if (!garry_mvcc_set(eng, txn, cid, compressed, (garry_i32)compressed_len))
+        {
             lz4_free(compressed);
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
         }
         lz4_free(compressed);
     }
-    else {
-        if (!garry_mvcc_set(eng, txn, cid, (const char*)value, vlen)) {
+    else
+    {
+        if (!garry_mvcc_set(eng, txn, cid, (const char *)value, vlen))
+        {
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
         }
     }
 
-    if (new_key) {
+    if (new_key)
+    {
         eng->key_count++;
     }
 
@@ -216,33 +236,36 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
  * deleted for MVCC readers. A subsequent garbage collection pass can
  * reclaim the chain and B-tree slot once no active transactions reference it.
  */
-garry_bool garry_storage_delete(garry_engine_handle *eng, garry_txn_id txn,
-                                const garry_byte *key, garry_i32 klen)
+garry_bool garry_storage_delete(garry_engine_handle *eng, garry_txn_id txn, const garry_byte *key,
+                                garry_i32 klen)
 {
     garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
     garry_i32 cid;
     garry_bool ok;
 
-    if (!eng || !key || klen <= 0) return 0;
-    if (!garry_txn_is_active(txn, eng)) return 0;
+    if (!eng || !key || klen <= 0)
+        return 0;
+    if (!garry_txn_is_active(txn, eng))
+        return 0;
 
-    garry_lock_acquire(&eng->lock_mgr, txn, key, klen,
-                       GARRY_LOCK_EXCLUSIVE, &ok);
-    if (!ok) return 0;
+    garry_lock_acquire(&eng->lock_mgr, txn, key, klen, GARRY_LOCK_EXCLUSIVE, &ok);
+    if (!ok)
+        return 0;
 
     garry_rwlock_wrlock(&eng->root_lock);
 
     lookup_len = 0;
     memset(lookup, 0, sizeof(lookup));
-    if (!garry_leaf_find_search(eng->pool, eng->btree_root,
-                                key, klen, lookup, &lookup_len)) {
+    if (!garry_leaf_find_search(eng->pool, eng->btree_root, key, klen, lookup, &lookup_len))
+    {
         garry_rwlock_wrunlock(&eng->root_lock);
         return 0;
     }
 
     cid = garry_decode_cid_from_descriptor(lookup);
-    if (cid < 0) {
+    if (cid < 0)
+    {
         garry_rwlock_wrunlock(&eng->root_lock);
         return 0;
     }
@@ -253,15 +276,17 @@ garry_bool garry_storage_delete(garry_engine_handle *eng, garry_txn_id txn,
 }
 
 garry_bool garry_storage_get_default(garry_engine_handle *eng, garry_txn_id txn,
-                                     const garry_byte *key, garry_i32 klen,
-                                     const garry_byte *def, garry_i32 dlen,
-                                     garry_byte *result, garry_i32 *result_len)
+                                     const garry_byte *key, garry_i32 klen, const garry_byte *def,
+                                     garry_i32 dlen, garry_byte *result, garry_i32 *result_len)
 {
-    if (garry_storage_get(eng, txn, key, klen, result, result_len)) {
+    if (garry_storage_get(eng, txn, key, klen, result, result_len))
+    {
         return 1;
     }
-    if (!garry_txn_is_active(txn, eng)) return 0;
-    if (dlen > GARRY_MAX_RECORD_SIZE) return 0;
+    if (!garry_txn_is_active(txn, eng))
+        return 0;
+    if (dlen > GARRY_MAX_RECORD_SIZE)
+        return 0;
     memcpy(result, def, (size_t)dlen);
     *result_len = dlen;
     return 1;
@@ -279,8 +304,8 @@ garry_bool garry_storage_get_default(garry_engine_handle *eng, garry_txn_id txn,
  * Note: value 0 doubles as "not found" and boolean false. Callers
  * should compare against the named constants rather than truthiness.
  */
-garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn,
-                             const garry_byte *key, garry_i32 klen)
+garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn, const garry_byte *key,
+                             garry_i32 klen)
 {
     garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
@@ -289,26 +314,29 @@ garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn,
     char *val;
     garry_i32 vlen;
 
-    if (!eng || !key || klen <= 0) return 0;
+    if (!eng || !key || klen <= 0)
+        return 0;
 
     garry_rwlock_rdlock(&eng->root_lock);
 
     lookup_len = 0;
     memset(lookup, 0, sizeof(lookup));
-    if (!garry_leaf_find_search(eng->pool, eng->btree_root,
-                                key, klen, lookup, &lookup_len)) {
+    if (!garry_leaf_find_search(eng->pool, eng->btree_root, key, klen, lookup, &lookup_len))
+    {
         garry_rwlock_rdunlock(&eng->root_lock);
         return 0;
     }
 
     has_children = 0;
     cid = garry_decode_cid_from_descriptor(lookup);
-    if (cid < 0) {
+    if (cid < 0)
+    {
         garry_rwlock_rdunlock(&eng->root_lock);
         return GARRY_DATA_NOT_FOUND;
     }
     /* Extract has_children from descriptor if present */
-    if ((unsigned char)lookup[0] == (GARRY_CBOR_MAP_BASE + 2)) {
+    if ((unsigned char)lookup[0] == (GARRY_CBOR_MAP_BASE + 2))
+    {
         garry_i32 dummy_cid;
         garry_decode_descriptor(lookup, GARRY_LOOKUP_BUF_SIZE, &dummy_cid, &has_children);
     }
@@ -317,8 +345,17 @@ garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn,
 
     garry_rwlock_rdunlock(&eng->root_lock);
 
-    if (val && has_children) { free(val); return GARRY_DATA_HAS_BOTH; }
-    if (val) { free(val); return GARRY_DATA_HAS_VALUE; }
-    if (has_children) return GARRY_DATA_HAS_CHILDREN;
+    if (val && has_children)
+    {
+        free(val);
+        return GARRY_DATA_HAS_BOTH;
+    }
+    if (val)
+    {
+        free(val);
+        return GARRY_DATA_HAS_VALUE;
+    }
+    if (has_children)
+        return GARRY_DATA_HAS_CHILDREN;
     return GARRY_DATA_NOT_FOUND;
 }

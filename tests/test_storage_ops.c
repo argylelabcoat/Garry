@@ -41,7 +41,7 @@ static void test_set_and_get_single_key(void)
     GARRY_CHECK(txn > 0);
 
     ENCODE_KEY(key, "hello");
-    GARRY_CHECK(garry_storage_set(eng, txn, key, 5, (const garry_byte*)"world", 5));
+    GARRY_CHECK(garry_storage_set(eng, txn, key, 5, (const garry_byte *)"world", 5));
 
     result_len = 0;
     memset(result, 0, sizeof(result));
@@ -70,11 +70,11 @@ static void test_set_overwrites_same_key(void)
 
     txn = garry_storage_begin(eng);
     ENCODE_KEY(key, "key1");
-    GARRY_CHECK(garry_storage_set(eng, txn, key, 4, (const garry_byte*)"val1", 4));
+    GARRY_CHECK(garry_storage_set(eng, txn, key, 4, (const garry_byte *)"val1", 4));
     garry_storage_commit(eng, txn);
 
     txn = garry_storage_begin(eng);
-    GARRY_CHECK(garry_storage_set(eng, txn, key, 4, (const garry_byte*)"val2", 4));
+    GARRY_CHECK(garry_storage_set(eng, txn, key, 4, (const garry_byte *)"val2", 4));
 
     result_len = 0;
     memset(result, 0, sizeof(result));
@@ -125,7 +125,7 @@ static void test_delete_key(void)
 
     txn = garry_storage_begin(eng);
     ENCODE_KEY(key, "delme");
-    GARRY_CHECK(garry_storage_set(eng, txn, key, 5, (const garry_byte*)"gone", 4));
+    GARRY_CHECK(garry_storage_set(eng, txn, key, 5, (const garry_byte *)"gone", 4));
     GARRY_CHECK(garry_storage_delete(eng, txn, key, 5));
     garry_storage_commit(eng, txn);
 
@@ -149,7 +149,7 @@ static void test_get_after_delete_returns_false(void)
 
     txn = garry_storage_begin(eng);
     ENCODE_KEY(key, "deldel");
-    GARRY_CHECK(garry_storage_set(eng, txn, key, 6, (const garry_byte*)"temp", 4));
+    GARRY_CHECK(garry_storage_set(eng, txn, key, 6, (const garry_byte *)"temp", 4));
     garry_storage_commit(eng, txn);
 
     txn = garry_storage_begin(eng);
@@ -181,13 +181,13 @@ static void test_get_default_returns_value_when_exists(void)
 
     txn = garry_storage_begin(eng);
     ENCODE_KEY(key, "exists");
-    GARRY_CHECK(garry_storage_set(eng, txn, key, 6, (const garry_byte*)"real", 4));
+    GARRY_CHECK(garry_storage_set(eng, txn, key, 6, (const garry_byte *)"real", 4));
     garry_storage_commit(eng, txn);
 
     txn = garry_storage_begin(eng);
     result_len = 0;
-    GARRY_CHECK(garry_storage_get_default(eng, txn, key, 6,
-                 (const garry_byte*)"def", 3, result, &result_len));
+    GARRY_CHECK(garry_storage_get_default(eng, txn, key, 6, (const garry_byte *)"def", 3, result,
+                                          &result_len));
     GARRY_CHECK(result_len == 4);
     GARRY_CHECK(memcmp(result, "real", 4) == 0);
 
@@ -213,8 +213,8 @@ static void test_get_default_returns_default_when_missing(void)
     txn = garry_storage_begin(eng);
     ENCODE_KEY(key, "missing");
     result_len = 0;
-    GARRY_CHECK(garry_storage_get_default(eng, txn, key, 7,
-                 (const garry_byte*)"fallback", 8, result, &result_len));
+    GARRY_CHECK(garry_storage_get_default(eng, txn, key, 7, (const garry_byte *)"fallback", 8,
+                                          result, &result_len));
     GARRY_CHECK(result_len == 8);
     GARRY_CHECK(memcmp(result, "fallback", 8) == 0);
 
@@ -240,7 +240,7 @@ static void test_storage_data_returns_correct_flags(void)
     GARRY_CHECK(garry_storage_data(eng, txn, key, 6) == 0);
 
     ENCODE_KEY(key, "hasval");
-    GARRY_CHECK(garry_storage_set(eng, txn, key, 6, (const garry_byte*)"x", 1));
+    GARRY_CHECK(garry_storage_set(eng, txn, key, 6, (const garry_byte *)"x", 1));
     GARRY_CHECK(garry_storage_data(eng, txn, key, 6) == GARRY_DATA_HAS_VALUE);
 
     garry_storage_commit(eng, txn);
@@ -259,6 +259,7 @@ int main(void)
     test_get_default_returns_default_when_missing();
     test_storage_data_returns_correct_flags();
 
-    if (garry_test_failures == 0) printf("test_storage_ops: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_storage_ops: ALL PASSED\n");
     return garry_test_failures;
 }

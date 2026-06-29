@@ -22,8 +22,16 @@ int main(void)
     GARRY_CHECK(txn > 0);
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
-    key[0] = 'h'; key[1] = 'e'; key[2] = 'l'; key[3] = 'l'; key[4] = 'o';
-    value[0] = 'w'; value[1] = 'o'; value[2] = 'r'; value[3] = 'l'; value[4] = 'd';
+    key[0] = 'h';
+    key[1] = 'e';
+    key[2] = 'l';
+    key[3] = 'l';
+    key[4] = 'o';
+    value[0] = 'w';
+    value[1] = 'o';
+    value[2] = 'r';
+    value[3] = 'l';
+    value[4] = 'd';
     ok = garry_set(db, txn, key, 5, value, 5);
     GARRY_CHECK(ok == GARRY_OK);
     garry_txn_commit(db, txn);
@@ -38,6 +46,7 @@ int main(void)
     GARRY_CHECK(result[4] == 'd');
     garry_txn_rollback(db, txn);
     garry_database_close(db);
-    if (garry_test_failures == 0) printf("test_public_api: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_public_api: ALL PASSED\n");
     return garry_test_failures;
 }

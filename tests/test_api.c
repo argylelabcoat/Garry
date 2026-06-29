@@ -42,8 +42,10 @@ static void test_set_get_single(void)
     GARRY_CHECK(txn > 0);
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
-    key[0] = 'k'; key[1] = '1';
-    value[0] = 'v'; value[1] = '1';
+    key[0] = 'k';
+    key[1] = '1';
+    value[0] = 'v';
+    value[1] = '1';
     GARRY_CHECK(garry_set(db, txn, key, 2, value, 2) == GARRY_OK);
     memset(result, 0, sizeof(result));
     vlen = 0;
@@ -67,7 +69,8 @@ static void test_delete(void)
     txn = garry_txn_begin(db);
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
-    key[0] = 'd'; value[0] = '1';
+    key[0] = 'd';
+    value[0] = '1';
     GARRY_CHECK(garry_set(db, txn, key, 1, value, 1) == GARRY_OK);
     GARRY_CHECK(garry_delete(db, txn, key, 1) == GARRY_OK);
     memset(result, 0, sizeof(result));
@@ -90,7 +93,8 @@ static void test_get_default(void)
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
     memset(def, 0, sizeof(def));
-    key[0] = 'g'; def[0] = 'D';
+    key[0] = 'g';
+    def[0] = 'D';
     GARRY_CHECK(garry_get_default(db, txn, key, 1, def, 1, result, &vlen) == GARRY_OK);
     GARRY_CHECK(result[0] == 'D');
     value[0] = 'v';
@@ -115,7 +119,8 @@ static void test_overwrite(void)
     txn = garry_txn_begin(db);
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
-    key[0] = 'o'; value[0] = '1';
+    key[0] = 'o';
+    value[0] = '1';
     garry_set(db, txn, key, 1, value, 1);
     value[0] = '2';
     garry_set(db, txn, key, 1, value, 1);
@@ -139,7 +144,8 @@ static void test_cross_txn_read(void)
     txn1 = garry_txn_begin(db);
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
-    key[0] = 'x'; value[0] = '1';
+    key[0] = 'x';
+    value[0] = '1';
     garry_set(db, txn1, key, 1, value, 1);
     garry_txn_commit(db, txn1);
     txn2 = garry_txn_begin(db);
@@ -162,7 +168,8 @@ static void test_rollback(void)
     txn = garry_txn_begin(db);
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
-    key[0] = 'r'; value[0] = '1';
+    key[0] = 'r';
+    value[0] = '1';
     garry_set(db, txn, key, 1, value, 1);
     garry_txn_rollback(db, txn);
     garry_database_close(db);
@@ -180,22 +187,28 @@ static void test_multi_key(void)
     txn = garry_txn_begin(db);
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
-    key[0] = 'a'; value[0] = '1';
+    key[0] = 'a';
+    value[0] = '1';
     GARRY_CHECK(garry_set(db, txn, key, 1, value, 1) == GARRY_OK);
-    key[0] = 'b'; value[0] = '2';
+    key[0] = 'b';
+    value[0] = '2';
     GARRY_CHECK(garry_set(db, txn, key, 1, value, 1) == GARRY_OK);
-    key[0] = 'c'; value[0] = '3';
+    key[0] = 'c';
+    value[0] = '3';
     GARRY_CHECK(garry_set(db, txn, key, 1, value, 1) == GARRY_OK);
     garry_txn_commit(db, txn);
     txn = garry_txn_begin(db);
-    memset(result, 0, sizeof(result)); vlen = 0;
-    GARRY_CHECK(garry_get(db, txn, (const garry_u8*)"a", 1, result, &vlen) == GARRY_OK);
+    memset(result, 0, sizeof(result));
+    vlen = 0;
+    GARRY_CHECK(garry_get(db, txn, (const garry_u8 *)"a", 1, result, &vlen) == GARRY_OK);
     GARRY_CHECK(result[0] == '1');
-    memset(result, 0, sizeof(result)); vlen = 0;
-    GARRY_CHECK(garry_get(db, txn, (const garry_u8*)"b", 1, result, &vlen) == GARRY_OK);
+    memset(result, 0, sizeof(result));
+    vlen = 0;
+    GARRY_CHECK(garry_get(db, txn, (const garry_u8 *)"b", 1, result, &vlen) == GARRY_OK);
     GARRY_CHECK(result[0] == '2');
-    memset(result, 0, sizeof(result)); vlen = 0;
-    GARRY_CHECK(garry_get(db, txn, (const garry_u8*)"c", 1, result, &vlen) == GARRY_OK);
+    memset(result, 0, sizeof(result));
+    vlen = 0;
+    GARRY_CHECK(garry_get(db, txn, (const garry_u8 *)"c", 1, result, &vlen) == GARRY_OK);
     GARRY_CHECK(result[0] == '3');
     garry_txn_rollback(db, txn);
     garry_database_close(db);
@@ -212,7 +225,8 @@ static void test_bulk(void)
     db = garry_database_create(TEST_DB);
     GARRY_CHECK(db != NULL);
     txn = garry_txn_begin(db);
-    for (i = 0; i < 100; i++) {
+    for (i = 0; i < 100; i++)
+    {
         memset(key, 0, sizeof(key));
         memset(value, 0, sizeof(value));
         key[0] = 'k';
@@ -223,7 +237,8 @@ static void test_bulk(void)
     }
     garry_txn_commit(db, txn);
     txn = garry_txn_begin(db);
-    for (i = 0; i < 100; i++) {
+    for (i = 0; i < 100; i++)
+    {
         memset(key, 0, sizeof(key));
         key[0] = 'k';
         key[1] = (garry_u8)('0' + i / 10);
@@ -260,14 +275,15 @@ static void test_encoding(void)
     garry_encode_key_tuple(&t, key);
     GARRY_CHECK(key[0] != 0);
     garry_empty_byte_array(result);
-    result[0] = 'a'; result[1] = 'b';
+    result[0] = 'a';
+    result[1] = 'b';
     cmp = garry_byte_compare(result, 2, result, 2);
     GARRY_CHECK(cmp == 0);
-    cmp = garry_byte_compare((const garry_u8*)"aa", 2, (const garry_u8*)"ab", 2);
+    cmp = garry_byte_compare((const garry_u8 *)"aa", 2, (const garry_u8 *)"ab", 2);
     GARRY_CHECK(cmp < 0);
-    cmp = garry_byte_compare((const garry_u8*)"ab", 2, (const garry_u8*)"aa", 2);
+    cmp = garry_byte_compare((const garry_u8 *)"ab", 2, (const garry_u8 *)"aa", 2);
     GARRY_CHECK(cmp > 0);
-    cmp = garry_byte_compare((const garry_u8*)"a", 1, (const garry_u8*)"ab", 2);
+    cmp = garry_byte_compare((const garry_u8 *)"a", 1, (const garry_u8 *)"ab", 2);
     GARRY_CHECK(cmp != 0);
     garry_empty_byte_array(key);
     garry_empty_byte_array(result);
@@ -287,6 +303,7 @@ int main(void)
     test_multi_key();
     test_bulk();
     test_encoding();
-    if (garry_test_failures == 0) printf("test_api: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_api: ALL PASSED\n");
     return garry_test_failures;
 }

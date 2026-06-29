@@ -88,7 +88,7 @@ static void test_set_klen_zero(void)
 
     memset(value, 'V', sizeof(value));
 
-    ok = garry_set(db, txn, (const garry_u8*)"", 0, value, 5);
+    ok = garry_set(db, txn, (const garry_u8 *)"", 0, value, 5);
     GARRY_CHECK(ok != GARRY_OK);
 
     garry_txn_commit(db, txn);
@@ -148,6 +148,7 @@ int main(void)
     test_set_klen_zero();
     test_get_klen_too_large();
     test_set_str_key_too_long();
-    if (garry_test_failures == 0) printf("test_overflow: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_overflow: ALL PASSED\n");
     return garry_test_failures;
 }

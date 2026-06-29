@@ -21,7 +21,8 @@
 garry_bool garry_wal_checkpoint(garry_wal_log *wal, garry_engine_handle *eng,
                                 garry_log_sequence_number *checkpoint_lsn)
 {
-    if (!wal->fd.is_open) return GARRY_FALSE;
+    if (!wal->fd.is_open)
+        return GARRY_FALSE;
 
     *checkpoint_lsn = wal->last_lsn;
     garry_mvcc_gc(eng);

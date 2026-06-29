@@ -24,8 +24,10 @@ int main(void)
 
     memset(key, 0, sizeof(key));
     memset(value, 0, sizeof(value));
-    key[0] = 'a'; key[1] = 'b';
-    value[0] = 'x'; value[1] = 'y';
+    key[0] = 'a';
+    key[1] = 'b';
+    value[0] = 'x';
+    value[1] = 'y';
     ok = garry_leaf_insert(&node, key, 2, value, 2, 0);
     GARRY_CHECK(ok == 1);
     GARRY_CHECK(node.entry_count == 1);

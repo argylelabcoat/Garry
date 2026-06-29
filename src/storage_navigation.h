@@ -14,18 +14,18 @@
 
 #include "transaction.h"
 
-garry_bool garry_storage_first(garry_engine_handle *eng, garry_txn_id txn,
-                               garry_byte *key, garry_i32 *klen);
-garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn,
-                              garry_byte *key, garry_i32 *klen);
+garry_bool garry_storage_first(garry_engine_handle *eng, garry_txn_id txn, garry_byte *key,
+                               garry_i32 *klen);
+garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn, garry_byte *key,
+                              garry_i32 *klen);
 garry_bool garry_storage_next_key(garry_engine_handle *eng, garry_txn_id txn,
-                                  const garry_byte *after, garry_i32 after_len,
-                                  garry_byte *key, garry_i32 *klen);
+                                  const garry_byte *after, garry_i32 after_len, garry_byte *key,
+                                  garry_i32 *klen);
 garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
-                                  const garry_byte *before, garry_i32 before_len,
-                                  garry_byte *key, garry_i32 *klen);
-garry_bool garry_storage_exists(garry_engine_handle *eng, garry_txn_id txn,
-                                const garry_byte *key, garry_i32 klen);
+                                  const garry_byte *before, garry_i32 before_len, garry_byte *key,
+                                  garry_i32 *klen);
+garry_bool garry_storage_exists(garry_engine_handle *eng, garry_txn_id txn, const garry_byte *key,
+                                garry_i32 klen);
 garry_i32 garry_storage_count(garry_engine_handle *eng, garry_txn_id txn);
 
 #endif /* GARRY_STORAGE_NAVIGATION_H */

@@ -210,6 +210,7 @@ int main(void)
     test_delete_from_leaf();
     test_search_after_insert();
     test_delete_with_split_rebalance();
-    if (garry_test_failures == 0) printf("test_btree_modify: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_btree_modify: ALL PASSED\n");
     return garry_test_failures;
 }

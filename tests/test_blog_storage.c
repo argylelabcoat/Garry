@@ -33,17 +33,15 @@ static void cleanup(void)
     remove(TEST_DB ".ckpt");
 }
 
-static const char *slugs[] = {
-    "acoa-trauma-forgiveness-and-self-love",
-    "baking-soda-non-toxic-household-hacks",
-    "benefits-of-wool-wellness-clothing",
-    "cooking-from-scratch-guide-ditching-processed-foods",
-    "keynesian-economics-daily-life-mental-health",
-    "philosophy-of-fountain-pens-analog-writing",
-    "sarah-connor-vs-trad-wife-2030",
-    "walking-10km-a-day-second-heart",
-    "zen-and-the-algorithmic-garden"
-};
+static const char *slugs[] = {"acoa-trauma-forgiveness-and-self-love",
+                              "baking-soda-non-toxic-household-hacks",
+                              "benefits-of-wool-wellness-clothing",
+                              "cooking-from-scratch-guide-ditching-processed-foods",
+                              "keynesian-economics-daily-life-mental-health",
+                              "philosophy-of-fountain-pens-analog-writing",
+                              "sarah-connor-vs-trad-wife-2030",
+                              "walking-10km-a-day-second-heart",
+                              "zen-and-the-algorithmic-garden"};
 #define NUM_ARTICLES 9
 
 /* Read entire file into buf, return bytes read or -1 on error. */
@@ -52,7 +50,8 @@ static long read_full_file(const char *path, char *buf, long max_len)
     FILE *f;
     long n;
     f = fopen(path, "rb");
-    if (!f) return -1;
+    if (!f)
+        return -1;
     n = (long)fread(buf, 1, (size_t)max_len, f);
     fclose(f);
     return n;
@@ -65,12 +64,15 @@ static int parse_title(const char *content, char *title, int title_size)
     const char *end;
     int len;
     start = strstr(content, "title: \"");
-    if (!start) return 0;
+    if (!start)
+        return 0;
     start += 8;
     end = strchr(start, '"');
-    if (!end) return 0;
+    if (!end)
+        return 0;
     len = (int)(end - start);
-    if (len >= title_size) len = title_size - 1;
+    if (len >= title_size)
+        len = title_size - 1;
     memcpy(title, start, (size_t)len);
     title[len] = '\0';
     return len;
@@ -83,12 +85,15 @@ static int parse_date(const char *content, char *date, int date_size)
     const char *end;
     int len;
     start = strstr(content, "date: ");
-    if (!start) return 0;
+    if (!start)
+        return 0;
     start += 6;
     end = start;
-    while (*end && *end != '\n' && *end != '\r') end++;
+    while (*end && *end != '\n' && *end != '\r')
+        end++;
     len = (int)(end - start);
-    if (len >= date_size) len = date_size - 1;
+    if (len >= date_size)
+        len = date_size - 1;
     memcpy(date, start, (size_t)len);
     date[len] = '\0';
     return len;
@@ -114,8 +119,8 @@ static void test_store_all_articles(void)
     printf("test_store_all_articles\n");
     cleanup();
 
-    content = (garry_u8*)malloc(GARRY_MAX_RECORD_SIZE);
-    result = (garry_u8*)malloc(GARRY_MAX_RECORD_SIZE);
+    content = (garry_u8 *)malloc(GARRY_MAX_RECORD_SIZE);
+    result = (garry_u8 *)malloc(GARRY_MAX_RECORD_SIZE);
     GARRY_CHECK(content != NULL);
     GARRY_CHECK(result != NULL);
 
@@ -124,36 +129,35 @@ static void test_store_all_articles(void)
 
     /* Store all 9 articles */
     txn = garry_txn_begin(db);
-    for (i = 0; i < NUM_ARTICLES; i++) {
+    for (i = 0; i < NUM_ARTICLES; i++)
+    {
         /* Read full file */
         sprintf(fpath, "%s/%s.md", GARRY_TEST_CONTENT_DIR, slugs[i]);
-        content_len = read_full_file(fpath, (char*)content, GARRY_MAX_RECORD_SIZE);
+        content_len = read_full_file(fpath, (char *)content, GARRY_MAX_RECORD_SIZE);
         GARRY_CHECK(content_len > 0);
 
         /* Parse metadata from front matter */
-        title_len = parse_title((const char*)content, title, sizeof(title));
-        date_len = parse_date((const char*)content, date, sizeof(date));
+        title_len = parse_title((const char *)content, title, sizeof(title));
+        date_len = parse_date((const char *)content, date, sizeof(date));
         GARRY_CHECK(title_len > 0);
         GARRY_CHECK(date_len > 0);
 
         /* Store title */
         sprintf(fpath, "post/%s/title", slugs[i]);
         klen = garry_key_split(fpath, '/', key);
-        ok = garry_set(db, txn, key, klen, (const garry_u8*)title, (garry_i32)title_len);
+        ok = garry_set(db, txn, key, klen, (const garry_u8 *)title, (garry_i32)title_len);
         GARRY_CHECK(ok == GARRY_OK);
 
         /* Store author */
         sprintf(fpath, "post/%s/author", slugs[i]);
         klen = garry_key_split(fpath, '/', key);
-        ok = garry_set(db, txn, key, klen,
-                       (const garry_u8*)"Garry the Arborist", 18);
+        ok = garry_set(db, txn, key, klen, (const garry_u8 *)"Garry the Arborist", 18);
         GARRY_CHECK(ok == GARRY_OK);
 
         /* Store date */
         sprintf(fpath, "post/%s/date", slugs[i]);
         klen = garry_key_split(fpath, '/', key);
-        ok = garry_set(db, txn, key, klen,
-                       (const garry_u8*)date, (garry_i32)date_len);
+        ok = garry_set(db, txn, key, klen, (const garry_u8 *)date, (garry_i32)date_len);
         GARRY_CHECK(ok == GARRY_OK);
 
         /* Store full content */
@@ -169,14 +173,15 @@ static void test_store_all_articles(void)
 
     /* Verify all articles can be retrieved with correct content */
     txn = garry_txn_begin(db);
-    for (i = 0; i < NUM_ARTICLES; i++) {
+    for (i = 0; i < NUM_ARTICLES; i++)
+    {
         /* Read original file for comparison */
         sprintf(fpath, "%s/%s.md", GARRY_TEST_CONTENT_DIR, slugs[i]);
-        content_len = read_full_file(fpath, (char*)content, GARRY_MAX_RECORD_SIZE);
+        content_len = read_full_file(fpath, (char *)content, GARRY_MAX_RECORD_SIZE);
         GARRY_CHECK(content_len > 0);
 
-        title_len = parse_title((const char*)content, title, sizeof(title));
-        date_len = parse_date((const char*)content, date, sizeof(date));
+        title_len = parse_title((const char *)content, title, sizeof(title));
+        date_len = parse_date((const char *)content, date, sizeof(date));
 
         /* Verify title */
         sprintf(fpath, "post/%s/title", slugs[i]);
@@ -229,6 +234,7 @@ static void test_store_all_articles(void)
 int main(void)
 {
     test_store_all_articles();
-    if (garry_test_failures == 0) printf("test_blog_storage: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_blog_storage: ALL PASSED\n");
     return garry_test_failures;
 }

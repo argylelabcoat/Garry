@@ -133,10 +133,10 @@ static void test_page_holds_66_records(void)
     garry_chain_page_init(buf, 4096);
     memset(data, 'A', sizeof(data));
 
-    for (i = 0; i < 66; i++) {
+    for (i = 0; i < 66; i++)
+    {
         data[0] = (garry_byte)(i & 0xFF);
-        idx = garry_chain_page_append(buf, 4096, (garry_txn_id)(i + 1),
-                                      (const char*)data, 10);
+        idx = garry_chain_page_append(buf, 4096, (garry_txn_id)(i + 1), (const char *)data, 10);
         GARRY_CHECK(idx == GARRY_TRUE);
     }
 
@@ -154,6 +154,7 @@ int main(void)
     test_tombstone_does_not_affect_earlier_snapshots();
     test_page_holds_66_records();
 
-    if (garry_test_failures == 0) printf("test_version_chain: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_version_chain: ALL PASSED\n");
     return garry_test_failures;
 }

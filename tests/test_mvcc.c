@@ -113,6 +113,7 @@ int main(void)
     test_snapshot_isolation();
     test_new_txn_sees_committed();
     test_separate_txn_writes_visible();
-    if (garry_test_failures == 0) printf("test_mvcc: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_mvcc: ALL PASSED\n");
     return garry_test_failures;
 }

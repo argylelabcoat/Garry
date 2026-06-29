@@ -11,12 +11,13 @@
 static void test_wal_record_constructors(void)
 {
     garry_byte_array key, val;
-    garry_wal_record* rec;
+    garry_wal_record *rec;
     garry_i32 i;
 
     memset(key, 0, sizeof(key));
     memset(val, 0, sizeof(val));
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         key[i] = (garry_byte)(97 + i);
         val[i] = (garry_byte)(65 + i);
     }
@@ -26,7 +27,8 @@ static void test_wal_record_constructors(void)
     GARRY_CHECK(rec->kind == GARRY_WAL_UPDATE);
     GARRY_CHECK(rec->txid == 1);
     GARRY_CHECK(rec->key_len == 8);
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         GARRY_CHECK(rec->key[i] == key[i]);
         GARRY_CHECK(rec->new_data[i] == val[i]);
     }
@@ -55,14 +57,15 @@ static void test_wal_log_io(void)
 {
     garry_wal_log wal;
     garry_status_t st;
-    garry_wal_record* rec;
+    garry_wal_record *rec;
     garry_log_sequence_number lsn1, lsn2;
     garry_byte_array key, val;
     garry_i32 i;
 
     memset(key, 0, sizeof(key));
     memset(val, 0, sizeof(val));
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 4; i++)
+    {
         key[i] = (garry_byte)(48 + i);
         val[i] = (garry_byte)(65 + i);
     }
@@ -96,6 +99,7 @@ int main(void)
     test_wal_record_constructors();
     test_wal_log_io();
 
-    if (garry_test_failures == 0) printf("test_wal: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_wal: ALL PASSED\n");
     return garry_test_failures;
 }

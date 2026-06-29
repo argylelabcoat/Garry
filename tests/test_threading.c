@@ -10,11 +10,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define TEST_DB "/tmp/garry_thread_test.db"
-#define NUM_THREADS 4
+#define TEST_DB        "/tmp/garry_thread_test.db"
+#define NUM_THREADS    4
 #define OPS_PER_THREAD 100
 
-typedef struct {
+typedef struct
+{
     garry_database *db;
     int thread_id;
 } thread_arg;
@@ -29,12 +30,13 @@ static void cleanup(void)
     remove(TEST_DB ".ckpt");
 }
 
-static void* reader_thread(void *arg)
+static void *reader_thread(void *arg)
 {
     thread_arg *ta = (thread_arg *)arg;
     int i;
 
-    for (i = 0; i < OPS_PER_THREAD; i++) {
+    for (i = 0; i < OPS_PER_THREAD; i++)
+    {
         garry_txn txn;
         garry_u8 key[512], result[512];
         garry_i32 vlen;
@@ -47,7 +49,8 @@ static void* reader_thread(void *arg)
         key[0] = (garry_u8)c;
 
         txn = garry_txn_begin(ta->db);
-        if (txn <= 0) continue;
+        if (txn <= 0)
+            continue;
         ok = garry_get(ta->db, txn, key, 1, result, &vlen);
         (void)ok;
         garry_txn_commit(ta->db, txn);
@@ -56,12 +59,13 @@ static void* reader_thread(void *arg)
     return NULL;
 }
 
-static void* writer_thread(void *arg)
+static void *writer_thread(void *arg)
 {
     thread_arg *ta = (thread_arg *)arg;
     int i;
 
-    for (i = 0; i < OPS_PER_THREAD; i++) {
+    for (i = 0; i < OPS_PER_THREAD; i++)
+    {
         garry_txn txn;
         garry_u8 key[512], value[512];
         garry_status_t ok;
@@ -76,9 +80,11 @@ static void* writer_thread(void *arg)
         value[2] = (garry_u8)'v';
 
         txn = garry_txn_begin(ta->db);
-        if (txn <= 0) continue;
+        if (txn <= 0)
+            continue;
         ok = garry_set(ta->db, txn, key, 1, value, 3);
-        if (ok != GARRY_OK) {
+        if (ok != GARRY_OK)
+        {
             garry_txn_rollback(ta->db, txn);
             continue;
         }
@@ -100,7 +106,8 @@ static void test_concurrent_readers(void)
     db = garry_database_create(TEST_DB);
     GARRY_CHECK(db != NULL);
 
-    for (i = 0; i < 26; i++) {
+    for (i = 0; i < 26; i++)
+    {
         garry_u8 key[512], value[512];
         garry_status_t ok;
 
@@ -120,14 +127,16 @@ static void test_concurrent_readers(void)
         garry_txn_commit(db, txn);
     }
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS; i++)
+    {
         args[i].db = db;
         args[i].thread_id = i;
         ret = pthread_create(&threads[i], NULL, reader_thread, &args[i]);
         GARRY_CHECK(ret == 0);
     }
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS; i++)
+    {
         ret = pthread_join(threads[i], NULL);
         GARRY_CHECK(ret == 0);
     }
@@ -148,21 +157,25 @@ static void test_concurrent_writers(void)
     db = garry_database_create(TEST_DB);
     GARRY_CHECK(db != NULL);
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS; i++)
+    {
         args[i].db = db;
         args[i].thread_id = i;
         ret = pthread_create(&threads[i], NULL, writer_thread, &args[i]);
         GARRY_CHECK(ret == 0);
     }
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS; i++)
+    {
         ret = pthread_join(threads[i], NULL);
         GARRY_CHECK(ret == 0);
     }
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS; i++)
+    {
         int j;
-        for (j = 0; j < OPS_PER_THREAD; j++) {
+        for (j = 0; j < OPS_PER_THREAD; j++)
+        {
             garry_txn txn;
             garry_u8 key[512], result[512];
             garry_i32 vlen;
@@ -203,7 +216,8 @@ static void test_concurrent_mixed(void)
     db = garry_database_create(TEST_DB);
     GARRY_CHECK(db != NULL);
 
-    for (i = 0; i < 26; i++) {
+    for (i = 0; i < 26; i++)
+    {
         garry_u8 key[512], value[512];
         garry_status_t ok;
 
@@ -221,18 +235,23 @@ static void test_concurrent_mixed(void)
         garry_txn_commit(db, txn);
     }
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS; i++)
+    {
         args[i].db = db;
         args[i].thread_id = i;
-        if (i < 2) {
+        if (i < 2)
+        {
             ret = pthread_create(&threads[i], NULL, reader_thread, &args[i]);
-        } else {
+        }
+        else
+        {
             ret = pthread_create(&threads[i], NULL, writer_thread, &args[i]);
         }
         GARRY_CHECK(ret == 0);
     }
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < NUM_THREADS; i++)
+    {
         ret = pthread_join(threads[i], NULL);
         GARRY_CHECK(ret == 0);
     }
@@ -248,6 +267,7 @@ int main(void)
     test_concurrent_writers();
     test_concurrent_mixed();
 
-    if (garry_test_failures == 0) printf("test_threading: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_threading: ALL PASSED\n");
     return garry_test_failures;
 }

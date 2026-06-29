@@ -46,7 +46,8 @@ int main(void)
 
     garry_database_close(db);
 
-    if (strcmp(result, "value") != 0) {
+    if (strcmp(result, "value") != 0)
+    {
         printf("FAIL: expected \"value\", got \"%s\"\n", result);
         cleanup();
         return 1;

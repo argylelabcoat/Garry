@@ -48,9 +48,12 @@ garry_i32 garry_chain_id_decode(const garry_byte *encoded)
 static void remove_active_txn(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_i32 i, j;
-    for (i = 0; i < eng->active_count; i++) {
-        if (eng->active_txns[i] == txn) {
-            for (j = i; j < eng->active_count - 1; j++) {
+    for (i = 0; i < eng->active_count; i++)
+    {
+        if (eng->active_txns[i] == txn)
+        {
+            for (j = i; j < eng->active_count - 1; j++)
+            {
                 eng->active_txns[j] = eng->active_txns[j + 1];
                 eng->txn_states[j] = eng->txn_states[j + 1];
             }
@@ -63,13 +66,15 @@ static void remove_active_txn(garry_engine_handle *eng, garry_txn_id txn)
 static garry_i32 find_txn_slot(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_i32 i;
-    for (i = 0; i < eng->active_count; i++) {
-        if (eng->active_txns[i] == txn) return i;
+    for (i = 0; i < eng->active_count; i++)
+    {
+        if (eng->active_txns[i] == txn)
+            return i;
     }
     return -1;
 }
 
-garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings settings)
+garry_engine_handle *garry_engine_init(const char *path, garry_engine_settings settings)
 {
     garry_engine_handle *eng;
     garry_page_buffer *hdr_buf;
@@ -77,8 +82,9 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
     garry_byte ckpt_path[PATH_MAX];
     garry_i32 path_len;
 
-    eng = (garry_engine_handle*)malloc(sizeof(garry_engine_handle));
-    if (!eng) return NULL;
+    eng = (garry_engine_handle *)malloc(sizeof(garry_engine_handle));
+    if (!eng)
+        return NULL;
     memset(eng, 0, sizeof(garry_engine_handle));
 
     eng->settings = settings;
@@ -88,9 +94,10 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
     eng->next_txid = 1;
     eng->active_count = 0;
 
-    eng->active_txns = (garry_txn_id*)malloc(sizeof(garry_txn_id) * settings.max_txns);
-    eng->txn_states = (garry_txn_info*)malloc(sizeof(garry_txn_info) * settings.max_txns);
-    if (!eng->active_txns || !eng->txn_states) {
+    eng->active_txns = (garry_txn_id *)malloc(sizeof(garry_txn_id) * settings.max_txns);
+    eng->txn_states = (garry_txn_info *)malloc(sizeof(garry_txn_info) * settings.max_txns);
+    if (!eng->active_txns || !eng->txn_states)
+    {
         free(eng->active_txns);
         free(eng->txn_states);
         free(eng);
@@ -99,8 +106,10 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
     memset(eng->active_txns, 0, sizeof(garry_txn_id) * settings.max_txns);
     memset(eng->txn_states, 0, sizeof(garry_txn_info) * settings.max_txns);
 
-    eng->pool = garry_pool_create(path, (garry_u32)settings.pool_size, (garry_u32)settings.page_size);
-    if (!eng->pool) {
+    eng->pool =
+        garry_pool_create(path, (garry_u32)settings.pool_size, (garry_u32)settings.page_size);
+    if (!eng->pool)
+    {
         free(eng->active_txns);
         free(eng->txn_states);
         free(eng);
@@ -110,16 +119,23 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
     eng->pool->free_list_head = -1;
 
     path_len = (garry_i32)strlen(path);
-    if (path_len > PATH_MAX - 6) path_len = PATH_MAX - 6;
+    if (path_len > PATH_MAX - 6)
+        path_len = PATH_MAX - 6;
     memcpy(wal_path, path, (size_t)path_len);
-    wal_path[path_len] = '-'; wal_path[path_len + 1] = 'w';
-    wal_path[path_len + 2] = 'a'; wal_path[path_len + 3] = 'l';
+    wal_path[path_len] = '-';
+    wal_path[path_len + 1] = 'w';
+    wal_path[path_len + 2] = 'a';
+    wal_path[path_len + 3] = 'l';
     wal_path[path_len + 4] = '\0';
     memcpy(ckpt_path, path, (size_t)path_len);
-    ckpt_path[path_len] = '-'; ckpt_path[path_len + 1] = 'c';
-    ckpt_path[path_len + 2] = 'k'; ckpt_path[path_len + 3] = 'p';
-    ckpt_path[path_len + 4] = 't'; ckpt_path[path_len + 5] = '\0';
-    if (garry_wal_log_init(&eng->wal, (const char*)wal_path, (const char*)ckpt_path) != GARRY_OK) {
+    ckpt_path[path_len] = '-';
+    ckpt_path[path_len + 1] = 'c';
+    ckpt_path[path_len + 2] = 'k';
+    ckpt_path[path_len + 3] = 'p';
+    ckpt_path[path_len + 4] = 't';
+    ckpt_path[path_len + 5] = '\0';
+    if (garry_wal_log_init(&eng->wal, (const char *)wal_path, (const char *)ckpt_path) != GARRY_OK)
+    {
         garry_pool_close(eng->pool);
         free(eng->active_txns);
         free(eng->txn_states);
@@ -135,8 +151,9 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
     eng->btree_root = eng->header.root_page;
 
     hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
-    if (hdr_buf != NULL) {
-        garry_write_db_header((garry_byte*)*hdr_buf, &eng->header);
+    if (hdr_buf != NULL)
+    {
+        garry_write_db_header((garry_byte *)*hdr_buf, &eng->header);
         garry_pool_mark_dirty(eng->pool, GARRY_HEADER_PAGE);
         garry_pool_release_page(eng->pool, GARRY_HEADER_PAGE);
     }
@@ -145,9 +162,11 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
         garry_btree_node root_node;
         garry_page_buffer *root_buf;
         root_buf = garry_pool_pin_page(eng->pool, eng->btree_root);
-        if (root_buf != NULL) {
+        if (root_buf != NULL)
+        {
             garry_load_node(eng->pool, eng->btree_root, &root_node);
-            if (root_node.entry_count == 0 && root_node.kind != GARRY_NODE_LEAF) {
+            if (root_node.entry_count == 0 && root_node.kind != GARRY_NODE_LEAF)
+            {
                 root_node.kind = GARRY_NODE_LEAF;
                 root_node.header = garry_create_header(GARRY_NODE_LEAF, 0);
                 root_node.entry_count = 0;
@@ -163,7 +182,7 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
     return eng;
 }
 
-garry_engine_handle* garry_engine_open(const char *path)
+garry_engine_handle *garry_engine_open(const char *path)
 {
     garry_engine_handle *eng;
     garry_page_buffer *hdr_buf;
@@ -175,12 +194,14 @@ garry_engine_handle* garry_engine_open(const char *path)
     garry_i32 page_size;
     garry_db_header tmp_hdr;
 
-    eng = (garry_engine_handle*)malloc(sizeof(garry_engine_handle));
-    if (!eng) return NULL;
+    eng = (garry_engine_handle *)malloc(sizeof(garry_engine_handle));
+    if (!eng)
+        return NULL;
     memset(eng, 0, sizeof(garry_engine_handle));
 
     raw_fd = garry_file_open(path, GARRY_O_RDONLY);
-    if (!raw_fd.is_open) {
+    if (!raw_fd.is_open)
+    {
         free(eng);
         return NULL;
     }
@@ -188,13 +209,16 @@ garry_engine_handle* garry_engine_open(const char *path)
     garry_file_read_page(&raw_fd, 0, hdr_raw, GARRY_MAX_PAGE_SIZE);
     tmp_hdr = garry_read_db_header(hdr_raw);
     page_size = tmp_hdr.page_size;
-    if (page_size < GARRY_MIN_PAGE_SIZE || page_size > GARRY_MAX_PAGE_SIZE) {
+    if (page_size < GARRY_MIN_PAGE_SIZE || page_size > GARRY_MAX_PAGE_SIZE)
+    {
         page_size = GARRY_DEFAULT_PAGE_SIZE;
     }
     garry_file_close(&raw_fd);
 
-    eng->pool = garry_pool_create(path, (garry_u32)garry_default_engine_settings().pool_size, (garry_u32)page_size);
-    if (!eng->pool) {
+    eng->pool = garry_pool_create(path, (garry_u32)garry_default_engine_settings().pool_size,
+                                  (garry_u32)page_size);
+    if (!eng->pool)
+    {
         free(eng->active_txns);
         free(eng->txn_states);
         free(eng);
@@ -204,12 +228,15 @@ garry_engine_handle* garry_engine_open(const char *path)
     eng->pool->free_list_head = -1;
 
     hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
-    if (hdr_buf != NULL) {
-        eng->header = garry_read_db_header((garry_byte*)*hdr_buf);
+    if (hdr_buf != NULL)
+    {
+        eng->header = garry_read_db_header((garry_byte *)*hdr_buf);
         eng->pool->free_list_head = eng->header.free_list_head;
         eng->pool->next_page = eng->header.total_pages;
         garry_pool_release_page(eng->pool, GARRY_HEADER_PAGE);
-    } else {
+    }
+    else
+    {
         garry_pool_close(eng->pool);
         free(eng->active_txns);
         free(eng->txn_states);
@@ -232,9 +259,10 @@ garry_engine_handle* garry_engine_open(const char *path)
     eng->settings.max_subscripts = eng->header.max_subscripts;
     eng->settings.btree_flags = eng->header.btree_flags;
 
-    eng->active_txns = (garry_txn_id*)malloc(sizeof(garry_txn_id) * eng->max_txns);
-    eng->txn_states = (garry_txn_info*)malloc(sizeof(garry_txn_info) * eng->max_txns);
-    if (!eng->active_txns || !eng->txn_states) {
+    eng->active_txns = (garry_txn_id *)malloc(sizeof(garry_txn_id) * eng->max_txns);
+    eng->txn_states = (garry_txn_info *)malloc(sizeof(garry_txn_info) * eng->max_txns);
+    if (!eng->active_txns || !eng->txn_states)
+    {
         free(eng->active_txns);
         free(eng->txn_states);
         garry_pool_close(eng->pool);
@@ -245,16 +273,23 @@ garry_engine_handle* garry_engine_open(const char *path)
     memset(eng->txn_states, 0, sizeof(garry_txn_info) * eng->max_txns);
 
     path_len = (garry_i32)strlen(path);
-    if (path_len > PATH_MAX - 6) path_len = PATH_MAX - 6;
+    if (path_len > PATH_MAX - 6)
+        path_len = PATH_MAX - 6;
     memcpy(wal_path, path, (size_t)path_len);
-    wal_path[path_len] = '-'; wal_path[path_len + 1] = 'w';
-    wal_path[path_len + 2] = 'a'; wal_path[path_len + 3] = 'l';
+    wal_path[path_len] = '-';
+    wal_path[path_len + 1] = 'w';
+    wal_path[path_len + 2] = 'a';
+    wal_path[path_len + 3] = 'l';
     wal_path[path_len + 4] = '\0';
     memcpy(ckpt_path, path, (size_t)path_len);
-    ckpt_path[path_len] = '-'; ckpt_path[path_len + 1] = 'c';
-    ckpt_path[path_len + 2] = 'k'; ckpt_path[path_len + 3] = 'p';
-    ckpt_path[path_len + 4] = 't'; ckpt_path[path_len + 5] = '\0';
-    if (garry_wal_log_init(&eng->wal, (const char*)wal_path, (const char*)ckpt_path) != GARRY_OK) {
+    ckpt_path[path_len] = '-';
+    ckpt_path[path_len + 1] = 'c';
+    ckpt_path[path_len + 2] = 'k';
+    ckpt_path[path_len + 3] = 'p';
+    ckpt_path[path_len + 4] = 't';
+    ckpt_path[path_len + 5] = '\0';
+    if (garry_wal_log_init(&eng->wal, (const char *)wal_path, (const char *)ckpt_path) != GARRY_OK)
+    {
         garry_pool_close(eng->pool);
         free(eng->active_txns);
         free(eng->txn_states);
@@ -273,13 +308,15 @@ void garry_engine_close(garry_engine_handle *eng)
 {
     garry_lock_node *node, *next;
     garry_page_buffer *hdr_buf;
-    if (!eng) return;
+    if (!eng)
+        return;
     /* Persist free-list state to the DB header before flushing */
     eng->header.free_list_head = eng->pool->free_list_head;
     eng->header.total_pages = eng->pool->next_page;
     hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
-    if (hdr_buf != NULL) {
-        garry_write_db_header((garry_byte*)*hdr_buf, &eng->header);
+    if (hdr_buf != NULL)
+    {
+        garry_write_db_header((garry_byte *)*hdr_buf, &eng->header);
         garry_pool_mark_dirty(eng->pool, GARRY_HEADER_PAGE);
         garry_pool_release_page(eng->pool, GARRY_HEADER_PAGE);
     }
@@ -289,7 +326,8 @@ void garry_engine_close(garry_engine_handle *eng)
     garry_rwlock_destroy(&eng->root_lock);
     garry_mutex_destroy(&eng->txn_slot_mutex);
     node = eng->lock_mgr.head;
-    while (node != NULL) {
+    while (node != NULL)
+    {
         next = node->next;
         free(node);
         node = next;
@@ -309,10 +347,12 @@ garry_i32 garry_chain_allocate(garry_engine_handle *eng, const garry_byte *key, 
     (void)klen;
 
     pid = garry_pool_allocate(eng->pool);
-    if (pid < 0) return -1;
+    if (pid < 0)
+        return -1;
 
     buf = garry_pool_pin_page(eng->pool, pid);
-    if (!buf) return -1;
+    if (!buf)
+        return -1;
 
     garry_chain_page_init(*buf, (garry_u32)eng->page_size);
     garry_pool_mark_dirty(eng->pool, pid);
@@ -327,7 +367,8 @@ garry_txn_id garry_mvcc_begin(garry_engine_handle *eng)
     garry_i32 slot;
 
     garry_mutex_lock(&eng->txn_slot_mutex);
-    if (eng->active_count >= eng->max_txns) {
+    if (eng->active_count >= eng->max_txns)
+    {
         garry_mutex_unlock(&eng->txn_slot_mutex);
         return -1;
     }
@@ -354,23 +395,29 @@ void garry_mvcc_commit(garry_engine_handle *eng, garry_txn_id txn)
 
     garry_mutex_lock(&eng->txn_slot_mutex);
     slot = find_txn_slot(eng, txn);
-    if (slot >= 0) {
+    if (slot >= 0)
+    {
         count = eng->txn_states[slot].modified_count;
-        if (count > GARRY_MAX_MODIFIED_PAGES) count = GARRY_MAX_MODIFIED_PAGES;
-        for (i = 0; i < count; i++) {
+        if (count > GARRY_MAX_MODIFIED_PAGES)
+            count = GARRY_MAX_MODIFIED_PAGES;
+        for (i = 0; i < count; i++)
+        {
             pages[i] = eng->txn_states[slot].modified_pages[i];
         }
         eng->txn_states[slot].state = GARRY_TXN_COMMITTED;
         eng->txn_states[slot].modified_count = 0;
         remove_active_txn(eng, txn);
-    } else {
+    }
+    else
+    {
         count = 0;
     }
     garry_mutex_unlock(&eng->txn_slot_mutex);
 
     garry_lock_release(&eng->lock_mgr, txn);
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         garry_pool_flush_page(eng->pool, pages[i]);
     }
 }
@@ -380,7 +427,8 @@ void garry_mvcc_rollback(garry_engine_handle *eng, garry_txn_id txn)
     garry_i32 slot;
     garry_mutex_lock(&eng->txn_slot_mutex);
     slot = find_txn_slot(eng, txn);
-    if (slot >= 0) {
+    if (slot >= 0)
+    {
         eng->txn_states[slot].state = GARRY_TXN_ROLLED_BACK;
         remove_active_txn(eng, txn);
     }
@@ -398,27 +446,27 @@ garry_bool garry_txn_is_active(garry_txn_id txn, garry_engine_handle *eng)
     return result;
 }
 
-char* garry_mvcc_get(garry_engine_handle *eng, garry_txn_id txn,
-                     garry_i32 chain_page_id, garry_i32 *vlen)
+char *garry_mvcc_get(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id,
+                     garry_i32 *vlen)
 {
     garry_page_buffer *buf;
     char *result;
 
     buf = garry_pool_pin_page(eng->pool, chain_page_id);
-    if (!buf) return NULL;
+    if (!buf)
+        return NULL;
 
     garry_mutex_lock(&eng->txn_slot_mutex);
-    result = garry_chain_page_find_visible(
-        eng->pool, *buf, (garry_u32)eng->page_size,
-        txn, eng->active_txns, eng->active_count, vlen);
+    result = garry_chain_page_find_visible(eng->pool, *buf, (garry_u32)eng->page_size, txn,
+                                           eng->active_txns, eng->active_count, vlen);
     garry_mutex_unlock(&eng->txn_slot_mutex);
 
     garry_pool_release_page(eng->pool, chain_page_id);
     return result;
 }
 
-garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn,
-                           garry_i32 chain_page_id, const char *value, garry_i32 vlen)
+garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id,
+                          const char *value, garry_i32 vlen)
 {
     garry_page_buffer *buf;
     garry_bool ok;
@@ -426,31 +474,37 @@ garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn,
     garry_i32 inline_cap;
 
     buf = garry_pool_pin_page(eng->pool, chain_page_id);
-    if (!buf) return GARRY_FALSE;
+    if (!buf)
+        return GARRY_FALSE;
 
     inline_cap = garry_chain_inline_capacity((garry_u32)eng->page_size);
 
-    if (vlen > inline_cap) {
+    if (vlen > inline_cap)
+    {
         garry_i32 head;
         head = garry_overflow_write(eng->pool, value, vlen);
-        if (head < 0) {
+        if (head < 0)
+        {
             garry_pool_release_page(eng->pool, chain_page_id);
             return GARRY_FALSE;
         }
-        ok = garry_chain_page_append_overflow(*buf, (garry_u32)eng->page_size,
-                                              txn, vlen, head);
-    } else {
-        ok = garry_chain_page_append(*buf, (garry_u32)eng->page_size,
-                                     txn, value, vlen);
+        ok = garry_chain_page_append_overflow(*buf, (garry_u32)eng->page_size, txn, vlen, head);
+    }
+    else
+    {
+        ok = garry_chain_page_append(*buf, (garry_u32)eng->page_size, txn, value, vlen);
     }
 
-    if (ok) {
+    if (ok)
+    {
         garry_pool_mark_dirty(eng->pool, chain_page_id);
         garry_mutex_lock(&eng->txn_slot_mutex);
         slot = find_txn_slot(eng, txn);
-        if (slot >= 0) {
+        if (slot >= 0)
+        {
             garry_i32 mc = eng->txn_states[slot].modified_count;
-            if (mc < GARRY_MAX_MODIFIED_PAGES) {
+            if (mc < GARRY_MAX_MODIFIED_PAGES)
+            {
                 eng->txn_states[slot].modified_pages[mc] = chain_page_id;
                 eng->txn_states[slot].modified_count = mc + 1;
             }
@@ -462,25 +516,28 @@ garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn,
     return ok;
 }
 
-garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn,
-                             garry_i32 chain_page_id)
+garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id)
 {
     garry_page_buffer *buf;
     garry_bool ok;
     garry_i32 slot;
 
     buf = garry_pool_pin_page(eng->pool, chain_page_id);
-    if (!buf) return GARRY_FALSE;
+    if (!buf)
+        return GARRY_FALSE;
 
     ok = garry_chain_page_append_tombstone(*buf, (garry_u32)eng->page_size, txn);
 
-    if (ok) {
+    if (ok)
+    {
         garry_pool_mark_dirty(eng->pool, chain_page_id);
         garry_mutex_lock(&eng->txn_slot_mutex);
         slot = find_txn_slot(eng, txn);
-        if (slot >= 0) {
+        if (slot >= 0)
+        {
             garry_i32 mc = eng->txn_states[slot].modified_count;
-            if (mc < GARRY_MAX_MODIFIED_PAGES) {
+            if (mc < GARRY_MAX_MODIFIED_PAGES)
+            {
                 eng->txn_states[slot].modified_pages[mc] = chain_page_id;
                 eng->txn_states[slot].modified_count = mc + 1;
             }
@@ -492,8 +549,8 @@ garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn,
     return ok;
 }
 
-garry_i32 garry_mvcc_chain_overflow(garry_engine_handle *eng, garry_txn_id txn,
-                                    const char *value, garry_i32 vlen)
+garry_i32 garry_mvcc_chain_overflow(garry_engine_handle *eng, garry_txn_id txn, const char *value,
+                                    garry_i32 vlen)
 {
     garry_i32 head;
     head = garry_overflow_write(eng->pool, value, vlen);

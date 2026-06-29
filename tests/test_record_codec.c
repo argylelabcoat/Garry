@@ -18,7 +18,8 @@ int main(void)
 
     memset(key_in, 0, sizeof(key_in));
     memset(val_in, 0, sizeof(val_in));
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         key_in[i] = (garry_byte)(97 + i);
         val_in[i] = (garry_byte)(65 + i);
     }
@@ -29,7 +30,8 @@ int main(void)
     garry_decode_kv(buf, len, key_out, &klen_out, val_out, &vlen_out);
     GARRY_CHECK(klen_out == 8);
     GARRY_CHECK(vlen_out == 8);
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         GARRY_CHECK(key_out[i] == key_in[i]);
         GARRY_CHECK(val_out[i] == val_in[i]);
     }
@@ -39,7 +41,8 @@ int main(void)
     memset(key_dec, 0, sizeof(key_dec));
     kdec_len = garry_decode_key_only(buf, key_only_len, key_dec);
     GARRY_CHECK(kdec_len == 8);
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         GARRY_CHECK(key_dec[i] == key_in[i]);
     }
 

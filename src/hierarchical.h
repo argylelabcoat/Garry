@@ -67,8 +67,8 @@ garry_bool garry_subscript_equal(const garry_byte *key, garry_i32 klen, garry_i3
  * @param out_size  Size of output buffer in bytes
  * @return Total length of prefix, or -1 on error
  */
-garry_i32 garry_key_prefix(const garry_byte *key, garry_i32 klen, garry_i32 nsubs,
-                           garry_byte *out, garry_i32 out_size);
+garry_i32 garry_key_prefix(const garry_byte *key, garry_i32 klen, garry_i32 nsubs, garry_byte *out,
+                           garry_i32 out_size);
 
 /**
  * @brief Extract a single subscript from a composite key.
@@ -81,8 +81,8 @@ garry_i32 garry_key_prefix(const garry_byte *key, garry_i32 klen, garry_i32 nsub
  * @param sub      Output buffer for subscript bytes
  * @param sub_len  Output: length of extracted subscript
  */
-void garry_extract_subscript(const garry_byte *key, garry_i32 klen, garry_i32 idx,
-                             garry_byte *sub, garry_i32 *sub_len);
+void garry_extract_subscript(const garry_byte *key, garry_i32 klen, garry_i32 idx, garry_byte *sub,
+                             garry_i32 *sub_len);
 
 /**
  * @brief Concatenate a parent key prefix with a child subscript.
@@ -98,8 +98,7 @@ void garry_extract_subscript(const garry_byte *key, garry_i32 klen, garry_i32 id
  * @param out_size    Size of output buffer in bytes
  * @return Total length of concatenated key, or -1 on error
  */
-garry_i32 garry_concat_prefix(const garry_byte *parent, garry_i32 parent_len,
-                               const garry_byte *sub, garry_i32 sub_len,
-                               garry_byte *out, garry_i32 out_size);
+garry_i32 garry_concat_prefix(const garry_byte *parent, garry_i32 parent_len, const garry_byte *sub,
+                              garry_i32 sub_len, garry_byte *out, garry_i32 out_size);
 
 #endif /* GARRY_HIERARCHICAL_H */

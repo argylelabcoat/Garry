@@ -17,7 +17,8 @@
 #include "btree_node.h"
 #include "buffer_pool.h"
 
-typedef struct {
+typedef struct
+{
     garry_i32 root;
     garry_byte_array prefix;
     garry_u32 prefix_len;
@@ -35,11 +36,11 @@ typedef struct {
 } garry_btree_cursor_handle;
 
 garry_btree_cursor_handle garry_btree_cursor_open(garry_buffer_pool *pool, garry_i32 root,
-                                      const garry_byte_array *prefix, garry_u32 plen);
+                                                  const garry_byte_array *prefix, garry_u32 plen);
 garry_bool garry_btree_cursor_next(garry_buffer_pool *pool, garry_btree_cursor_handle *cur,
-                             garry_byte_array *key, garry_u32 *klen);
+                                   garry_byte_array *key, garry_u32 *klen);
 garry_bool garry_btree_cursor_peek(garry_buffer_pool *pool, const garry_btree_cursor_handle *cur,
-                             garry_byte_array *key, garry_u32 *klen);
+                                   garry_byte_array *key, garry_u32 *klen);
 void garry_btree_cursor_value(const garry_btree_cursor_handle *cur, garry_byte_array *out);
 void garry_btree_cursor_close(garry_btree_cursor_handle *cur);
 

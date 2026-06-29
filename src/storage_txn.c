@@ -18,7 +18,8 @@
 
 garry_txn_id garry_storage_begin(garry_engine_handle *eng)
 {
-    if (!eng) return -1;
+    if (!eng)
+        return -1;
     return garry_mvcc_begin(eng);
 }
 
@@ -26,10 +27,12 @@ void garry_storage_commit(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_wal_record *rec;
 
-    if (!eng) return;
+    if (!eng)
+        return;
 
     rec = garry_make_commit_record(txn);
-    if (rec) {
+    if (rec)
+    {
         garry_wal_log_append(&eng->wal, rec);
         garry_wal_record_free(rec);
         garry_wal_log_flush(&eng->wal);
@@ -43,10 +46,12 @@ void garry_storage_rollback(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_wal_record *rec;
 
-    if (!eng) return;
+    if (!eng)
+        return;
 
     rec = garry_make_abort_record(txn);
-    if (rec) {
+    if (rec)
+    {
         garry_wal_log_append(&eng->wal, rec);
         garry_wal_record_free(rec);
     }

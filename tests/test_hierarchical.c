@@ -18,8 +18,10 @@ int main(void)
     garry_i32 child_len;
 
     /* Key: accounts/user1/balance (3 subscripts). */
-    { garry_key_tuple t3 = garry_make_key_3("accounts", "user1", "balance");
-      garry_encode_key_tuple(&t3, k); }
+    {
+        garry_key_tuple t3 = garry_make_key_3("accounts", "user1", "balance");
+        garry_encode_key_tuple(&t3, k);
+    }
 
     v0 = garry_subscript_count(k, 1 * 3 + 8 + 5 + 7);
     GARRY_CHECK(v0 == 3);
@@ -37,8 +39,10 @@ int main(void)
     GARRY_CHECK(v0 == 7);
 
     /* Key: accounts/user1/txns/1 (4 subscripts). */
-    { garry_key_tuple t4 = garry_make_key_4("accounts", "user1", "txns", "1");
-      garry_encode_key_tuple(&t4, k); }
+    {
+        garry_key_tuple t4 = garry_make_key_4("accounts", "user1", "txns", "1");
+        garry_encode_key_tuple(&t4, k);
+    }
 
     v0 = garry_subscript_count(k, 1 * 4 + 8 + 5 + 4 + 1);
     GARRY_CHECK(v0 == 4);
@@ -50,8 +54,10 @@ int main(void)
     GARRY_CHECK(v0 == 3);
 
     /* Key: a/b (2 subscripts, single-byte each). */
-    { garry_key_tuple t2 = garry_make_key_2("a", "b");
-      garry_encode_key_tuple(&t2, k); }
+    {
+        garry_key_tuple t2 = garry_make_key_2("a", "b");
+        garry_encode_key_tuple(&t2, k);
+    }
 
     sub_len = 0;
     garry_extract_subscript(k, 1 + 1 + 1 + 1, 0, sub, &sub_len);
@@ -73,8 +79,10 @@ int main(void)
     GARRY_CHECK((garry_i32)child_buf[2] == 98);
 
     /* Key: acct/usr1/bal — extract subscript 1 ("usr1"). */
-    { garry_key_tuple t3b = garry_make_key_3("acct", "usr1", "bal");
-      garry_encode_key_tuple(&t3b, k); }
+    {
+        garry_key_tuple t3b = garry_make_key_3("acct", "usr1", "bal");
+        garry_encode_key_tuple(&t3b, k);
+    }
 
     garry_extract_subscript(k, 1 + 4 + 1 + 4 + 1 + 3, 1, sub, &sub_len);
     GARRY_CHECK(sub_len == 4);

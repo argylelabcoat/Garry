@@ -21,7 +21,8 @@
  * Ordinal values must stay stable: internal=0, leaf=1, overflow=2, free=3, chain=4.
  * These values are stored on disk and used for page dispatch.
  */
-typedef enum {
+typedef enum
+{
     GARRY_NODE_INTERNAL = 0,
     GARRY_NODE_LEAF,
     GARRY_NODE_OVERFLOW,
@@ -31,7 +32,8 @@ typedef enum {
 
 typedef garry_node_kind garry_page_type;
 
-typedef struct {
+typedef struct
+{
     garry_page_type page_type;
     garry_i32 page_level;
     garry_i32 num_records;

@@ -17,7 +17,7 @@
 #include "btree_node.h"
 
 #ifndef GARRY_LEAF_NODE
-#define GARRY_LEAF_NODE     GARRY_NODE_LEAF
+#define GARRY_LEAF_NODE GARRY_NODE_LEAF
 #endif
 #ifndef GARRY_INTERNAL_NODE
 #define GARRY_INTERNAL_NODE GARRY_NODE_INTERNAL
@@ -34,7 +34,7 @@
  * @param klen  Key length in bytes
  * @return Index of matching key, or insertion position (0..entry_count)
  */
-garry_i32 garry_leaf_find(garry_btree_node* node, const garry_byte* key, garry_i32 klen);
+garry_i32 garry_leaf_find(garry_btree_node *node, const garry_byte *key, garry_i32 klen);
 
 /**
  * @brief Find the child pointer for a key in an internal node.
@@ -47,11 +47,10 @@ garry_i32 garry_leaf_find(garry_btree_node* node, const garry_byte* key, garry_i
  * @param klen  Key length in bytes
  * @return Child index (0..entry_count) for the subtree containing key
  */
-garry_i32 garry_internal_find(garry_btree_node* node, const garry_byte* key, garry_i32 klen);
+garry_i32 garry_internal_find(garry_btree_node *node, const garry_byte *key, garry_i32 klen);
 
 /* Search for a key's value in a leaf tree rooted at `root`. */
-garry_bool garry_leaf_find_search(garry_buffer_pool *pool, garry_i32 root,
-                                  const garry_byte *key, garry_i32 klen,
-                                  garry_byte *result, garry_i32 *result_len);
+garry_bool garry_leaf_find_search(garry_buffer_pool *pool, garry_i32 root, const garry_byte *key,
+                                  garry_i32 klen, garry_byte *result, garry_i32 *result_len);
 
 #endif /* GARRY_BTREE_SEARCH_H */

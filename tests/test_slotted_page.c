@@ -42,7 +42,9 @@ int main(void)
     GARRY_CHECK(rc == 0);
 
     memset(data, 0, sizeof(data));
-    data[0] = 65; data[1] = 66; data[2] = 67;
+    data[0] = 65;
+    data[1] = 66;
+    data[2] = 67;
     idx = garry_page_insert(buf, data, 3, 4096);
     GARRY_CHECK(idx == 0);
 
@@ -55,7 +57,8 @@ int main(void)
     GARRY_CHECK(out_data[1] == 66);
     GARRY_CHECK(out_data[2] == 67);
 
-    data[0] = 88; data[1] = 89;
+    data[0] = 88;
+    data[1] = 89;
     idx = garry_page_insert(buf, data, 2, 4096);
     GARRY_CHECK(idx == 1);
 
@@ -68,14 +71,16 @@ int main(void)
     GARRY_CHECK(out_data[1] == 89);
 
     garry_page_init(buf, GARRY_LEAF_NODE, 0, 4096);
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < 10; i++)
+    {
         data[0] = (garry_byte)(i + 1);
         data[1] = (garry_byte)(i + 2);
         idx = garry_page_insert(buf, data, 2, 4096);
         GARRY_CHECK(idx == i);
     }
 
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < 10; i++)
+    {
         rlen = garry_page_get(&buf, i, out_data, 4096);
         GARRY_CHECK(rlen == 2);
         GARRY_CHECK(out_data[0] == (garry_byte)(i + 1));
@@ -96,7 +101,9 @@ int main(void)
     GARRY_CHECK(idx == -1);
 
     garry_page_init(buf, GARRY_LEAF_NODE, 0, 4096);
-    src[0] = 10; src[1] = 20; src[2] = 30;
+    src[0] = 10;
+    src[1] = 20;
+    src[2] = 30;
     garry_copy_bytes_in(buf, 100, src, 3);
     GARRY_CHECK(buf[100] == 10);
     GARRY_CHECK(buf[101] == 20);

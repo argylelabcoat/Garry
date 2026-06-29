@@ -26,13 +26,13 @@ garry_page_header garry_create_header(garry_page_type pt, garry_i32 level)
 {
     garry_page_header hdr;
     /* precondition: level >= 0 */
-    hdr.page_type    = pt;
-    hdr.page_level   = level;
-    hdr.num_records  = 0;
-    hdr.free_start   = GARRY_PAGE_HEADER_SIZE;
-    hdr.free_end     = GARRY_MAX_PAGE_SIZE;
-    hdr.compression  = 0;
-    hdr.parent_page  = 0;
-    hdr.checksum     = 0;
+    hdr.page_type = pt;
+    hdr.page_level = level;
+    hdr.num_records = 0;
+    hdr.free_start = GARRY_PAGE_HEADER_SIZE;
+    hdr.free_end = GARRY_MAX_PAGE_SIZE;
+    hdr.compression = 0;
+    hdr.parent_page = 0;
+    hdr.checksum = 0;
     return hdr;
 }

@@ -18,7 +18,8 @@
 #include "file_io.h"
 #include "garry_threading.h"
 
-typedef struct {
+typedef struct
+{
     garry_u32 capacity;
     garry_u32 page_size;
     garry_page_buffer pages[GARRY_MAX_POOL_SIZE];

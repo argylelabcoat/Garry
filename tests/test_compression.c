@@ -14,7 +14,8 @@ int main(void)
 
     memset(left, 0, sizeof(left));
     memset(right, 0, sizeof(right));
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         left[i] = BYTE_FROM_INT(97 + i);
         right[i] = BYTE_FROM_INT(97 + i);
     }
@@ -29,7 +30,8 @@ int main(void)
     GARRY_CHECK(sep[7] == BYTE_FROM_INT(122));
 
     memset(key, 0, sizeof(key));
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < 5; i++)
+    {
         key[i] = BYTE_FROM_INT(117 + i);
     }
     garry_compress_key(comp, key, 5, 0);

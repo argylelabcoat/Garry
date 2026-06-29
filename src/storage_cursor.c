@@ -29,7 +29,8 @@ garry_storage_cursor garry_storage_cursor_open(garry_engine_handle *eng, garry_t
 
     memset(&cur, 0, sizeof(cur));
     memset(pfx, 0, sizeof(pfx));
-    if (prefix && plen > 0) {
+    if (prefix && plen > 0)
+    {
         memcpy(pfx, prefix, (size_t)plen);
     }
     uplen = (garry_u32)plen;
@@ -52,17 +53,21 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
     char *val;
     garry_i32 mv_len;
 
-    if (!cur || cur->btree_cur.exhausted) return 0;
+    if (!cur || cur->btree_cur.exhausted)
+        return 0;
 
     garry_rwlock_rdlock(&cur->eng->root_lock);
 
-    for (;;) {
-        if (!garry_btree_cursor_next(cur->eng->pool, &cur->btree_cur, &bkey, &bklen)) {
+    for (;;)
+    {
+        if (!garry_btree_cursor_next(cur->eng->pool, &cur->btree_cur, &bkey, &bklen))
+        {
             garry_rwlock_rdunlock(&cur->eng->root_lock);
             return 0;
         }
 
-        if (!cur->btree_cur.node_loaded) continue;
+        if (!cur->btree_cur.node_loaded)
+            continue;
 
         {
             garry_btree_node *node = &cur->btree_cur.current_node;
@@ -70,32 +75,43 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
             garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
             garry_i32 lookup_len;
 
-            if (idx < 0 || idx >= node->entry_count) continue;
+            if (idx < 0 || idx >= node->entry_count)
+                continue;
 
             lookup_len = node->value_lens[idx];
-            if (lookup_len <= 0 || lookup_len > GARRY_LOOKUP_BUF_SIZE) continue;
+            if (lookup_len <= 0 || lookup_len > GARRY_LOOKUP_BUF_SIZE)
+                continue;
             memcpy(lookup, node->values[idx], (size_t)lookup_len);
 
             cid = garry_decode_cid_from_descriptor(lookup);
-            if (cid < 0) continue;
+            if (cid < 0)
+                continue;
 
             val = garry_mvcc_get(cur->eng, cur->txn, cid, &mv_len);
-            if (!val) continue;
+            if (!val)
+                continue;
 
-            if (key) {
+            if (key)
+            {
                 memcpy(key, bkey, sizeof(garry_byte_array));
             }
-            if (klen) {
+            if (klen)
+            {
                 *klen = (garry_i32)bklen;
             }
-            if (value && vlen) {
+            if (value && vlen)
+            {
                 memcpy(value, val, (size_t)mv_len);
                 *vlen = mv_len;
-            } else if (value && !vlen) {
+            }
+            else if (value && !vlen)
+            {
                 free(val);
                 garry_rwlock_rdunlock(&cur->eng->root_lock);
                 return 0;
-            } else if (vlen) {
+            }
+            else if (vlen)
+            {
                 *vlen = 0;
             }
             free(val);
@@ -105,20 +121,23 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
     }
 }
 
-garry_bool garry_storage_cursor_peek(garry_storage_cursor *cur,
-                                     garry_byte *key, garry_i32 *klen)
+garry_bool garry_storage_cursor_peek(garry_storage_cursor *cur, garry_byte *key, garry_i32 *klen)
 {
     garry_byte_array bkey;
     garry_u32 bklen;
 
-    if (!cur || cur->btree_cur.exhausted) return 0;
-    if (!garry_btree_cursor_peek(cur->eng->pool, &cur->btree_cur, &bkey, &bklen)) {
+    if (!cur || cur->btree_cur.exhausted)
+        return 0;
+    if (!garry_btree_cursor_peek(cur->eng->pool, &cur->btree_cur, &bkey, &bklen))
+    {
         return 0;
     }
-    if (key) {
+    if (key)
+    {
         memcpy(key, bkey, sizeof(garry_byte_array));
     }
-    if (klen) {
+    if (klen)
+    {
         *klen = (garry_i32)bklen;
     }
     return 1;
@@ -132,25 +151,35 @@ garry_bool garry_storage_cursor_skip_prefix(garry_storage_cursor *cur,
     garry_bool match;
     garry_i32 i;
 
-    if (!cur || cur->btree_cur.exhausted) return 0;
+    if (!cur || cur->btree_cur.exhausted)
+        return 0;
 
-    for (;;) {
-        if (!garry_storage_cursor_next(cur, key, &klen, NULL, NULL)) {
+    for (;;)
+    {
+        if (!garry_storage_cursor_next(cur, key, &klen, NULL, NULL))
+        {
             return 0;
         }
         match = 1;
-        if (klen < skip_plen) {
+        if (klen < skip_plen)
+        {
             match = 0;
-        } else {
-            for (i = 0; i < skip_plen; i++) {
-                if (key[i] != skip_prefix[i]) {
+        }
+        else
+        {
+            for (i = 0; i < skip_plen; i++)
+            {
+                if (key[i] != skip_prefix[i])
+                {
                     match = 0;
                     break;
                 }
             }
         }
-        if (!match) {
-            if (klen <= (garry_i32)sizeof(garry_byte_array)) {
+        if (!match)
+        {
+            if (klen <= (garry_i32)sizeof(garry_byte_array))
+            {
                 memcpy(cur->btree_cur.saved_key, key, (size_t)klen);
             }
             cur->btree_cur.saved_klen = (garry_u32)klen;
@@ -162,6 +191,7 @@ garry_bool garry_storage_cursor_skip_prefix(garry_storage_cursor *cur,
 
 void garry_storage_cursor_close(garry_storage_cursor *cur)
 {
-    if (!cur) return;
+    if (!cur)
+        return;
     garry_btree_cursor_close(&cur->btree_cur);
 }

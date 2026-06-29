@@ -26,7 +26,7 @@
  * @param t  Key tuple to measure
  * @return Total encoded length in bytes
  */
-garry_i32 garry_tuple_length(garry_key_tuple* t);
+garry_i32 garry_tuple_length(garry_key_tuple *t);
 
 /**
  * @brief Create a 2-part compound key from C strings.
@@ -35,7 +35,7 @@ garry_i32 garry_tuple_length(garry_key_tuple* t);
  * @param p2  Second part (null-terminated C string)
  * @return Key tuple with 2 parts
  */
-garry_key_tuple garry_make_key_2(const char* p1, const char* p2);
+garry_key_tuple garry_make_key_2(const char *p1, const char *p2);
 
 /**
  * @brief Create a 3-part compound key from C strings.
@@ -45,7 +45,7 @@ garry_key_tuple garry_make_key_2(const char* p1, const char* p2);
  * @param p3  Third part (null-terminated C string)
  * @return Key tuple with 3 parts
  */
-garry_key_tuple garry_make_key_3(const char* p1, const char* p2, const char* p3);
+garry_key_tuple garry_make_key_3(const char *p1, const char *p2, const char *p3);
 
 /**
  * @brief Create a 4-part compound key from C strings.
@@ -56,7 +56,7 @@ garry_key_tuple garry_make_key_3(const char* p1, const char* p2, const char* p3)
  * @param p4  Fourth part (null-terminated C string)
  * @return Key tuple with 4 parts
  */
-garry_key_tuple garry_make_key_4(const char* p1, const char* p2, const char* p3, const char* p4);
+garry_key_tuple garry_make_key_4(const char *p1, const char *p2, const char *p3, const char *p4);
 
 /**
  * @brief Encode a length prefix at the given offset.
@@ -80,7 +80,7 @@ garry_i32 garry_encode_length_prefix(garry_byte_array result, garry_i32 offset, 
  * @param offset  Byte offset where prefix starts
  * @return Decoded length value
  */
-garry_i32 garry_decode_length_prefix(const garry_byte* key, garry_i32 offset);
+garry_i32 garry_decode_length_prefix(const garry_byte *key, garry_i32 offset);
 
 /**
  * @brief Calculate the number of bytes needed to encode a length value.
@@ -99,7 +99,7 @@ garry_i32 garry_length_prefix_size(garry_i32 plen);
  * @param t    Key tuple to encode
  * @param out  Output byte array (must be large enough)
  */
-void garry_encode_key_tuple(const garry_key_tuple* t, garry_byte_array out);
+void garry_encode_key_tuple(const garry_key_tuple *t, garry_byte_array out);
 
 /**
  * @brief Decode a byte buffer into a key tuple.
@@ -111,7 +111,7 @@ void garry_encode_key_tuple(const garry_key_tuple* t, garry_byte_array out);
  * @param elen     Length of encoded data in bytes
  * @return Decoded key tuple with parts pointing into encoded buffer
  */
-garry_key_tuple garry_decode_key_tuple(const garry_byte* encoded, garry_i32 elen);
+garry_key_tuple garry_decode_key_tuple(const garry_byte *encoded, garry_i32 elen);
 
 /**
  * @brief Check if a key starts with a given prefix.
@@ -124,8 +124,8 @@ garry_key_tuple garry_decode_key_tuple(const garry_byte* encoded, garry_i32 elen
  * @param plen    Prefix length in bytes
  * @return GARRY_TRUE if key starts with prefix
  */
-garry_bool garry_has_prefix(const garry_byte* key, garry_i32 klen,
-                            const garry_byte* prefix, garry_i32 plen);
+garry_bool garry_has_prefix(const garry_byte *key, garry_i32 klen, const garry_byte *prefix,
+                            garry_i32 plen);
 
 /**
  * @brief Zero out a byte array.
@@ -155,7 +155,7 @@ void garry_encode_integer_subscript(garry_i32 n, garry_byte_array out);
  * @param offset   Byte offset where integer starts
  * @return Decoded integer value
  */
-garry_i32 garry_decode_integer_subscript(const garry_byte* encoded, garry_i32 offset);
+garry_i32 garry_decode_integer_subscript(const garry_byte *encoded, garry_i32 offset);
 
 /**
  * @brief Compare two byte arrays lexicographically.
@@ -166,7 +166,7 @@ garry_i32 garry_decode_integer_subscript(const garry_byte* encoded, garry_i32 of
  * @param blen  Length of second array
  * @return Negative if a < b, 0 if equal, positive if a > b
  */
-garry_i32 garry_byte_compare(const garry_byte* a, garry_i32 alen,
-                             const garry_byte* b, garry_i32 blen);
+garry_i32 garry_byte_compare(const garry_byte *a, garry_i32 alen, const garry_byte *b,
+                             garry_i32 blen);
 
 #endif /* GARRY_KEY_ENCODING_H */

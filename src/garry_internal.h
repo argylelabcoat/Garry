@@ -19,8 +19,9 @@
 #include "transaction.h"
 
 /** @brief Opaque database handle wrapping the engine instance. */
-struct garry_database {
-    garry_engine_handle *eng;  /**< Underlying storage engine. */
+struct garry_database
+{
+    garry_engine_handle *eng; /**< Underlying storage engine. */
 };
 
 #endif /* GARRY_INTERNAL_H */

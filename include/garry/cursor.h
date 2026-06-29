@@ -41,8 +41,8 @@ typedef struct garry_cursor garry_cursor;
  * The cursor will iterate over all keys that start with @p prefix, in
  * lexicographic order. Pass @c NULL / 0 to iterate over every key.
  */
-GARRY_API garry_cursor* garry_cursor_open(garry_database *db, garry_txn txn,
-                                           const garry_u8 *prefix, garry_i32 plen);
+GARRY_API garry_cursor *garry_cursor_open(garry_database *db, garry_txn txn, const garry_u8 *prefix,
+                                          garry_i32 plen);
 
 /**
  * @brief Advance the cursor to the next key and read both key and value.
@@ -57,9 +57,8 @@ GARRY_API garry_cursor* garry_cursor_open(garry_database *db, garry_txn txn,
  * After @ref garry_cursor_open, the cursor is positioned before the first
  * match — call this function to read the first entry.
  */
-GARRY_API garry_bool garry_cursor_next(garry_cursor *cur,
-                                        garry_u8 *key, garry_i32 *klen,
-                                        garry_u8 *value, garry_i32 *vlen);
+GARRY_API garry_bool garry_cursor_next(garry_cursor *cur, garry_u8 *key, garry_i32 *klen,
+                                       garry_u8 *value, garry_i32 *vlen);
 
 /**
  * @brief Advance the cursor to the next key without reading its value.
@@ -72,8 +71,7 @@ GARRY_API garry_bool garry_cursor_next(garry_cursor *cur,
  * More efficient than @ref garry_cursor_next when only the key is needed
  * (e.g. for counting, existence checks, or key-only scans).
  */
-GARRY_API garry_bool garry_cursor_next_key(garry_cursor *cur,
-                                            garry_u8 *key, garry_i32 *klen);
+GARRY_API garry_bool garry_cursor_next_key(garry_cursor *cur, garry_u8 *key, garry_i32 *klen);
 
 /**
  * @brief Close a cursor and release all associated resources.

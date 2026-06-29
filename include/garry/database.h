@@ -33,16 +33,18 @@ typedef struct garry_database garry_database;
  * Pass this to @ref garry_database_create_with_config to override defaults.
  * Use @ref garry_config_default to obtain a sensible starting point.
  */
-typedef struct {
-    garry_i32 pool_size;        ///< Number of pages in the in-memory pool.
-    garry_i32 max_record_size;  ///< Maximum record size in bytes.
-    garry_i32 page_size;        ///< Page size in bytes (must be power of two).
-    garry_i32 max_txns;         ///< Maximum concurrent transactions.
-    garry_i32 max_versions;     ///< Maximum version-chain depth per key.
-    garry_i32 max_key_size;     ///< Maximum size of a user-supplied key in bytes.
-    garry_i32 max_subscripts;   ///< Maximum number of subscripts in a composite key.
-    garry_i32 compression;      ///< Compression mode (@ref GARRY_COMPRESS_NONE or @ref GARRY_COMPRESS_LZ4).
-    garry_i32 btree_flags;      ///< B-tree behavior flags.
+typedef struct
+{
+    garry_i32 pool_size;       ///< Number of pages in the in-memory pool.
+    garry_i32 max_record_size; ///< Maximum record size in bytes.
+    garry_i32 page_size;       ///< Page size in bytes (must be power of two).
+    garry_i32 max_txns;        ///< Maximum concurrent transactions.
+    garry_i32 max_versions;    ///< Maximum version-chain depth per key.
+    garry_i32 max_key_size;    ///< Maximum size of a user-supplied key in bytes.
+    garry_i32 max_subscripts;  ///< Maximum number of subscripts in a composite key.
+    garry_i32
+        compression; ///< Compression mode (@ref GARRY_COMPRESS_NONE or @ref GARRY_COMPRESS_LZ4).
+    garry_i32 btree_flags; ///< B-tree behavior flags.
 } garry_config;
 
 /**
@@ -60,7 +62,7 @@ GARRY_API garry_config garry_config_default(void);
  * Use @ref garry_database_open to open an existing database without
  * truncating.
  */
-GARRY_API garry_database* garry_database_create(const char *path);
+GARRY_API garry_database *garry_database_create(const char *path);
 
 /**
  * @brief Create a new database with custom configuration.
@@ -71,7 +73,7 @@ GARRY_API garry_database* garry_database_create(const char *path);
  * Like @ref garry_database_create but allows tuning pool size, page size,
  * and transaction limits before the first page is written.
  */
-GARRY_API garry_database* garry_database_create_with_config(const char *path, garry_config config);
+GARRY_API garry_database *garry_database_create_with_config(const char *path, garry_config config);
 
 /**
  * @brief Open an existing database.
@@ -82,7 +84,7 @@ GARRY_API garry_database* garry_database_create_with_config(const char *path, ga
  * previously with @ref garry_database_create or
  * @ref garry_database_create_with_config.
  */
-GARRY_API garry_database* garry_database_open(const char *path);
+GARRY_API garry_database *garry_database_open(const char *path);
 
 /**
  * @brief Close a database and release all associated resources.

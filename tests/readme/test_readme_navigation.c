@@ -8,7 +8,10 @@
 
 #define TEST_DB "/tmp/garry_readme_nav.db"
 
-static void cleanup(void) { remove(TEST_DB); }
+static void cleanup(void)
+{
+    remove(TEST_DB);
+}
 
 int main(void)
 {
@@ -40,7 +43,7 @@ int main(void)
     found = garry_last(db, txn, key, &klen);
     printf("last: found=%d klen=%d\n", found, klen);
 
-    found = garry_next_key(db, txn, (const garry_u8*)"aaa", 3, key, &klen);
+    found = garry_next_key(db, txn, (const garry_u8 *)"aaa", 3, key, &klen);
     printf("next(aaa): found=%d klen=%d\n", found, klen);
 
     found = garry_exists(db, txn, key, klen);
@@ -52,7 +55,8 @@ int main(void)
     garry_txn_rollback(db, txn);
     garry_database_close(db);
 
-    if (count != 3) {
+    if (count != 3)
+    {
         printf("FAIL\n");
         cleanup();
         return 1;

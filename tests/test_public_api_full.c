@@ -46,7 +46,7 @@ static void test_database_open_close_reopen(void)
     txn = garry_txn_begin(db);
     memset(result, 0, sizeof(result));
     vlen = 0;
-    ok = garry_get(db, txn, (const garry_u8*)"key1", 4, result, &vlen);
+    ok = garry_get(db, txn, (const garry_u8 *)"key1", 4, result, &vlen);
     GARRY_CHECK(ok == GARRY_OK);
     GARRY_CHECK(vlen == 4);
     GARRY_CHECK(memcmp(result, "val1", 4) == 0);
@@ -83,7 +83,8 @@ static void test_cursor_next_key(void)
     cur = garry_cursor_open(db, txn, NULL, 0);
     GARRY_CHECK(cur != NULL);
 
-    while (garry_cursor_next_key(cur, key, &klen)) {
+    while (garry_cursor_next_key(cur, key, &klen))
+    {
         count++;
         GARRY_CHECK(klen == 3);
     }
@@ -161,30 +162,30 @@ static void test_next_prev_key_navigation(void)
 
     txn = garry_txn_begin(db);
 
-    found = garry_next_key(db, txn, (const garry_u8*)"aaa", 3, key, &klen);
+    found = garry_next_key(db, txn, (const garry_u8 *)"aaa", 3, key, &klen);
     GARRY_CHECK(found == 1);
     GARRY_CHECK(klen == 3);
     GARRY_CHECK(memcmp(key, "bbb", 3) == 0);
 
-    found = garry_next_key(db, txn, (const garry_u8*)"bbb", 3, key, &klen);
+    found = garry_next_key(db, txn, (const garry_u8 *)"bbb", 3, key, &klen);
     GARRY_CHECK(found == 1);
     GARRY_CHECK(klen == 3);
     GARRY_CHECK(memcmp(key, "ccc", 3) == 0);
 
-    found = garry_next_key(db, txn, (const garry_u8*)"ccc", 3, key, &klen);
+    found = garry_next_key(db, txn, (const garry_u8 *)"ccc", 3, key, &klen);
     GARRY_CHECK(found == 0);
 
-    found = garry_prev_key(db, txn, (const garry_u8*)"ccc", 3, key, &klen);
+    found = garry_prev_key(db, txn, (const garry_u8 *)"ccc", 3, key, &klen);
     GARRY_CHECK(found == 1);
     GARRY_CHECK(klen == 3);
     GARRY_CHECK(memcmp(key, "bbb", 3) == 0);
 
-    found = garry_prev_key(db, txn, (const garry_u8*)"bbb", 3, key, &klen);
+    found = garry_prev_key(db, txn, (const garry_u8 *)"bbb", 3, key, &klen);
     GARRY_CHECK(found == 1);
     GARRY_CHECK(klen == 3);
     GARRY_CHECK(memcmp(key, "aaa", 3) == 0);
 
-    found = garry_prev_key(db, txn, (const garry_u8*)"aaa", 3, key, &klen);
+    found = garry_prev_key(db, txn, (const garry_u8 *)"aaa", 3, key, &klen);
     GARRY_CHECK(found == 0);
 
     garry_txn_rollback(db, txn);
@@ -254,11 +255,13 @@ static void test_get_str(void)
 }
 
 static int for_each_counter;
-static void count_visitor(const garry_u8 *key, garry_i32 klen,
-                           const garry_u8 *val, garry_i32 vlen,
-                           void *user_data)
+static void count_visitor(const garry_u8 *key, garry_i32 klen, const garry_u8 *val, garry_i32 vlen,
+                          void *user_data)
 {
-    (void)key; (void)klen; (void)val; (void)vlen;
+    (void)key;
+    (void)klen;
+    (void)val;
+    (void)vlen;
     (void)user_data;
     for_each_counter++;
 }
@@ -292,7 +295,7 @@ static void test_for_each_iteration(void)
     GARRY_CHECK(for_each_counter == 4);
 
     for_each_counter = 0;
-    garry_for_each(db, txn, (const garry_u8*)"item/", 5, count_visitor, NULL);
+    garry_for_each(db, txn, (const garry_u8 *)"item/", 5, count_visitor, NULL);
     GARRY_CHECK(for_each_counter == 3);
 
     garry_txn_rollback(db, txn);
@@ -308,6 +311,7 @@ int main(void)
     test_count_keys();
     test_get_str();
     test_for_each_iteration();
-    if (garry_test_failures == 0) printf("test_public_api_full: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_public_api_full: ALL PASSED\n");
     return garry_test_failures;
 }

@@ -28,20 +28,23 @@
 
 #define GARRY_MAX_MODIFIED_PAGES 16
 
-typedef enum {
+typedef enum
+{
     GARRY_TXN_ACTIVE = 0,
     GARRY_TXN_COMMITTED,
     GARRY_TXN_ROLLED_BACK
 } garry_txn_state;
 
-typedef struct {
+typedef struct
+{
     garry_txn_id txid;
     garry_txn_state state;
     garry_i32 modified_count;
     garry_i32 modified_pages[GARRY_MAX_MODIFIED_PAGES];
 } garry_txn_info;
 
-typedef struct {
+typedef struct
+{
     garry_i32 page_size;
     garry_i32 compression;
     garry_i32 btree_root;
@@ -60,7 +63,7 @@ typedef struct {
     garry_i32 key_count;
 } garry_engine_handle;
 
-garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings settings);
+garry_engine_handle *garry_engine_init(const char *path, garry_engine_settings settings);
 /**
  * Open an existing database.
  *
@@ -71,7 +74,7 @@ garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings s
  * @param path Filesystem path of the database file.
  * @return Engine handle, or NULL on failure.
  */
-garry_engine_handle* garry_engine_open(const char *path);
+garry_engine_handle *garry_engine_open(const char *path);
 void garry_engine_close(garry_engine_handle *eng);
 
 garry_i32 garry_chain_id_encode(garry_i32 chain_id, garry_byte *out);
@@ -83,14 +86,13 @@ void garry_mvcc_commit(garry_engine_handle *eng, garry_txn_id txn);
 void garry_mvcc_rollback(garry_engine_handle *eng, garry_txn_id txn);
 garry_bool garry_txn_is_active(garry_txn_id txn, garry_engine_handle *eng);
 
-char* garry_mvcc_get(garry_engine_handle *eng, garry_txn_id txn,
-                     garry_i32 chain_page_id, garry_i32 *vlen);
-garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn,
-                          garry_i32 chain_page_id, const char *value, garry_i32 vlen);
-garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn,
-                             garry_i32 chain_page_id);
-garry_i32 garry_mvcc_chain_overflow(garry_engine_handle *eng, garry_txn_id txn,
-                                    const char *value, garry_i32 vlen);
+char *garry_mvcc_get(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id,
+                     garry_i32 *vlen);
+garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id,
+                          const char *value, garry_i32 vlen);
+garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id);
+garry_i32 garry_mvcc_chain_overflow(garry_engine_handle *eng, garry_txn_id txn, const char *value,
+                                    garry_i32 vlen);
 garry_bool garry_mvcc_recovery_apply(garry_engine_handle *eng, garry_i32 chain_page_id,
                                      garry_txn_id txn, const char *value, garry_i32 vlen);
 

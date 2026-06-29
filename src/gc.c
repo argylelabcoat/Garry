@@ -34,18 +34,22 @@ void garry_mvcc_gc(garry_engine_handle *eng)
      * visibility of older versions. */
     garry_mutex_lock(&eng->txn_slot_mutex);
     snapshot_count = eng->active_count;
-    for (i = 0; i < snapshot_count; i++) snapshot[i] = eng->active_txns[i];
+    for (i = 0; i < snapshot_count; i++)
+        snapshot[i] = eng->active_txns[i];
     garry_mutex_unlock(&eng->txn_slot_mutex);
 
-    for (pid = 1; pid < eng->header.total_pages; pid++) {
+    for (pid = 1; pid < eng->header.total_pages; pid++)
+    {
         buf = garry_pool_try_pin(eng->pool, pid);
-        if (buf != NULL) {
+        if (buf != NULL)
+        {
             garry_page_type pt;
-            pt = ((garry_page_header*)*buf)->page_type;
-            if (pt == GARRY_NODE_CHAIN) {
+            pt = ((garry_page_header *)*buf)->page_type;
+            if (pt == GARRY_NODE_CHAIN)
+            {
                 garry_rwlock_wrlock(&eng->root_lock);
-                garry_chain_page_prune(eng->pool, *buf, (garry_u32)eng->page_size,
-                                       snapshot, snapshot_count);
+                garry_chain_page_prune(eng->pool, *buf, (garry_u32)eng->page_size, snapshot,
+                                       snapshot_count);
                 garry_pool_mark_dirty(eng->pool, pid);
                 garry_rwlock_wrunlock(&eng->root_lock);
             }

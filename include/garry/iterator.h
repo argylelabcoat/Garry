@@ -38,9 +38,8 @@ typedef struct garry_database garry_database;
  * The key and value pointers are only valid for the duration of this
  * callback. Copy them if you need them beyond the callback scope.
  */
-typedef void (*garry_visitor)(const garry_u8 *key, garry_i32 klen,
-                               const garry_u8 *val, garry_i32 vlen,
-                               void *user_data);
+typedef void (*garry_visitor)(const garry_u8 *key, garry_i32 klen, const garry_u8 *val,
+                              garry_i32 vlen, void *user_data);
 
 /**
  * @brief Iterate over all key-value pairs matching a prefix.
@@ -59,8 +58,7 @@ typedef void (*garry_visitor)(const garry_u8 *key, garry_i32 klen,
  *       visitor — this may corrupt the iteration. Read-only operations
  *       (e.g. @ref garry_get) are safe.
  */
-GARRY_API void garry_for_each(garry_database *db, garry_txn txn,
-                                const garry_u8 *prefix, garry_i32 plen,
-                                garry_visitor visitor, void *user_data);
+GARRY_API void garry_for_each(garry_database *db, garry_txn txn, const garry_u8 *prefix,
+                              garry_i32 plen, garry_visitor visitor, void *user_data);
 
 #endif /* GARRY_ITERATOR_H */

@@ -22,14 +22,14 @@
 garry_engine_settings garry_default_engine_settings(void)
 {
     garry_engine_settings s;
-    s.page_size       = GARRY_DEFAULT_PAGE_SIZE;
-    s.compression     = GARRY_COMPRESS_NONE;
-    s.max_txns        = GARRY_DEFAULT_MAX_TXNS;
-    s.max_versions    = GARRY_DEFAULT_MAX_VERSIONS;
-    s.max_key_size    = GARRY_DEFAULT_MAX_KEY_SIZE;
-    s.max_subscripts  = GARRY_DEFAULT_MAX_SUBSCRIPTS;
-    s.btree_flags     = 0;
-    s.pool_size       = GARRY_DEFAULT_POOL_SIZE;
+    s.page_size = GARRY_DEFAULT_PAGE_SIZE;
+    s.compression = GARRY_COMPRESS_NONE;
+    s.max_txns = GARRY_DEFAULT_MAX_TXNS;
+    s.max_versions = GARRY_DEFAULT_MAX_VERSIONS;
+    s.max_key_size = GARRY_DEFAULT_MAX_KEY_SIZE;
+    s.max_subscripts = GARRY_DEFAULT_MAX_SUBSCRIPTS;
+    s.btree_flags = 0;
+    s.pool_size = GARRY_DEFAULT_POOL_SIZE;
     s.max_record_size = GARRY_DEFAULT_MAX_RECORD_SIZE;
     return s;
 }

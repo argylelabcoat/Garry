@@ -30,8 +30,9 @@
  * with @ref garry_make_key_2 / @ref garry_make_key_3 / @ref garry_make_key_4,
  * then call @ref garry_encode_key_tuple to produce the final byte array.
  */
-typedef struct {
-    const garry_byte* parts[GARRY_MAX_SUBSCRIPTS]; ///< Pointers to each part.
+typedef struct
+{
+    const garry_byte *parts[GARRY_MAX_SUBSCRIPTS]; ///< Pointers to each part.
     garry_i32 counts[GARRY_MAX_SUBSCRIPTS];        ///< Length of each part.
     garry_i32 count;                               ///< Number of active parts.
 } garry_key_tuple;
@@ -73,7 +74,8 @@ GARRY_API garry_key_tuple garry_make_key_3(const char *p1, const char *p2, const
  * @param p4  Fourth part.
  * @return A @ref garry_key_tuple with 4 active parts.
  */
-GARRY_API garry_key_tuple garry_make_key_4(const char *p1, const char *p2, const char *p3, const char *p4);
+GARRY_API garry_key_tuple garry_make_key_4(const char *p1, const char *p2, const char *p3,
+                                           const char *p4);
 
 /**
  * @brief Encode a key tuple into the internal byte format.
@@ -96,7 +98,7 @@ GARRY_API void garry_encode_key_tuple(const garry_key_tuple *t, garry_byte_array
  *
  * Standard lexicographic comparison suitable for B-tree ordering.
  */
-GARRY_API garry_i32 garry_byte_compare(const garry_byte *a, garry_i32 alen,
-                                        const garry_byte *b, garry_i32 blen);
+GARRY_API garry_i32 garry_byte_compare(const garry_byte *a, garry_i32 alen, const garry_byte *b,
+                                       garry_i32 blen);
 
 #endif /* GARRY_ENCODING_H */

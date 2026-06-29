@@ -31,19 +31,19 @@
  *   to nothing.
  */
 #if defined(_WIN32) || defined(__CYGWIN__)
-  #ifdef GARRY_BUILDING_DLL
-    #define GARRY_API __declspec(dllexport)
-  #elif defined(GARRY_DLL)
-    #define GARRY_API __declspec(dllimport)
-  #else
-    #define GARRY_API
-  #endif
+#ifdef GARRY_BUILDING_DLL
+#define GARRY_API __declspec(dllexport)
+#elif defined(GARRY_DLL)
+#define GARRY_API __declspec(dllimport)
 #else
-  #if __GNUC__ >= 4
-    #define GARRY_API __attribute__((visibility("default")))
-  #else
-    #define GARRY_API
-  #endif
+#define GARRY_API
+#endif
+#else
+#if __GNUC__ >= 4
+#define GARRY_API __attribute__((visibility("default")))
+#else
+#define GARRY_API
+#endif
 #endif
 
 #endif /* GARRY_EXPORT_H */

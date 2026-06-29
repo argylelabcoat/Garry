@@ -21,19 +21,19 @@
 #include <stddef.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #define LZ4_MAX_INPUT_SIZE 65536
 
-size_t lz4_compress_bound(size_t src_len);
+    size_t lz4_compress_bound(size_t src_len);
 
-char *lz4_compress(const char *src, size_t src_len, size_t *out_len);
+    char *lz4_compress(const char *src, size_t src_len, size_t *out_len);
 
-char *lz4_decompress(const char *src, size_t src_len,
-                     size_t dst_capacity, size_t *out_len);
+    char *lz4_decompress(const char *src, size_t src_len, size_t dst_capacity, size_t *out_len);
 
-void lz4_free(void *ptr);
+    void lz4_free(void *ptr);
 
 #ifdef __cplusplus
 }

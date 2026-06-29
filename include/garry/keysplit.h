@@ -31,8 +31,7 @@
  * Example: @c garry_key_split("users/matthew/articles", '/', buf)
  * produces a 3-part key of 20 bytes. The delimiter itself is not stored.
  */
-GARRY_API garry_i32 garry_key_split(const char *str, char delimiter,
-                                     garry_byte_array out);
+GARRY_API garry_i32 garry_key_split(const char *str, char delimiter, garry_byte_array out);
 
 /**
  * @brief Decode a length-prefixed key back to a delimiter-separated string.
@@ -43,8 +42,8 @@ GARRY_API garry_i32 garry_key_split(const char *str, char delimiter,
  * @param out_size  Capacity of @p out in bytes.
  * @return Number of segments decoded, or 0 if @p out_size is too small.
  */
-GARRY_API garry_i32 garry_key_unsplit(const garry_byte *key, garry_i32 klen,
-                                        char delimiter, char *out, garry_i32 out_size);
+GARRY_API garry_i32 garry_key_unsplit(const garry_byte *key, garry_i32 klen, char delimiter,
+                                      char *out, garry_i32 out_size);
 
 /**
  * @brief Make a single-part key from a C string.
@@ -66,7 +65,6 @@ GARRY_API garry_i32 garry_make_key(const char *str, garry_byte_array out);
  * General-purpose variant when the number of parts is not known at
  * compile time.
  */
-GARRY_API garry_i32 garry_make_key_parts(const char **parts, garry_i32 count,
-                                          garry_byte_array out);
+GARRY_API garry_i32 garry_make_key_parts(const char **parts, garry_i32 count, garry_byte_array out);
 
 #endif /* GARRY_KEYSPLIT_H */

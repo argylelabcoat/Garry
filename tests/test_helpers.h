@@ -5,12 +5,15 @@
 
 static int garry_test_failures = 0;
 
-#define GARRY_CHECK(cond) do { \
-    if (!(cond)) { \
-        printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond); \
-        garry_test_failures++; \
-    } \
-} while (0)
+#define GARRY_CHECK(cond)                                          \
+    do                                                             \
+    {                                                              \
+        if (!(cond))                                               \
+        {                                                          \
+            printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond); \
+            garry_test_failures++;                                 \
+        }                                                          \
+    } while (0)
 
 #include <string.h>
 
@@ -28,22 +31,24 @@ static garry_byte garry_test_byte_from_int(int n)
  * Widespread in tests for creating key/value byte_arrays from string literals.
  * C89 adaptation: uses output parameter (C89 cannot return arrays by value). */
 #ifdef __GNUC__
-static __attribute__((unused)) void garry_test_encode_key(garry_byte_array out, const char* s)
+static __attribute__((unused)) void garry_test_encode_key(garry_byte_array out, const char *s)
 #else
-static void garry_test_encode_key(garry_byte_array out, const char* s)
+static void garry_test_encode_key(garry_byte_array out, const char *s)
 #endif
 {
     size_t len;
     size_t i;
     memset(out, 0, 256);
     len = strlen(s);
-    if (len > 256) len = 256;
-    for (i = 0; i < len; i++) {
+    if (len > 256)
+        len = 256;
+    for (i = 0; i < len; i++)
+    {
         out[i] = (garry_byte)(unsigned char)s[i];
     }
 }
 
 #define ENCODE_KEY(out, s) garry_test_encode_key(out, s)
-#define BYTE_FROM_INT(n) garry_test_byte_from_int(n)
+#define BYTE_FROM_INT(n)   garry_test_byte_from_int(n)
 
 #endif /* GARRY_TEST_HELPERS_H */

@@ -22,31 +22,25 @@
 #include <string.h>
 #include <stdlib.h>
 
-static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
-                                   const garry_byte *key, garry_i32 klen,
-                                   const garry_byte *value, garry_i32 vlen,
-                                   garry_byte *sep, garry_i32 *sep_len,
-                                   garry_i32 *new_child);
+static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page, const garry_byte *key,
+                                   garry_i32 klen, const garry_byte *value, garry_i32 vlen,
+                                   garry_byte *sep, garry_i32 *sep_len, garry_i32 *new_child);
 
-static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
-                             garry_btree_node *node,
-                             const garry_byte *key, garry_i32 klen,
-                             const garry_byte *value, garry_i32 vlen,
-                             garry_byte *sep, garry_i32 *sep_len,
+static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page, garry_btree_node *node,
+                             const garry_byte *key, garry_i32 klen, const garry_byte *value,
+                             garry_i32 vlen, garry_byte *sep, garry_i32 *sep_len,
                              garry_i32 *new_page);
 
-static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
-                                 garry_btree_node *node, garry_i32 insert_idx,
-                                 const garry_byte *insert_key, garry_i32 insert_klen,
-                                 garry_i32 insert_child,
-                                 garry_byte *sep, garry_i32 *sep_len,
-                                 garry_i32 *new_page);
+static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page, garry_btree_node *node,
+                                 garry_i32 insert_idx, const garry_byte *insert_key,
+                                 garry_i32 insert_klen, garry_i32 insert_child, garry_byte *sep,
+                                 garry_i32 *sep_len, garry_i32 *new_page);
 
 static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
-                             garry_btree_node *parent, garry_i32 child_idx);
+                                  garry_btree_node *parent, garry_i32 child_idx);
 
-static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page,
-                                   const garry_byte *key, garry_i32 klen);
+static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page, const garry_byte *key,
+                                   garry_i32 klen);
 
 /**
  * Insert a key-value pair into the B-tree rooted at *root.
@@ -54,9 +48,8 @@ static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page,
  * If the root splits, allocates a new root node and updates *root.
  * Returns true if the key was inserted or updated.
  */
-garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root,
-                              const garry_byte *key, garry_i32 klen,
-                              const garry_byte *value, garry_i32 vlen)
+garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root, const garry_byte *key,
+                              garry_i32 klen, const garry_byte *value, garry_i32 vlen)
 {
     garry_bool inserted;
     garry_byte sep[GARRY_MAX_RECORD_SIZE];
@@ -72,13 +65,15 @@ garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root,
     sep_len = 0;
     garry_load_node(pool, *root, &new_root_node);
     orig_root_entries = new_root_node.entry_count;
-    inserted = btree_insert_rec(pool, *root, key, klen, value, vlen,
-                                sep, &sep_len, &new_child);
-    if (new_child >= 0) {
+    inserted = btree_insert_rec(pool, *root, key, klen, value, vlen, sep, &sep_len, &new_child);
+    if (new_child >= 0)
+    {
         garry_load_node(pool, *root, &new_root_node);
-        if (new_root_node.entry_count <= orig_root_entries) {
+        if (new_root_node.entry_count <= orig_root_entries)
+        {
             new_root_page = garry_allocate_internal(pool);
-            if (new_root_page < 0) {
+            if (new_root_page < 0)
+            {
                 return 0;
             }
             new_root_node.kind = GARRY_NODE_INTERNAL;
@@ -92,7 +87,8 @@ garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root,
             new_root_node.entry_count = 1;
             new_root_node.next_page = -1;
             new_root_node.prev_page = -1;
-            for (i = 2; i < GARRY_MAX_KEYS_PER_NODE + 1; i++) {
+            for (i = 2; i < GARRY_MAX_KEYS_PER_NODE + 1; i++)
+            {
                 new_root_node.children[i] = 0;
             }
             garry_store_node(pool, new_root_page, &new_root_node);
@@ -103,11 +99,9 @@ garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root,
     return inserted;
 }
 
-static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
-                                   const garry_byte *key, garry_i32 klen,
-                                   const garry_byte *value, garry_i32 vlen,
-                                   garry_byte *sep, garry_i32 *sep_len,
-                                   garry_i32 *new_child)
+static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page, const garry_byte *key,
+                                   garry_i32 klen, const garry_byte *value, garry_i32 vlen,
+                                   garry_byte *sep, garry_i32 *sep_len, garry_i32 *new_child)
 {
     garry_btree_node node;
     garry_i32 idx;
@@ -122,9 +116,11 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
     *sep_len = 0;
     garry_load_node(pool, page, &node);
 
-    if (node.kind == GARRY_NODE_LEAF) {
+    if (node.kind == GARRY_NODE_LEAF)
+    {
         idx = garry_leaf_find(&node, key, klen);
-        if (idx >= 0) {
+        if (idx >= 0)
+        {
             memcpy(node.keys[idx], key, sizeof(garry_byte_array));
             node.key_lens[idx] = klen;
             memcpy(node.values[idx], value, sizeof(garry_byte_array));
@@ -133,11 +129,14 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
             garry_pool_mark_dirty(pool, page);
             return 1;
         }
-        if (node.entry_count < GARRY_MAX_KEYS_PER_NODE - 1) {
+        if (node.entry_count < GARRY_MAX_KEYS_PER_NODE - 1)
+        {
             i = node.entry_count - 1;
             idx = node.entry_count;
-            while (i >= 0 && idx == node.entry_count) {
-                if (garry_byte_compare(key, klen, node.keys[i], node.key_lens[i]) < 0) {
+            while (i >= 0 && idx == node.entry_count)
+            {
+                if (garry_byte_compare(key, klen, node.keys[i], node.key_lens[i]) < 0)
+                {
                     idx = i;
                 }
                 i = i - 1;
@@ -147,21 +146,25 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
             garry_pool_mark_dirty(pool, page);
             return inserted;
         }
-        inserted = leaf_split(pool, page, &node, key, klen, value, vlen,
-                              sep, sep_len, new_child);
+        inserted = leaf_split(pool, page, &node, key, klen, value, vlen, sep, sep_len, new_child);
         garry_store_node(pool, page, &node);
         return inserted;
-    } else {
+    }
+    else
+    {
         idx = garry_internal_find(&node, key, klen);
         child = node.children[idx];
         child_sep_len = 0;
         child_new = -1;
-        inserted = btree_insert_rec(pool, child, key, klen, value, vlen,
-                                    child_sep, &child_sep_len, &child_new);
-        if (inserted && child_new >= 0) {
-            if (node.entry_count < GARRY_MAX_KEYS_PER_NODE) {
+        inserted = btree_insert_rec(pool, child, key, klen, value, vlen, child_sep, &child_sep_len,
+                                    &child_new);
+        if (inserted && child_new >= 0)
+        {
+            if (node.entry_count < GARRY_MAX_KEYS_PER_NODE)
+            {
                 i = node.entry_count;
-                while (i > idx) {
+                while (i > idx)
+                {
                     memcpy(node.keys[i], node.keys[i - 1], sizeof(garry_byte_array));
                     node.key_lens[i] = node.key_lens[i - 1];
                     node.children[i + 1] = node.children[i];
@@ -173,9 +176,12 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
                 node.entry_count = node.entry_count + 1;
                 garry_store_node(pool, page, &node);
                 garry_pool_mark_dirty(pool, page);
-            } else {
-                if (!internal_split(pool, page, &node, idx, child_sep, child_sep_len,
-                                   child_new, sep, sep_len, new_child)) {
+            }
+            else
+            {
+                if (!internal_split(pool, page, &node, idx, child_sep, child_sep_len, child_new,
+                                    sep, sep_len, new_child))
+                {
                     return 0;
                 }
             }
@@ -192,11 +198,9 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
  * and a newly allocated right node (right half). The first key of the
  * right node becomes the separator promoted to the parent.
  */
-static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
-                             garry_btree_node *node,
-                             const garry_byte *key, garry_i32 klen,
-                             const garry_byte *value, garry_i32 vlen,
-                             garry_byte *sep, garry_i32 *sep_len,
+static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page, garry_btree_node *node,
+                             const garry_byte *key, garry_i32 klen, const garry_byte *value,
+                             garry_i32 vlen, garry_byte *sep, garry_i32 *sep_len,
                              garry_i32 *new_page)
 {
     garry_i32 mid, right_page, i, insert_pos, all_count;
@@ -210,24 +214,31 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
 
     tmp_buf = malloc(sizeof(garry_byte_array) * n + sizeof(garry_i32) * n +
                      sizeof(garry_byte_array) * n + sizeof(garry_i32) * n);
-    if (!tmp_buf) return 0;
+    if (!tmp_buf)
+        return 0;
 
-    tmp_keys = (garry_byte_array*)tmp_buf;
-    tmp_lens = (garry_i32*)(tmp_buf + sizeof(garry_byte_array) * n);
-    tmp_values = (garry_byte_array*)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n);
-    tmp_vlens = (garry_i32*)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n + sizeof(garry_byte_array) * n);
+    tmp_keys = (garry_byte_array *)tmp_buf;
+    tmp_lens = (garry_i32 *)(tmp_buf + sizeof(garry_byte_array) * n);
+    tmp_values =
+        (garry_byte_array *)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n);
+    tmp_vlens = (garry_i32 *)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n +
+                              sizeof(garry_byte_array) * n);
 
     all_count = node->entry_count + 1;
     mid = all_count / 2;
     insert_pos = node->entry_count;
-    for (i = 0; i < node->entry_count; i++) {
-        if (insert_pos == node->entry_count) {
-            if (garry_byte_compare(key, klen, node->keys[i], node->key_lens[i]) < 0) {
+    for (i = 0; i < node->entry_count; i++)
+    {
+        if (insert_pos == node->entry_count)
+        {
+            if (garry_byte_compare(key, klen, node->keys[i], node->key_lens[i]) < 0)
+            {
                 insert_pos = i;
             }
         }
     }
-    for (i = 0; i < insert_pos; i++) {
+    for (i = 0; i < insert_pos; i++)
+    {
         memcpy(tmp_keys[i], node->keys[i], sizeof(garry_byte_array));
         tmp_lens[i] = node->key_lens[i];
         memcpy(tmp_values[i], node->values[i], sizeof(garry_byte_array));
@@ -237,7 +248,8 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
     tmp_lens[insert_pos] = klen;
     memcpy(tmp_values[insert_pos], value, sizeof(garry_byte_array));
     tmp_vlens[insert_pos] = vlen;
-    for (i = insert_pos; i < node->entry_count; i++) {
+    for (i = insert_pos; i < node->entry_count; i++)
+    {
         memcpy(tmp_keys[i + 1], node->keys[i], sizeof(garry_byte_array));
         tmp_lens[i + 1] = node->key_lens[i];
         memcpy(tmp_values[i + 1], node->values[i], sizeof(garry_byte_array));
@@ -245,14 +257,16 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
     }
 
     right_page = garry_allocate_leaf(pool);
-    if (right_page < 0) {
+    if (right_page < 0)
+    {
         free(tmp_buf);
         return 0;
     }
     garry_load_node(pool, right_page, &right_node);
     right_node.kind = GARRY_NODE_LEAF;
     right_node.entry_count = all_count - mid;
-    for (i = 0; i < right_node.entry_count; i++) {
+    for (i = 0; i < right_node.entry_count; i++)
+    {
         memcpy(right_node.keys[i], tmp_keys[mid + i], sizeof(garry_byte_array));
         right_node.key_lens[i] = tmp_lens[mid + i];
         memcpy(right_node.values[i], tmp_values[mid + i], sizeof(garry_byte_array));
@@ -260,7 +274,8 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
     }
 
     node->entry_count = mid;
-    for (i = 0; i < node->entry_count; i++) {
+    for (i = 0; i < node->entry_count; i++)
+    {
         memcpy(node->keys[i], tmp_keys[i], sizeof(garry_byte_array));
         node->key_lens[i] = tmp_lens[i];
         memcpy(node->values[i], tmp_values[i], sizeof(garry_byte_array));
@@ -291,12 +306,10 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
  * left node keeps keys[0..mid-1], the right node gets keys[mid+1..end].
  * Child pointers are split accordingly.
  */
-static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
-                                 garry_btree_node *node, garry_i32 insert_idx,
-                                 const garry_byte *insert_key, garry_i32 insert_klen,
-                                 garry_i32 insert_child,
-                                 garry_byte *sep, garry_i32 *sep_len,
-                                 garry_i32 *new_page)
+static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page, garry_btree_node *node,
+                                 garry_i32 insert_idx, const garry_byte *insert_key,
+                                 garry_i32 insert_klen, garry_i32 insert_child, garry_byte *sep,
+                                 garry_i32 *sep_len, garry_i32 *new_page)
 {
     garry_byte_array *tmp_keys;
     garry_i32 *tmp_lens;
@@ -306,18 +319,20 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
     char *tmp_buf;
     garry_i32 n = GARRY_MAX_KEYS_PER_NODE + 1;
 
-    tmp_buf = malloc(sizeof(garry_byte_array) * n + sizeof(garry_i32) * n +
-                     sizeof(garry_i32) * (n + 1));
-    if (!tmp_buf) return 0;
+    tmp_buf =
+        malloc(sizeof(garry_byte_array) * n + sizeof(garry_i32) * n + sizeof(garry_i32) * (n + 1));
+    if (!tmp_buf)
+        return 0;
 
-    tmp_keys = (garry_byte_array*)tmp_buf;
-    tmp_lens = (garry_i32*)(tmp_buf + sizeof(garry_byte_array) * n);
-    tmp_children = (garry_i32*)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n);
+    tmp_keys = (garry_byte_array *)tmp_buf;
+    tmp_lens = (garry_i32 *)(tmp_buf + sizeof(garry_byte_array) * n);
+    tmp_children = (garry_i32 *)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n);
 
     all_count = node->entry_count + 1;
     mid = all_count / 2;
 
-    for (i = 0; i < insert_idx; i++) {
+    for (i = 0; i < insert_idx; i++)
+    {
         memcpy(tmp_keys[i], node->keys[i], sizeof(garry_byte_array));
         tmp_lens[i] = node->key_lens[i];
         tmp_children[i] = node->children[i];
@@ -326,14 +341,16 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
     tmp_lens[insert_idx] = insert_klen;
     tmp_children[insert_idx] = node->children[insert_idx];
     tmp_children[insert_idx + 1] = insert_child;
-    for (i = insert_idx + 1; i <= node->entry_count; i++) {
+    for (i = insert_idx + 1; i <= node->entry_count; i++)
+    {
         memcpy(tmp_keys[i], node->keys[i - 1], sizeof(garry_byte_array));
         tmp_lens[i] = node->key_lens[i - 1];
         tmp_children[i + 1] = node->children[i];
     }
 
     right_page = garry_allocate_internal(pool);
-    if (right_page < 0) {
+    if (right_page < 0)
+    {
         free(tmp_buf);
         return 0;
     }
@@ -348,20 +365,24 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
     right_node.next_page = node->next_page;
     right_node.prev_page = page;
 
-    for (i = 0; i < right_node.entry_count; i++) {
+    for (i = 0; i < right_node.entry_count; i++)
+    {
         memcpy(right_node.keys[i], tmp_keys[mid + 1 + i], sizeof(garry_byte_array));
         right_node.key_lens[i] = tmp_lens[mid + 1 + i];
     }
-    for (i = 0; i <= right_node.entry_count; i++) {
+    for (i = 0; i <= right_node.entry_count; i++)
+    {
         right_node.children[i] = tmp_children[mid + 1 + i];
     }
 
     node->entry_count = left_count;
-    for (i = 0; i < node->entry_count; i++) {
+    for (i = 0; i < node->entry_count; i++)
+    {
         memcpy(node->keys[i], tmp_keys[i], sizeof(garry_byte_array));
         node->key_lens[i] = tmp_lens[i];
     }
-    for (i = 0; i <= node->entry_count; i++) {
+    for (i = 0; i <= node->entry_count; i++)
+    {
         node->children[i] = tmp_children[i];
     }
 
@@ -389,7 +410,7 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
  * Removes the separator key from the parent after a successful merge.
  */
 static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
-                             garry_btree_node *parent, garry_i32 child_idx)
+                                  garry_btree_node *parent, garry_i32 child_idx)
 {
     garry_i32 left_page, right_page, child_page;
     garry_btree_node left_node;
@@ -397,33 +418,41 @@ static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page
     garry_i32 i, base;
 
     child_page = parent->children[child_idx];
-    if (child_idx > 0) {
+    if (child_idx > 0)
+    {
         left_page = parent->children[child_idx - 1];
         garry_load_node(pool, left_page, &left_node);
         garry_load_node(pool, child_page, &tmp);
         {
             garry_i32 merged_keys = left_node.entry_count + tmp.entry_count;
-            if (left_node.kind == GARRY_NODE_INTERNAL) {
+            if (left_node.kind == GARRY_NODE_INTERNAL)
+            {
                 merged_keys = merged_keys + 1;
             }
-            if (merged_keys > GARRY_MAX_KEYS_PER_NODE) {
+            if (merged_keys > GARRY_MAX_KEYS_PER_NODE)
+            {
                 return GARRY_FALSE;
             }
         }
-        if (left_node.kind == GARRY_NODE_INTERNAL) {
-            memcpy(left_node.keys[left_node.entry_count], parent->keys[child_idx - 1], sizeof(garry_byte_array));
+        if (left_node.kind == GARRY_NODE_INTERNAL)
+        {
+            memcpy(left_node.keys[left_node.entry_count], parent->keys[child_idx - 1],
+                   sizeof(garry_byte_array));
             left_node.key_lens[left_node.entry_count] = parent->key_lens[child_idx - 1];
             left_node.entry_count = left_node.entry_count + 1;
         }
         base = left_node.entry_count;
-        for (i = 0; i < tmp.entry_count; i++) {
+        for (i = 0; i < tmp.entry_count; i++)
+        {
             memcpy(left_node.keys[base + i], tmp.keys[i], sizeof(garry_byte_array));
             left_node.key_lens[base + i] = tmp.key_lens[i];
             memcpy(left_node.values[base + i], tmp.values[i], sizeof(garry_byte_array));
             left_node.value_lens[base + i] = tmp.value_lens[i];
         }
-        if (tmp.kind == GARRY_NODE_INTERNAL) {
-            for (i = 0; i <= tmp.entry_count; i++) {
+        if (tmp.kind == GARRY_NODE_INTERNAL)
+        {
+            for (i = 0; i <= tmp.entry_count; i++)
+            {
                 left_node.children[base + i] = tmp.children[i];
             }
         }
@@ -433,7 +462,8 @@ static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page
         garry_pool_mark_dirty(pool, left_page);
 
         i = child_idx - 1;
-        while (i < parent->entry_count - 1) {
+        while (i < parent->entry_count - 1)
+        {
             memcpy(parent->keys[i], parent->keys[i + 1], sizeof(garry_byte_array));
             parent->key_lens[i] = parent->key_lens[i + 1];
             parent->children[i + 1] = parent->children[i + 2];
@@ -442,7 +472,9 @@ static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page
         parent->entry_count = parent->entry_count - 1;
         garry_store_node(pool, parent_page, parent);
         garry_pool_mark_dirty(pool, parent_page);
-    } else {
+    }
+    else
+    {
         right_page = parent->children[child_idx + 1];
         garry_load_node(pool, child_page, &tmp);
         {
@@ -450,27 +482,34 @@ static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page
             garry_load_node(pool, right_page, &right_node);
             {
                 garry_i32 merged_keys = tmp.entry_count + right_node.entry_count;
-                if (tmp.kind == GARRY_NODE_INTERNAL) {
+                if (tmp.kind == GARRY_NODE_INTERNAL)
+                {
                     merged_keys = merged_keys + 1;
                 }
-                if (merged_keys > GARRY_MAX_KEYS_PER_NODE) {
+                if (merged_keys > GARRY_MAX_KEYS_PER_NODE)
+                {
                     return GARRY_FALSE;
                 }
             }
-            if (tmp.kind == GARRY_NODE_INTERNAL) {
-                memcpy(tmp.keys[tmp.entry_count], parent->keys[child_idx], sizeof(garry_byte_array));
+            if (tmp.kind == GARRY_NODE_INTERNAL)
+            {
+                memcpy(tmp.keys[tmp.entry_count], parent->keys[child_idx],
+                       sizeof(garry_byte_array));
                 tmp.key_lens[tmp.entry_count] = parent->key_lens[child_idx];
                 tmp.entry_count = tmp.entry_count + 1;
             }
             base = tmp.entry_count;
-            for (i = 0; i < right_node.entry_count; i++) {
+            for (i = 0; i < right_node.entry_count; i++)
+            {
                 memcpy(tmp.keys[base + i], right_node.keys[i], sizeof(garry_byte_array));
                 tmp.key_lens[base + i] = right_node.key_lens[i];
                 memcpy(tmp.values[base + i], right_node.values[i], sizeof(garry_byte_array));
                 tmp.value_lens[base + i] = right_node.value_lens[i];
             }
-            if (right_node.kind == GARRY_NODE_INTERNAL) {
-                for (i = 0; i <= right_node.entry_count; i++) {
+            if (right_node.kind == GARRY_NODE_INTERNAL)
+            {
+                for (i = 0; i <= right_node.entry_count; i++)
+                {
                     tmp.children[base + i] = right_node.children[i];
                 }
             }
@@ -481,7 +520,8 @@ static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page
         garry_pool_mark_dirty(pool, child_page);
 
         i = child_idx;
-        while (i < parent->entry_count - 1) {
+        while (i < parent->entry_count - 1)
+        {
             memcpy(parent->keys[i], parent->keys[i + 1], sizeof(garry_byte_array));
             parent->key_lens[i] = parent->key_lens[i + 1];
             parent->children[i + 1] = parent->children[i + 2];
@@ -494,19 +534,22 @@ static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page
     return GARRY_TRUE;
 }
 
-static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page,
-                                   const garry_byte *key, garry_i32 klen)
+static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page, const garry_byte *key,
+                                   garry_i32 klen)
 {
     garry_btree_node node;
     garry_i32 idx, i, child;
     garry_bool underflowed;
 
     garry_load_node(pool, page, &node);
-    if (node.kind == GARRY_NODE_LEAF) {
+    if (node.kind == GARRY_NODE_LEAF)
+    {
         idx = garry_leaf_find(&node, key, klen);
-        if (idx >= 0) {
+        if (idx >= 0)
+        {
             i = idx;
-            while (i < node.entry_count - 1) {
+            while (i < node.entry_count - 1)
+            {
                 memcpy(node.keys[i], node.keys[i + 1], sizeof(garry_byte_array));
                 node.key_lens[i] = node.key_lens[i + 1];
                 memcpy(node.values[i], node.values[i + 1], sizeof(garry_byte_array));
@@ -518,27 +561,32 @@ static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page,
             garry_pool_mark_dirty(pool, page);
         }
         return (node.entry_count < GARRY_BTREE_MIN_KEYS);
-    } else {
+    }
+    else
+    {
         idx = garry_internal_find(&node, key, klen);
         child = node.children[idx];
         underflowed = btree_delete_rec(pool, child, key, klen);
-        if (underflowed) {
+        if (underflowed)
+        {
             rebalance_child(pool, page, &node, idx);
         }
         return (node.entry_count < GARRY_BTREE_MIN_KEYS);
     }
 }
 
-void garry_btree_delete(garry_buffer_pool *pool, garry_i32 *root,
-                        const garry_byte *key, garry_i32 klen)
+void garry_btree_delete(garry_buffer_pool *pool, garry_i32 *root, const garry_byte *key,
+                        garry_i32 klen)
 {
     garry_bool underflowed;
     garry_btree_node rnode;
 
     underflowed = btree_delete_rec(pool, *root, key, klen);
-    if (underflowed) {
+    if (underflowed)
+    {
         garry_load_node(pool, *root, &rnode);
-        if (rnode.kind == GARRY_NODE_INTERNAL && rnode.entry_count == 0) {
+        if (rnode.kind == GARRY_NODE_INTERNAL && rnode.entry_count == 0)
+        {
             garry_pool_free_page(pool, *root);
             *root = rnode.children[0];
         }

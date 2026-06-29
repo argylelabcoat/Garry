@@ -300,6 +300,7 @@ int main(void)
     test_version_chain_multiple_versions_visibility();
     test_version_chain_overflow_append();
 
-    if (garry_test_failures == 0) printf("test_data_structures: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_data_structures: ALL PASSED\n");
     return garry_test_failures;
 }

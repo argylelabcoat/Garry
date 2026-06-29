@@ -31,9 +31,8 @@
  * @param vlen   Value length in bytes
  * @return GARRY_TRUE on success, GARRY_FALSE on allocation failure
  */
-garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root,
-                              const garry_byte *key, garry_i32 klen,
-                              const garry_byte *value, garry_i32 vlen);
+garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root, const garry_byte *key,
+                              garry_i32 klen, const garry_byte *value, garry_i32 vlen);
 
 /**
  * @brief Delete a key from the B-tree.
@@ -47,7 +46,7 @@ garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root,
  * @param key   Key bytes to delete
  * @param klen  Key length in bytes
  */
-void garry_btree_delete(garry_buffer_pool *pool, garry_i32 *root,
-                        const garry_byte *key, garry_i32 klen);
+void garry_btree_delete(garry_buffer_pool *pool, garry_i32 *root, const garry_byte *key,
+                        garry_i32 klen);
 
 #endif /* GARRY_BTREE_MODIFY_H */

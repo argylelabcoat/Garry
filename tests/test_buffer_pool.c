@@ -9,7 +9,8 @@
 #include "buffer_pool.h"
 #include "test_helpers.h"
 
-static void test_create_pool(void) {
+static void test_create_pool(void)
+{
     garry_buffer_pool *pool;
     pool = garry_pool_create("tp_create.db", 2, 4096);
     GARRY_CHECK(pool != NULL);
@@ -17,7 +18,8 @@ static void test_create_pool(void) {
     garry_pool_close(pool);
 }
 
-static void test_allocate_and_pin(void) {
+static void test_allocate_and_pin(void)
+{
     garry_buffer_pool *pool;
     garry_i32 pid;
     garry_page_buffer *buf;
@@ -33,7 +35,8 @@ static void test_allocate_and_pin(void) {
     garry_pool_close(pool);
 }
 
-static void test_evicts_clean_page(void) {
+static void test_evicts_clean_page(void)
+{
     garry_buffer_pool *pool;
     garry_i32 p1, p2, p3;
     pool = garry_pool_create("tp_evict.db", 2, 4096);
@@ -46,7 +49,8 @@ static void test_evicts_clean_page(void) {
     garry_pool_close(pool);
 }
 
-static void test_does_not_evict_pinned(void) {
+static void test_does_not_evict_pinned(void)
+{
     garry_buffer_pool *pool;
     garry_i32 p1, result;
     garry_page_buffer *buf;
@@ -60,7 +64,8 @@ static void test_does_not_evict_pinned(void) {
     garry_pool_close(pool);
 }
 
-static void test_dirty_flushed_on_evict(void) {
+static void test_dirty_flushed_on_evict(void)
+{
     garry_buffer_pool *pool;
     garry_i32 p1, p2, p3;
     pool = garry_pool_create("tp_dirty.db", 2, 4096);
@@ -74,7 +79,8 @@ static void test_dirty_flushed_on_evict(void) {
     garry_pool_close(pool);
 }
 
-static void test_pin_count_underflow(void) {
+static void test_pin_count_underflow(void)
+{
     garry_buffer_pool *pool;
     garry_i32 p1;
     pool = garry_pool_create("tp_underflow.db", 2, 4096);
@@ -85,7 +91,8 @@ static void test_pin_count_underflow(void) {
     garry_pool_close(pool);
 }
 
-static void test_page_round_trip(void) {
+static void test_page_round_trip(void)
+{
     garry_buffer_pool *pool;
     garry_i32 pid;
     garry_page_buffer *p1;
@@ -109,7 +116,8 @@ static void test_page_round_trip(void) {
     garry_pool_close(pool);
 }
 
-static void test_multiple_pools(void) {
+static void test_multiple_pools(void)
+{
     garry_buffer_pool *pool1;
     garry_buffer_pool *pool2;
     garry_i32 p1, p2;
@@ -125,7 +133,8 @@ static void test_multiple_pools(void) {
     garry_pool_close(pool2);
 }
 
-static void test_free_list_reuses_page(void) {
+static void test_free_list_reuses_page(void)
+{
     garry_buffer_pool *pool;
     garry_i32 p1, p2, p3;
     pool = garry_pool_create("tp_freelist.db", 4, 4096);
@@ -145,7 +154,8 @@ static void test_free_list_reuses_page(void) {
     garry_pool_close(pool);
 }
 
-static void test_free_list_chain(void) {
+static void test_free_list_chain(void)
+{
     garry_buffer_pool *pool;
     garry_i32 p1, p2, p3, p4;
     pool = garry_pool_create("tp_freelist_chain.db", 4, 4096);
@@ -169,7 +179,8 @@ static void test_free_list_chain(void) {
     garry_pool_close(pool);
 }
 
-static void test_free_list_persists_in_header(void) {
+static void test_free_list_persists_in_header(void)
+{
     garry_buffer_pool *pool;
     garry_i32 p1;
     pool = garry_pool_create("tp_freelist_hdr.db", 4, 4096);
@@ -188,7 +199,8 @@ static void test_free_list_persists_in_header(void) {
     garry_pool_close(pool);
 }
 
-int main(void) {
+int main(void)
+{
     test_create_pool();
     test_allocate_and_pin();
     test_evicts_clean_page();
@@ -200,6 +212,7 @@ int main(void) {
     test_free_list_reuses_page();
     test_free_list_chain();
     test_free_list_persists_in_header();
-    if (garry_test_failures == 0) printf("test_buffer_pool: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_buffer_pool: ALL PASSED\n");
     return garry_test_failures;
 }

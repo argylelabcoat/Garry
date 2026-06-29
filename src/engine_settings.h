@@ -19,12 +19,13 @@
 #define GARRY_MAX_KEY_SIZE_CAPACITY   256
 #define GARRY_MAX_SUBSCRIPTS_CAPACITY 32
 
-#define GARRY_COMPRESS_NONE   0
-#define GARRY_COMPRESS_LZ4    1
+#define GARRY_COMPRESS_NONE 0
+#define GARRY_COMPRESS_LZ4  1
 
 #define GARRY_BTREE_FLAG_COMPRESS_KEYS 1
 
-typedef struct {
+typedef struct
+{
     garry_i32 page_size;
     garry_i32 compression;
     garry_i32 max_txns;

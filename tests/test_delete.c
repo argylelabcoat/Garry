@@ -87,6 +87,7 @@ int main(void)
 {
     test_delete_removes_key();
     test_delete_tombstone_persists();
-    if (garry_test_failures == 0) printf("test_delete: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_delete: ALL PASSED\n");
     return garry_test_failures;
 }

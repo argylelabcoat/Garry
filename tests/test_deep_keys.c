@@ -106,7 +106,9 @@ static void test_key_long_subscripts(void)
 
     memset(k, 0, sizeof(k));
     parts[0] = "short";
-    parts[1] = "this_is_a_very_long_subscript_that_exceeds_128_bytes_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    parts[1] =
+        "this_is_a_very_long_subscript_that_exceeds_128_bytes_"
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     klen = garry_make_key_parts(parts, 2, k);
     GARRY_CHECK(klen > 0);
 
@@ -140,6 +142,7 @@ int main(void)
     test_key_empty_subscripts();
     test_key_long_subscripts();
     test_make_key_parts_mixed_lengths();
-    if (garry_test_failures == 0) printf("test_deep_keys: ALL PASSED\n");
+    if (garry_test_failures == 0)
+        printf("test_deep_keys: ALL PASSED\n");
     return garry_test_failures;
 }

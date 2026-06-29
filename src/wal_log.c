@@ -17,15 +17,17 @@
 #include "wal_log.h"
 #include <string.h>
 
-garry_status_t garry_wal_log_init(garry_wal_log* wal, const char* log_path,
-                                  const char* checkpoint_path)
+garry_status_t garry_wal_log_init(garry_wal_log *wal, const char *log_path,
+                                  const char *checkpoint_path)
 {
     garry_file_descriptor fd;
-    if (log_path == NULL || checkpoint_path == NULL) {
+    if (log_path == NULL || checkpoint_path == NULL)
+    {
         return GARRY_ERR_INVALID_ARG;
     }
     fd = garry_file_open(log_path, GARRY_O_RDWR | GARRY_O_CREAT);
-    if (!fd.is_open) {
+    if (!fd.is_open)
+    {
         return GARRY_ERR_IO;
     }
     wal->fd = fd;
@@ -36,7 +38,7 @@ garry_status_t garry_wal_log_init(garry_wal_log* wal, const char* log_path,
     return GARRY_OK;
 }
 
-static garry_bool wal_write_record(garry_wal_log* wal, const garry_wal_record* rec)
+static garry_bool wal_write_record(garry_wal_log *wal, const garry_wal_record *rec)
 {
     garry_byte buf[GARRY_WAL_RECORD_SIZE];
     garry_i32 kind = (garry_i32)rec->kind;
@@ -56,14 +58,15 @@ static garry_bool wal_write_record(garry_wal_log* wal, const garry_wal_record* r
     return (n == GARRY_WAL_RECORD_SIZE) ? GARRY_TRUE : GARRY_FALSE;
 }
 
-garry_log_sequence_number garry_wal_log_append(garry_wal_log* wal,
-                                               const garry_wal_record* record)
+garry_log_sequence_number garry_wal_log_append(garry_wal_log *wal, const garry_wal_record *record)
 {
     garry_log_sequence_number lsn;
-    if (!wal->fd.is_open) return -1;
+    if (!wal->fd.is_open)
+        return -1;
     garry_mutex_lock(&wal->append_mutex);
     lsn = wal->last_lsn + 1;
-    if (!wal_write_record(wal, record)) {
+    if (!wal_write_record(wal, record))
+    {
         garry_mutex_unlock(&wal->append_mutex);
         return -1;
     }
@@ -72,15 +75,17 @@ garry_log_sequence_number garry_wal_log_append(garry_wal_log* wal,
     return lsn;
 }
 
-void garry_wal_log_flush(garry_wal_log* wal)
+void garry_wal_log_flush(garry_wal_log *wal)
 {
-    if (!wal->fd.is_open) return;
+    if (!wal->fd.is_open)
+        return;
     garry_file_sync(&wal->fd);
 }
 
-void garry_wal_log_close(garry_wal_log* wal)
+void garry_wal_log_close(garry_wal_log *wal)
 {
-    if (!wal->fd.is_open) return;
+    if (!wal->fd.is_open)
+        return;
     garry_file_sync(&wal->fd);
     garry_file_close(&wal->fd);
     garry_mutex_destroy(&wal->append_mutex);

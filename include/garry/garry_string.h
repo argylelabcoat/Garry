@@ -39,8 +39,8 @@ typedef struct garry_database garry_database;
  * Convenience wrapper: computes key and value lengths automatically and
  * delegates to @ref garry_set. The null terminators are not stored.
  */
-GARRY_API garry_status_t garry_set_str(garry_database *db, garry_txn txn,
-                                         const char *key, const char *value);
+GARRY_API garry_status_t garry_set_str(garry_database *db, garry_txn txn, const char *key,
+                                       const char *value);
 
 /**
  * @brief Retrieve a string value for a string key.
@@ -57,8 +57,7 @@ GARRY_API garry_status_t garry_set_str(garry_database *db, garry_txn txn,
  * fills the entire buffer, the last byte is set to '\0' to guarantee
  * null termination.
  */
-GARRY_API garry_status_t garry_get_str(garry_database *db, garry_txn txn,
-                                         const char *key, char *value,
-                                         garry_i32 value_size);
+GARRY_API garry_status_t garry_get_str(garry_database *db, garry_txn txn, const char *key,
+                                       char *value, garry_i32 value_size);
 
 #endif /* GARRY_STRING_H */

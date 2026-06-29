@@ -8,7 +8,10 @@
 
 #define TEST_DB "/tmp/garry_readme_cursor.db"
 
-static void cleanup(void) { remove(TEST_DB); }
+static void cleanup(void)
+{
+    remove(TEST_DB);
+}
 
 int main(void)
 {
@@ -33,7 +36,8 @@ int main(void)
     /* --- README example (cursor_next) --- */
     txn = garry_txn_begin(db);
     cur = garry_cursor_open(db, txn, NULL, 0);
-    while (garry_cursor_next(cur, key, &klen, val, &vlen)) {
+    while (garry_cursor_next(cur, key, &klen, val, &vlen))
+    {
         count_keys++;
     }
     garry_cursor_close(cur);
@@ -41,7 +45,8 @@ int main(void)
 
     /* --- README example (cursor_next_key) --- */
     cur = garry_cursor_open(db, txn, NULL, 0);
-    while (garry_cursor_next_key(cur, key, &klen)) {
+    while (garry_cursor_next_key(cur, key, &klen))
+    {
         count_keysonly++;
     }
     garry_cursor_close(cur);
@@ -50,12 +55,14 @@ int main(void)
     garry_txn_rollback(db, txn);
     garry_database_close(db);
 
-    if (count_keys != 3) {
+    if (count_keys != 3)
+    {
         printf("FAIL: cursor_next saw %d keys, expected 3\n", count_keys);
         cleanup();
         return 1;
     }
-    if (count_keysonly != 3) {
+    if (count_keysonly != 3)
+    {
         printf("FAIL: cursor_next_key saw %d keys, expected 3\n", count_keysonly);
         cleanup();
         return 1;

@@ -18,13 +18,13 @@
 #include "storage_core.h"
 
 /* CBOR major type base constants (from cbor_lib). */
-#define GARRY_CBOR_UINT_BASE   0
-#define GARRY_CBOR_NEGINT_BASE 32
-#define GARRY_CBOR_BYTES_BASE  64
-#define GARRY_CBOR_TEXT_BASE   96
-#define GARRY_CBOR_ARRAY_BASE  128
-#define GARRY_CBOR_MAP_BASE    160
-#define GARRY_CBOR_SIMPLE_BASE 224
+#define GARRY_CBOR_UINT_BASE    0
+#define GARRY_CBOR_NEGINT_BASE  32
+#define GARRY_CBOR_BYTES_BASE   64
+#define GARRY_CBOR_TEXT_BASE    96
+#define GARRY_CBOR_ARRAY_BASE   128
+#define GARRY_CBOR_MAP_BASE     160
+#define GARRY_CBOR_SIMPLE_BASE  224
 #define GARRY_CBOR_SIMPLE_FALSE 20
 #define GARRY_CBOR_SIMPLE_TRUE  21
 
@@ -41,9 +41,8 @@
  * @param out_buf Output buffer for encoded representation
  * @return Number of bytes written to out_buf
  */
-garry_i32 garry_encode_kv(const garry_byte* key, garry_i32 klen,
-                          const garry_byte* value, garry_i32 vlen,
-                          garry_byte* out_buf);
+garry_i32 garry_encode_kv(const garry_byte *key, garry_i32 klen, const garry_byte *value,
+                          garry_i32 vlen, garry_byte *out_buf);
 
 /**
  * @brief Decode a CBOR-encoded key-value pair.
@@ -59,9 +58,8 @@ garry_i32 garry_encode_kv(const garry_byte* key, garry_i32 klen,
  * @param vlen    Output: length of decoded value
  * @return GARRY_TRUE on success, GARRY_FALSE on invalid input or decode error
  */
-garry_bool garry_decode_kv(const garry_byte* encoded, garry_i32 elen,
-                           garry_byte* key, garry_i32* klen,
-                           garry_byte* value, garry_i32* vlen);
+garry_bool garry_decode_kv(const garry_byte *encoded, garry_i32 elen, garry_byte *key,
+                           garry_i32 *klen, garry_byte *value, garry_i32 *vlen);
 
 /**
  * @brief Encode a key without its value (for B-tree index entries).
@@ -74,8 +72,7 @@ garry_bool garry_decode_kv(const garry_byte* encoded, garry_i32 elen,
  * @param out_buf Output buffer for encoded key
  * @return Number of bytes written to out_buf
  */
-garry_i32 garry_encode_key_only(const garry_byte* key, garry_i32 klen,
-                                garry_byte* out_buf);
+garry_i32 garry_encode_key_only(const garry_byte *key, garry_i32 klen, garry_byte *out_buf);
 
 /**
  * @brief Decode a key-only encoded entry.
@@ -88,8 +85,7 @@ garry_i32 garry_encode_key_only(const garry_byte* key, garry_i32 klen,
  * @param key     Output buffer for decoded key
  * @return Length of decoded key in bytes
  */
-garry_i32 garry_decode_key_only(const garry_byte* encoded, garry_i32 elen,
-                                garry_byte* key);
+garry_i32 garry_decode_key_only(const garry_byte *encoded, garry_i32 elen, garry_byte *key);
 
 /**
  * @brief Encode a B-tree node descriptor (chain ID + child flag).
@@ -103,8 +99,7 @@ garry_i32 garry_decode_key_only(const garry_byte* encoded, garry_i32 elen,
  * @param out_buf      Output buffer for encoded descriptor
  * @return Number of bytes written to out_buf
  */
-garry_i32 garry_encode_descriptor(garry_i32 chain_id, garry_bool has_children,
-                                  garry_byte* out_buf);
+garry_i32 garry_encode_descriptor(garry_i32 chain_id, garry_bool has_children, garry_byte *out_buf);
 
 /**
  * @brief Decode a B-tree node descriptor.
@@ -117,16 +112,16 @@ garry_i32 garry_encode_descriptor(garry_i32 chain_id, garry_bool has_children,
  * @param chain_id    Output: decoded version chain ID
  * @param has_children Output: GARRY_TRUE if key has children
  */
-void garry_decode_descriptor(const garry_byte* encoded, garry_i32 elen,
-                             garry_i32* chain_id, garry_bool* has_children);
+void garry_decode_descriptor(const garry_byte *encoded, garry_i32 elen, garry_i32 *chain_id,
+                             garry_bool *has_children);
 
 /* CBOR raw helpers (from cbor_lib, trivial byte-level). */
-garry_i32 garry_cbor_encode_array_header_raw(garry_byte* out, garry_i32 pos, garry_i32 count);
-garry_i32 garry_cbor_encode_byte_string_raw(const garry_byte* data, garry_i32 dlen,
-                                            garry_byte* out, garry_i32 pos);
-garry_i32 garry_cbor_decode_array_header_raw(const garry_byte* buf, garry_i32 blen, garry_i32 pos);
-garry_i32 garry_cbor_array_header_size_raw(const garry_byte* buf, garry_i32 pos);
-garry_i32 garry_cbor_decode_byte_string_raw(const garry_byte* buf, garry_i32 blen, garry_i32 pos,
-                                            garry_byte* out_data, garry_i32* dlen);
+garry_i32 garry_cbor_encode_array_header_raw(garry_byte *out, garry_i32 pos, garry_i32 count);
+garry_i32 garry_cbor_encode_byte_string_raw(const garry_byte *data, garry_i32 dlen, garry_byte *out,
+                                            garry_i32 pos);
+garry_i32 garry_cbor_decode_array_header_raw(const garry_byte *buf, garry_i32 blen, garry_i32 pos);
+garry_i32 garry_cbor_array_header_size_raw(const garry_byte *buf, garry_i32 pos);
+garry_i32 garry_cbor_decode_byte_string_raw(const garry_byte *buf, garry_i32 blen, garry_i32 pos,
+                                            garry_byte *out_data, garry_i32 *dlen);
 
 #endif /* GARRY_RECORD_CODEC_H */

@@ -21,7 +21,8 @@
 #include "storage_core.h"
 #include "buffer_pool.h"
 
-typedef struct {
+typedef struct
+{
     garry_node_kind kind;
     garry_page_header header;
     garry_byte_array keys[GARRY_MAX_KEYS_PER_NODE];
@@ -48,8 +49,8 @@ typedef struct {
  * @param idx   Position to insert at (0 <= idx <= entry_count)
  * @return GARRY_TRUE on success, GARRY_FALSE if node is full
  */
-garry_bool garry_leaf_insert(garry_btree_node* node, const garry_byte* key, garry_i32 klen,
-                             const garry_byte* value, garry_i32 vlen, garry_i32 idx);
+garry_bool garry_leaf_insert(garry_btree_node *node, const garry_byte *key, garry_i32 klen,
+                             const garry_byte *value, garry_i32 vlen, garry_i32 idx);
 
 /**
  * @brief Encode node metadata into a CBOR byte string.
@@ -62,7 +63,7 @@ garry_bool garry_leaf_insert(garry_btree_node* node, const garry_byte* key, garr
  * @param buf   Output buffer for encoded metadata
  * @return Number of bytes written to buf
  */
-garry_i32 garry_encode_node_meta(garry_btree_node* node, garry_byte* buf);
+garry_i32 garry_encode_node_meta(garry_btree_node *node, garry_byte *buf);
 
 /**
  * @brief Decode node metadata from a CBOR-encoded buffer.
@@ -81,7 +82,7 @@ garry_i32 garry_encode_node_meta(garry_btree_node* node, garry_byte* buf);
  * @param elen  Length of encoded data in bytes
  * @param node  Node to populate with decoded metadata
  */
-void garry_decode_node_meta(const garry_byte* buf, garry_i32 elen, garry_btree_node* node);
+void garry_decode_node_meta(const garry_byte *buf, garry_i32 elen, garry_btree_node *node);
 
 /**
  * @brief Allocate a new leaf node from the buffer pool.

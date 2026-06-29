@@ -14,7 +14,10 @@ int main(void)
     garry_byte_array prefix_a, prefix_b;
     garry_i32 cmp;
 
-    { garry_key_tuple t3 = garry_make_key_3("accounts", "user1", "balance"); garry_encode_key_tuple(&t3, k1); }
+    {
+        garry_key_tuple t3 = garry_make_key_3("accounts", "user1", "balance");
+        garry_encode_key_tuple(&t3, k1);
+    }
 
     v0 = garry_decode_length_prefix(k1, 0);
     GARRY_CHECK(v0 == 8);
@@ -43,7 +46,10 @@ int main(void)
     v0 = garry_tuple_length(&t2);
     GARRY_CHECK(v0 == 10);
 
-    { garry_key_tuple t2e = garry_make_key_2("table", "row"); garry_encode_key_tuple(&t2e, k2); }
+    {
+        garry_key_tuple t2e = garry_make_key_2("table", "row");
+        garry_encode_key_tuple(&t2e, k2);
+    }
     v0 = garry_decode_length_prefix(k2, 0);
     GARRY_CHECK(v0 == 5);
 
@@ -58,11 +64,19 @@ int main(void)
 
     /* HAS_PREFIX negative tests. */
     garry_empty_byte_array(prefix_a);
-    { garry_i32 vi; for (vi = 0; vi < 5; vi++) prefix_a[vi] = BYTE_FROM_INT(97 + vi); }
+    {
+        garry_i32 vi;
+        for (vi = 0; vi < 5; vi++)
+            prefix_a[vi] = BYTE_FROM_INT(97 + vi);
+    }
     GARRY_CHECK(garry_has_prefix(k1, 8, prefix_a, 5) == 0);
 
     garry_empty_byte_array(prefix_b);
-    { garry_i32 vi; for (vi = 0; vi < 5; vi++) prefix_b[vi] = BYTE_FROM_INT(122); }
+    {
+        garry_i32 vi;
+        for (vi = 0; vi < 5; vi++)
+            prefix_b[vi] = BYTE_FROM_INT(122);
+    }
     GARRY_CHECK(garry_has_prefix(k1, 8, prefix_b, 5) == 0);
 
     /* BYTE_COMPARE. */
