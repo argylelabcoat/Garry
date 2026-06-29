@@ -209,7 +209,7 @@ garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value,
     return head;
 }
 
-garry_i32 garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
+garry_bool garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
                               garry_i32 total_len, char *out_buf)
 {
     garry_i32 pid;
@@ -226,7 +226,7 @@ garry_i32 garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
         garry_i32 c;
 
         pbuf = garry_pool_pin_page(pool, pid);
-        if (pbuf == NULL) return copied;
+        if (pbuf == NULL) return GARRY_FALSE;
 
         next = garry_read_int32((garry_byte*)*pbuf, GARRY_PAGE_HEADER_SIZE);
 
@@ -244,7 +244,7 @@ garry_i32 garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
         pid = next;
     }
 
-    return copied;
+    return (copied == total_len) ? GARRY_TRUE : GARRY_FALSE;
 }
 
 garry_bool garry_chain_page_append_overflow(garry_page_buffer buf, garry_u32 page_size,
@@ -367,13 +367,18 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
                 } else {
                     if (is_overflow) {
                         garry_i32 head_id;
-                        garry_i32 copied;
+                        garry_bool read_ok;
                         head_id = garry_read_le32(rec_data, pos); pos += 4;
                         result = (char*)malloc((size_t)value_len + 1);
                         if (result != NULL) {
-                            copied = garry_overflow_read(pool, head_id, value_len, result);
-                            result[value_len] = '\0';
-                            *vlen = copied;
+                            read_ok = garry_overflow_read(pool, head_id, value_len, result);
+                            if (read_ok) {
+                                result[value_len] = '\0';
+                                *vlen = value_len;
+                            } else {
+                                free(result);
+                                result = NULL;
+                            }
                         }
                     } else {
                         result = (char*)malloc((size_t)value_len + 1);
@@ -433,11 +438,14 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
     garry_bool keep[GARRY_MAX_VERSIONS_PER_PAGE];
     garry_i32 visible;
     garry_i32 snap;
-    garry_page_buffer tmp;
+    garry_page_buffer *tmp;
+
+    tmp = (garry_page_buffer*)malloc(sizeof(garry_page_buffer));
+    if (tmp == NULL) return;
 
     memcpy(local, buf, (size_t)page_size);
     rec_count = garry_page_record_count(&local);
-    if (rec_count <= 1) return;
+    if (rec_count <= 1) { free(tmp); return; }
 
     for (i = 0; i < rec_count; i++) {
         rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
@@ -490,18 +498,20 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
         }
     }
 
-    garry_page_init(tmp, GARRY_NODE_CHAIN, 0, (garry_i32)page_size);
+    garry_page_init(*tmp, GARRY_NODE_CHAIN, 0, (garry_i32)page_size);
     for (i = 0; i < rec_count; i++) {
         if (keep[i]) {
             rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
-            if (garry_page_insert(tmp, rec, rlen, (garry_i32)page_size) < 0) {
+            if (garry_page_insert(*tmp, rec, rlen, (garry_i32)page_size) < 0) {
+                free(tmp);
                 return;
             }
         }
     }
     for (j = 0; j < (garry_i32)page_size; j++) {
-        buf[j] = tmp[j];
+        buf[j] = (*tmp)[j];
     }
+    free(tmp);
 }
 
 garry_bool garry_chain_page_has_version(garry_page_buffer buf, garry_u32 page_size,

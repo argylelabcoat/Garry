@@ -10,6 +10,8 @@
 #include "slotted_page.h"
 #include "storage_types.h"
 #include "version_chain.h"
+#include "lock_table.h"
+#include "btree_cursor.h"
 #include "util_endian.h"
 #include "test_helpers.h"
 #include <stdio.h>
@@ -204,6 +206,65 @@ static void test_integer_subscript_roundtrip(void)
     }
 }
 
+static void test_lock_release_on_commit(void)
+{
+    garry_lock_manager mgr;
+    garry_bool ok;
+
+    mgr = garry_create_lock_manager();
+
+    garry_lock_acquire(&mgr, 1, (const garry_byte*)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
+    GARRY_CHECK(ok == 1);
+
+    GARRY_CHECK(garry_lock_held(&mgr, 1, (const garry_byte*)"key1", 4) == 1);
+
+    garry_lock_release(&mgr, 1);
+
+    GARRY_CHECK(garry_lock_held(&mgr, 1, (const garry_byte*)"key1", 4) == 0);
+
+    garry_lock_acquire(&mgr, 2, (const garry_byte*)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
+    GARRY_CHECK(ok == 1);
+
+    garry_lock_release(&mgr, 2);
+}
+
+static void test_lock_release_on_rollback(void)
+{
+    garry_lock_manager mgr;
+    garry_bool ok;
+
+    mgr = garry_create_lock_manager();
+
+    garry_lock_acquire(&mgr, 1, (const garry_byte*)"key1", 4, GARRY_LOCK_SHARED, &ok);
+    GARRY_CHECK(ok == 1);
+
+    garry_lock_acquire(&mgr, 2, (const garry_byte*)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
+    GARRY_CHECK(ok == 0);
+
+    garry_lock_release(&mgr, 1);
+
+    garry_lock_acquire(&mgr, 2, (const garry_byte*)"key1", 4, GARRY_LOCK_EXCLUSIVE, &ok);
+    GARRY_CHECK(ok == 1);
+
+    garry_lock_release(&mgr, 2);
+}
+
+static void test_overflow_read_returns_bool(void)
+{
+    garry_buffer_pool *pool;
+    garry_bool ok;
+    char buf[64];
+
+    pool = garry_pool_create("/tmp/garry_overflow_test.db", 4, 4096);
+    GARRY_CHECK(pool != NULL);
+
+    ok = garry_overflow_read(pool, -1, 10, buf);
+    GARRY_CHECK(ok == GARRY_FALSE);
+
+    garry_pool_close(pool);
+    remove("/tmp/garry_overflow_test.db");
+}
+
 int main(void)
 {
     test_garry_data_returns();
@@ -214,6 +275,9 @@ int main(void)
     test_version_chain_prune_preserves_on_full_page();
     test_btree_delete_root_shrink();
     test_integer_subscript_roundtrip();
+    test_lock_release_on_commit();
+    test_lock_release_on_rollback();
+    test_overflow_read_returns_bool();
     if (garry_test_failures == 0) printf("test_inquisitor_fixes: ALL PASSED\n");
     return garry_test_failures;
 }

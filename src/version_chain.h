@@ -31,7 +31,7 @@ garry_i32 garry_overflow_chunk_size(garry_u32 page_size);
 garry_i32 garry_chain_inline_capacity(garry_u32 page_size);
 garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value,
                                garry_i32 vlen);
-garry_i32 garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
+garry_bool garry_overflow_read(garry_buffer_pool *pool, garry_i32 head,
                               garry_i32 total_len, char *out_buf);
 char* garry_chain_page_find_visible(garry_buffer_pool *pool,
                                     garry_page_buffer buf, garry_u32 page_size,

@@ -15,6 +15,7 @@
  */
 
 #include "btree_cursor.h"
+#include "btree_search.h"
 #include <string.h>
 
 static garry_bool prefix_match(const garry_byte *key, garry_i32 klen,
@@ -56,7 +57,14 @@ garry_btree_cursor_handle garry_btree_cursor_open(garry_buffer_pool *pool, garry
             return cur;
         }
         if (node.entry_count > 0) {
-            idx = 0;
+            if (plen > 0 && prefix != NULL) {
+                idx = garry_internal_find(&node, (const garry_byte*)*prefix, (garry_i32)plen);
+                if (idx >= node.entry_count) {
+                    idx = node.entry_count - 1;
+                }
+            } else {
+                idx = 0;
+            }
             page = node.children[idx];
         } else {
             cur.exhausted = 1;

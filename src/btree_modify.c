@@ -205,16 +205,17 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
     garry_i32 *tmp_lens;
     garry_byte_array *tmp_values;
     garry_i32 *tmp_vlens;
+    char *tmp_buf;
+    garry_i32 n = GARRY_MAX_KEYS_PER_NODE + 1;
 
-    tmp_keys = malloc(sizeof(garry_byte_array) * (GARRY_MAX_KEYS_PER_NODE + 1));
-    tmp_lens = malloc(sizeof(garry_i32) * (GARRY_MAX_KEYS_PER_NODE + 1));
-    tmp_values = malloc(sizeof(garry_byte_array) * (GARRY_MAX_KEYS_PER_NODE + 1));
-    tmp_vlens = malloc(sizeof(garry_i32) * (GARRY_MAX_KEYS_PER_NODE + 1));
+    tmp_buf = malloc(sizeof(garry_byte_array) * n + sizeof(garry_i32) * n +
+                     sizeof(garry_byte_array) * n + sizeof(garry_i32) * n);
+    if (!tmp_buf) return 0;
 
-    if (!tmp_keys || !tmp_lens || !tmp_values || !tmp_vlens) {
-        free(tmp_keys); free(tmp_lens); free(tmp_values); free(tmp_vlens);
-        return 0;
-    }
+    tmp_keys = (garry_byte_array*)tmp_buf;
+    tmp_lens = (garry_i32*)(tmp_buf + sizeof(garry_byte_array) * n);
+    tmp_values = (garry_byte_array*)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n);
+    tmp_vlens = (garry_i32*)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n + sizeof(garry_byte_array) * n);
 
     all_count = node->entry_count + 1;
     mid = all_count / 2;
@@ -245,7 +246,7 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
 
     right_page = garry_allocate_leaf(pool);
     if (right_page < 0) {
-        free(tmp_keys); free(tmp_lens); free(tmp_values); free(tmp_vlens);
+        free(tmp_buf);
         return 0;
     }
     garry_load_node(pool, right_page, &right_node);
@@ -278,7 +279,7 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page,
     garry_store_node(pool, page, node);
     *new_page = right_page;
 
-    free(tmp_keys); free(tmp_lens); free(tmp_values); free(tmp_vlens);
+    free(tmp_buf);
     return 1;
 }
 
@@ -302,15 +303,16 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
     garry_i32 *tmp_children;
     garry_i32 right_page, left_count, right_count, all_count, mid, i;
     garry_btree_node right_node;
+    char *tmp_buf;
+    garry_i32 n = GARRY_MAX_KEYS_PER_NODE + 1;
 
-    tmp_keys = malloc(sizeof(garry_byte_array) * (GARRY_MAX_KEYS_PER_NODE + 1));
-    tmp_lens = malloc(sizeof(garry_i32) * (GARRY_MAX_KEYS_PER_NODE + 1));
-    tmp_children = malloc(sizeof(garry_i32) * (GARRY_MAX_KEYS_PER_NODE + 2));
+    tmp_buf = malloc(sizeof(garry_byte_array) * n + sizeof(garry_i32) * n +
+                     sizeof(garry_i32) * (n + 1));
+    if (!tmp_buf) return 0;
 
-    if (!tmp_keys || !tmp_lens || !tmp_children) {
-        free(tmp_keys); free(tmp_lens); free(tmp_children);
-        return 0;
-    }
+    tmp_keys = (garry_byte_array*)tmp_buf;
+    tmp_lens = (garry_i32*)(tmp_buf + sizeof(garry_byte_array) * n);
+    tmp_children = (garry_i32*)(tmp_buf + sizeof(garry_byte_array) * n + sizeof(garry_i32) * n);
 
     all_count = node->entry_count + 1;
     mid = all_count / 2;
@@ -332,7 +334,7 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
 
     right_page = garry_allocate_internal(pool);
     if (right_page < 0) {
-        free(tmp_keys); free(tmp_lens); free(tmp_children);
+        free(tmp_buf);
         return 0;
     }
     garry_load_node(pool, right_page, &right_node);
@@ -373,7 +375,7 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
     garry_pool_mark_dirty(pool, page);
     *new_page = right_page;
 
-    free(tmp_keys); free(tmp_lens); free(tmp_children);
+    free(tmp_buf);
     return 1;
 }
 

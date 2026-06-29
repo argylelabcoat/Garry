@@ -368,6 +368,8 @@ void garry_mvcc_commit(garry_engine_handle *eng, garry_txn_id txn)
     }
     garry_mutex_unlock(&eng->txn_slot_mutex);
 
+    garry_lock_release(&eng->lock_mgr, txn);
+
     for (i = 0; i < count; i++) {
         garry_pool_flush_page(eng->pool, pages[i]);
     }
@@ -383,6 +385,8 @@ void garry_mvcc_rollback(garry_engine_handle *eng, garry_txn_id txn)
         remove_active_txn(eng, txn);
     }
     garry_mutex_unlock(&eng->txn_slot_mutex);
+
+    garry_lock_release(&eng->lock_mgr, txn);
 }
 
 garry_bool garry_txn_is_active(garry_txn_id txn, garry_engine_handle *eng)
