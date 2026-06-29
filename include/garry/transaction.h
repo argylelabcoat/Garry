@@ -22,7 +22,10 @@
 #include "garry/types.h"
 
 /// Forward declaration — defined in database.h.
+#ifndef GARRY_DATABASE_FWD_DEFINED
+#define GARRY_DATABASE_FWD_DEFINED
 typedef struct garry_database garry_database;
+#endif
 /// Transaction identifier — an opaque handle returned by @ref garry_txn_begin.
 typedef garry_i32 garry_txn;
 

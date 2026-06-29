@@ -22,7 +22,10 @@
 #include "garry/types.h"
 
 /// Forward declaration — defined in database.h.
+#ifndef GARRY_DATABASE_FWD_DEFINED
+#define GARRY_DATABASE_FWD_DEFINED
 typedef struct garry_database garry_database;
+#endif
 /// Opaque cursor handle for prefix-scoped iteration.
 typedef struct garry_cursor garry_cursor;
 

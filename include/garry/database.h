@@ -22,7 +22,10 @@
 #include "garry/types.h"
 
 /// Opaque database handle — the top-level container for all data.
+#ifndef GARRY_DATABASE_FWD_DEFINED
+#define GARRY_DATABASE_FWD_DEFINED
 typedef struct garry_database garry_database;
+#endif
 
 /**
  * @brief Runtime configuration for a Garry database.

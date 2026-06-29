@@ -23,7 +23,10 @@
 #include "garry/types.h"
 
 /// Forward declaration — defined in database.h.
+#ifndef GARRY_DATABASE_FWD_DEFINED
+#define GARRY_DATABASE_FWD_DEFINED
 typedef struct garry_database garry_database;
+#endif
 
 /**
  * @brief Store a string value under a string key.

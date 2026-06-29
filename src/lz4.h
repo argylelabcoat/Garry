@@ -2,6 +2,9 @@
  * Copyright (c) 2026 Matthew Hughes (Argylelabcoat)
  * Licensed under the BSD-3-Clause License.
  * See LICENSE file for details.
+ *
+ * Original LZ4 implementation written for SPARK by Kimi-2.6,
+ * ported to C for the Garry storage engine.
  */
 
 /**
