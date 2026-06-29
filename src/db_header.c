@@ -14,28 +14,17 @@
  */
 
 #include "db_header.h"
+#include "util_endian.h"
 #include <string.h>
 
 void garry_write_int32(garry_byte* buf, garry_i32 offset, garry_i32 val)
 {
-    buf[offset]     = (garry_byte)(val % 256);
-    buf[offset + 1] = (garry_byte)((val >> 8) % 256);
-    buf[offset + 2] = (garry_byte)((val >> 16) % 256);
-    buf[offset + 3] = (garry_byte)((val >> 24) % 256);
+    garry_write_le32(buf, offset, val);
 }
 
 garry_i32 garry_read_int32(garry_byte* buf, garry_i32 offset)
 {
-    garry_i32 b0, b1, b2, b3;
-    b0 = (garry_i32)buf[offset];
-    b1 = (garry_i32)buf[offset + 1];
-    b2 = (garry_i32)buf[offset + 2];
-    b3 = (garry_i32)buf[offset + 3];
-    if (b0 < 0) b0 += 256;
-    if (b1 < 0) b1 += 256;
-    if (b2 < 0) b2 += 256;
-    if (b3 < 0) b3 += 256;
-    return b0 + (b1 << 8) + (b2 << 16) + (b3 << 24);
+    return garry_read_le32((const garry_byte*)buf, offset);
 }
 
 garry_db_header garry_create_db_header(garry_engine_settings* settings)

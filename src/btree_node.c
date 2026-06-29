@@ -253,8 +253,10 @@ void garry_load_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *n
                     for (k = 0; k < rlen; k++) {
                         rec_buf[k] = rec_data[k];
                     }
-                    garry_decode_kv(rec_buf, rlen, ckey, &ckey_len,
-                                    node->values[entry_idx], &vlen_out);
+                    if (!garry_decode_kv(rec_buf, rlen, ckey, &ckey_len,
+                                    node->values[entry_idx], &vlen_out)) {
+                        continue;
+                    }
                     memcpy(node->keys[entry_idx], ckey, ckey_len);
                     node->key_lens[entry_idx] = ckey_len;
                     node->value_lens[entry_idx] = vlen_out;

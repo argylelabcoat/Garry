@@ -53,8 +53,10 @@ static garry_u32 ensure_loaded(garry_buffer_pool *pool, garry_i32 pid) {
     victim = find_eviction_candidate(pool);
     if (victim == GARRY_INVALID_SLOT) return GARRY_INVALID_SLOT;
     if (pool->loaded[victim] && pool->dirty[victim]) {
-        garry_file_write_page(&pool->fd, pool->page_ids[victim],
-                              pool->pages[victim], (garry_i32)pool->page_size);
+        if (!garry_file_write_page(&pool->fd, pool->page_ids[victim],
+                               pool->pages[victim], (garry_i32)pool->page_size)) {
+            return GARRY_INVALID_SLOT;
+        }
         pool->dirty[victim] = GARRY_FALSE;
     }
     pool->page_ids[victim] = pid;
@@ -192,8 +194,11 @@ garry_i32 garry_pool_allocate(garry_buffer_pool *pool) {
             return -1;
         }
         if (pool->dirty[victim]) {
-            garry_file_write_page(&pool->fd, pool->page_ids[victim],
-                                  pool->pages[victim], (garry_i32)pool->page_size);
+            if (!garry_file_write_page(&pool->fd, pool->page_ids[victim],
+                                   pool->pages[victim], (garry_i32)pool->page_size)) {
+                garry_rwlock_wrunlock(&pool->slot_locks[0]);
+                return -1;
+            }
         }
         pid = free_pid;
         pool->page_ids[victim] = pid;
@@ -218,8 +223,11 @@ garry_i32 garry_pool_allocate(garry_buffer_pool *pool) {
         return -1;
     }
     if (pool->dirty[victim]) {
-        garry_file_write_page(&pool->fd, pool->page_ids[victim],
-                              pool->pages[victim], (garry_i32)pool->page_size);
+        if (!garry_file_write_page(&pool->fd, pool->page_ids[victim],
+                               pool->pages[victim], (garry_i32)pool->page_size)) {
+            garry_rwlock_wrunlock(&pool->slot_locks[0]);
+            return -1;
+        }
     }
     pid = pool->next_page;
     pool->next_page++;
@@ -243,8 +251,11 @@ void garry_pool_free_page(garry_buffer_pool *pool, garry_i32 pid) {
     idx = find_slot(pool, pid);
     if (idx != GARRY_INVALID_SLOT) {
         if (pool->dirty[idx]) {
-            garry_file_write_page(&pool->fd, pool->page_ids[idx],
-                                  pool->pages[idx], (garry_i32)pool->page_size);
+            if (!garry_file_write_page(&pool->fd, pool->page_ids[idx],
+                                   pool->pages[idx], (garry_i32)pool->page_size)) {
+                garry_rwlock_wrunlock(&pool->slot_locks[0]);
+                return;
+            }
         }
         pool->loaded[idx] = GARRY_FALSE;
         pool->pin_counts[idx] = 0;
@@ -277,11 +288,11 @@ garry_bool garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid) {
     garry_rwlock_wrlock(&pool->slot_locks[0]);
     idx = find_slot(pool, pid);
     if (idx != GARRY_INVALID_SLOT && pool->dirty[idx]) {
-        garry_file_write_page(&pool->fd, pool->page_ids[idx],
-                              pool->pages[idx], (garry_i32)pool->page_size);
-        /* TODO: garry_file_write_page currently returns void.
-         * When it gains a return value, check it here and return
-         * GARRY_FALSE on failure without clearing the dirty flag. */
+        if (!garry_file_write_page(&pool->fd, pool->page_ids[idx],
+                                   pool->pages[idx], (garry_i32)pool->page_size)) {
+            garry_rwlock_wrunlock(&pool->slot_locks[0]);
+            return GARRY_FALSE;
+        }
         pool->dirty[idx] = GARRY_FALSE;
     }
     garry_rwlock_wrunlock(&pool->slot_locks[0]);
@@ -294,8 +305,11 @@ void garry_pool_flush_all(garry_buffer_pool *pool) {
     garry_rwlock_wrlock(&pool->slot_locks[0]);
     for (i = 0; i < pool->capacity; i++) {
         if (pool->loaded[i] && pool->dirty[i]) {
-            garry_file_write_page(&pool->fd, pool->page_ids[i],
-                                  pool->pages[i], (garry_i32)pool->page_size);
+            if (!garry_file_write_page(&pool->fd, pool->page_ids[i],
+                                   pool->pages[i], (garry_i32)pool->page_size)) {
+                garry_rwlock_wrunlock(&pool->slot_locks[0]);
+                return;
+            }
             pool->dirty[i] = GARRY_FALSE;
         }
     }
@@ -307,8 +321,8 @@ void garry_pool_close(garry_buffer_pool *pool) {
     if (!pool) return;
     for (i = 0; i < pool->capacity; i++) {
         if (pool->loaded[i] && pool->dirty[i]) {
-            garry_file_write_page(&pool->fd, pool->page_ids[i],
-                                  pool->pages[i], (garry_i32)pool->page_size);
+            (void)garry_file_write_page(&pool->fd, pool->page_ids[i],
+                                   pool->pages[i], (garry_i32)pool->page_size);
             pool->dirty[i] = GARRY_FALSE;
         }
     }

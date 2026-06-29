@@ -27,6 +27,7 @@
 #include "slotted_page.h"
 #include "db_header.h"
 #include "buffer_pool.h"
+#include "util_endian.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -293,16 +294,6 @@ garry_bool garry_chain_page_append_overflow(garry_page_buffer buf, garry_u32 pag
     return GARRY_TRUE;
 }
 
-static garry_i32 read_le32(const garry_byte *buf, garry_i32 p)
-{
-    garry_i32 b0, b1, b2, b3;
-    b0 = (garry_i32)buf[p];     if (b0 < 0) b0 += 256;
-    b1 = (garry_i32)buf[p + 1]; if (b1 < 0) b1 += 256;
-    b2 = (garry_i32)buf[p + 2]; if (b2 < 0) b2 += 256;
-    b3 = (garry_i32)buf[p + 3]; if (b3 < 0) b3 += 256;
-    return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
-}
-
 /**
  * Find the most recent version visible to the given snapshot.
  *
@@ -347,9 +338,9 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
         rlen = garry_page_get(&local, i, rec_data, (garry_i32)page_size);
         if (rlen >= GARRY_CHAIN_ENTRY_HEADER_SIZE) {
             pos = 0;
-            txid_created = read_le32(rec_data, pos); pos += 4;
-            txid_deleted = read_le32(rec_data, pos);  pos += 4;
-            value_len    = read_le32(rec_data, pos);  pos += 4;
+            txid_created = garry_read_le32(rec_data, pos); pos += 4;
+            txid_deleted = garry_read_le32(rec_data, pos);  pos += 4;
+            value_len    = garry_read_le32(rec_data, pos);  pos += 4;
             is_tombstone = (rec_data[pos] != 0) ? 1 : 0; pos++;
             fb = (garry_i32)rec_data[pos]; if (fb < 0) fb += 256; pos++;
             is_overflow = (fb & 0x1) == GARRY_CHAIN_FLAG_OVERFLOW ? 1 : 0;
@@ -374,7 +365,7 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
                     if (is_overflow) {
                         garry_i32 head_id;
                         garry_i32 copied;
-                        head_id = read_le32(rec_data, pos); pos += 4;
+                        head_id = garry_read_le32(rec_data, pos); pos += 4;
                         result = (char*)malloc((size_t)value_len + 1);
                         if (result != NULL) {
                             copied = garry_overflow_read(pool, head_id, value_len, result);
@@ -449,8 +440,8 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
         rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
         if (rlen >= GARRY_CHAIN_PRUNE_MIN_LEN) {
             pos = 0;
-            txid_created = read_le32(rec, pos); pos += 4;
-            txid_deleted = read_le32(rec, pos); pos += 4;
+            txid_created = garry_read_le32(rec, pos); pos += 4;
+            txid_deleted = garry_read_le32(rec, pos); pos += 4;
 
             if (i == rec_count - 1) {
                 keep[i] = GARRY_TRUE;
@@ -487,7 +478,7 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
                 fb2 = (garry_i32)rec[13]; if (fb2 < 0) fb2 += 256;
                 if ((fb2 & GARRY_CHAIN_FLAG_OVERFLOW) != 0) {
                     garry_i32 head_id;
-                    head_id = read_le32(rec, 14);
+                    head_id = garry_read_le32(rec, 14);
                     if (pool != NULL && head_id >= 0) {
                         garry_overflow_free(pool, head_id);
                     }
@@ -501,7 +492,7 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
         if (keep[i]) {
             rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
             if (garry_page_insert(tmp, rec, rlen, (garry_i32)page_size) < 0) {
-                break;
+                return;
             }
         }
     }
@@ -525,7 +516,7 @@ garry_bool garry_chain_page_has_version(garry_page_buffer buf, garry_u32 page_si
     for (i = 0; i < rec_count; i++) {
         rlen = garry_page_get(&local, i, rec_data, (garry_i32)page_size);
         if (rlen >= 4) {
-            txid_created = read_le32(rec_data, 0);
+            txid_created = garry_read_le32(rec_data, 0);
             if (txid_created == txn) return GARRY_TRUE;
         }
     }

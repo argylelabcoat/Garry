@@ -22,8 +22,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define BTREE_MIN_KEYS 1
-
 static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page,
                                    const garry_byte *key, garry_i32 klen,
                                    const garry_byte *value, garry_i32 vlen,
@@ -44,8 +42,8 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
                                  garry_byte *sep, garry_i32 *sep_len,
                                  garry_i32 *new_page);
 
-static void rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
-                            garry_btree_node *parent, garry_i32 child_idx);
+static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
+                             garry_btree_node *parent, garry_i32 child_idx);
 
 static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page,
                                    const garry_byte *key, garry_i32 klen);
@@ -388,8 +386,8 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page,
  * result exceeds capacity, does nothing (child stays underflowed).
  * Removes the separator key from the parent after a successful merge.
  */
-static void rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
-                            garry_btree_node *parent, garry_i32 child_idx)
+static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
+                             garry_btree_node *parent, garry_i32 child_idx)
 {
     garry_i32 left_page, right_page, child_page;
     garry_btree_node left_node;
@@ -407,7 +405,7 @@ static void rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
                 merged_keys = merged_keys + 1;
             }
             if (merged_keys > GARRY_MAX_KEYS_PER_NODE) {
-                return;
+                return GARRY_FALSE;
             }
         }
         if (left_node.kind == GARRY_NODE_INTERNAL) {
@@ -454,7 +452,7 @@ static void rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
                     merged_keys = merged_keys + 1;
                 }
                 if (merged_keys > GARRY_MAX_KEYS_PER_NODE) {
-                    return;
+                    return GARRY_FALSE;
                 }
             }
             if (tmp.kind == GARRY_NODE_INTERNAL) {
@@ -491,6 +489,7 @@ static void rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
         garry_store_node(pool, parent_page, parent);
         garry_pool_mark_dirty(pool, parent_page);
     }
+    return GARRY_TRUE;
 }
 
 static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page,
@@ -516,7 +515,7 @@ static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page,
             garry_store_node(pool, page, &node);
             garry_pool_mark_dirty(pool, page);
         }
-        return (node.entry_count < BTREE_MIN_KEYS);
+        return (node.entry_count < GARRY_BTREE_MIN_KEYS);
     } else {
         idx = garry_internal_find(&node, key, klen);
         child = node.children[idx];
@@ -524,7 +523,7 @@ static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page,
         if (underflowed) {
             rebalance_child(pool, page, &node, idx);
         }
-        return (node.entry_count < BTREE_MIN_KEYS);
+        return (node.entry_count < GARRY_BTREE_MIN_KEYS);
     }
 }
 
@@ -535,9 +534,10 @@ void garry_btree_delete(garry_buffer_pool *pool, garry_i32 *root,
     garry_btree_node rnode;
 
     underflowed = btree_delete_rec(pool, *root, key, klen);
-    (void)underflowed;
-    garry_load_node(pool, *root, &rnode);
-    if (rnode.kind == GARRY_NODE_INTERNAL && rnode.entry_count == 0) {
-        *root = rnode.children[0];
+    if (underflowed) {
+        garry_load_node(pool, *root, &rnode);
+        if (rnode.kind == GARRY_NODE_INTERNAL && rnode.entry_count == 0) {
+            *root = rnode.children[0];
+        }
     }
 }

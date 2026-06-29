@@ -47,8 +47,8 @@ typedef struct {
 garry_file_descriptor garry_file_open(const char* path, int flags);
 void garry_file_read_page(garry_file_descriptor* fd, garry_i32 page_num,
                           garry_byte* buf, garry_i32 page_size);
-void garry_file_write_page(garry_file_descriptor* fd, garry_i32 page_num,
-                           const garry_byte* buf, garry_i32 page_size);
+garry_bool garry_file_write_page(garry_file_descriptor* fd, garry_i32 page_num,
+                                const garry_byte* buf, garry_i32 page_size);
 garry_i32 garry_file_read(garry_file_descriptor* fd, garry_byte* buf, garry_i32 count);
 void garry_file_sync(garry_file_descriptor* fd);
 void garry_file_close(garry_file_descriptor* fd);

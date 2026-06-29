@@ -24,6 +24,8 @@
 #define GARRY_MAX_POOL_SIZE          8
 /// Maximum keys a single B-tree node may hold before splitting.
 #define GARRY_MAX_KEYS_PER_NODE     3
+/// Minimum keys a B-tree node may hold (underflow threshold).
+#define GARRY_BTREE_MIN_KEYS        1
 /// Reserved slot index for page metadata (never used for user data).
 #define GARRY_META_SLOT              0
 /// Bias added to physical page IDs to distinguish them from logical IDs.

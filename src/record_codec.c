@@ -115,12 +115,12 @@ garry_i32 garry_encode_kv(const garry_byte* key, garry_i32 klen,
     return pos;
 }
 
-void garry_decode_kv(const garry_byte* encoded, garry_i32 elen,
-                     garry_byte* key, garry_i32* klen,
-                     garry_byte* value, garry_i32* vlen)
+garry_bool garry_decode_kv(const garry_byte* encoded, garry_i32 elen,
+                           garry_byte* key, garry_i32* klen,
+                           garry_byte* value, garry_i32* vlen)
 {
     garry_i32 pos, arr_count;
-    if (!encoded || elen <= 0) { *klen = 0; *vlen = 0; return; }
+    if (!encoded || elen <= 0) { *klen = 0; *vlen = 0; return GARRY_FALSE; }
     pos = 0;
     *klen = 0;
     *vlen = 0;
@@ -128,21 +128,22 @@ void garry_decode_kv(const garry_byte* encoded, garry_i32 elen,
     if (arr_count != 2) {
         *klen = 0;
         *vlen = 0;
-        return;
+        return GARRY_FALSE;
     }
     pos = pos + garry_cbor_array_header_size_raw(encoded, pos);
     pos = garry_cbor_decode_byte_string_raw(encoded, elen, pos, key, klen);
     if (pos <= 0) {
         *klen = 0;
         *vlen = 0;
-        return;
+        return GARRY_FALSE;
     }
     pos = garry_cbor_decode_byte_string_raw(encoded, elen, pos, value, vlen);
     if (pos <= 0) {
         *klen = 0;
         *vlen = 0;
-        return;
+        return GARRY_FALSE;
     }
+    return GARRY_TRUE;
 }
 
 garry_i32 garry_encode_key_only(const garry_byte* key, garry_i32 klen,

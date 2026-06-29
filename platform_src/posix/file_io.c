@@ -44,12 +44,12 @@ void garry_file_read_page(garry_file_descriptor* fd, garry_i32 page_num,
     }
 }
 
-void garry_file_write_page(garry_file_descriptor* fd, garry_i32 page_num,
-                            const garry_byte* buf, garry_i32 page_size)
+garry_bool garry_file_write_page(garry_file_descriptor* fd, garry_i32 page_num,
+                                 const garry_byte* buf, garry_i32 page_size)
 {
     off_t offset = (off_t)page_num * (off_t)page_size;
     ssize_t n = pwrite(fd->fd, buf, (size_t)page_size, offset);
-    (void)n;
+    return (n == (ssize_t)page_size) ? GARRY_TRUE : GARRY_FALSE;
 }
 
 garry_i32 garry_file_read(garry_file_descriptor* fd, garry_byte* buf, garry_i32 count)

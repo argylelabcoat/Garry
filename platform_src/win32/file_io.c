@@ -85,16 +85,20 @@ void garry_file_read_page(garry_file_descriptor* fd, garry_i32 page_num,
     ReadFile(fd->fd, buf, (DWORD)page_size, &bytes_read, NULL);
 }
 
-void garry_file_write_page(garry_file_descriptor* fd, garry_i32 page_num,
-                           const garry_byte* buf, garry_i32 page_size)
+garry_bool garry_file_write_page(garry_file_descriptor* fd, garry_i32 page_num,
+                                 const garry_byte* buf, garry_i32 page_size)
 {
     LARGE_INTEGER li;
     DWORD bytes_written = 0;
 
     li.QuadPart = (LONGLONG)page_num * (LONGLONG)page_size;
     SetFilePointerEx(fd->fd, li, NULL, FILE_BEGIN);
-    WriteFile(fd->fd, buf, (DWORD)page_size, &bytes_written, NULL);
+    if (!WriteFile(fd->fd, buf, (DWORD)page_size, &bytes_written, NULL))
+        return GARRY_FALSE;
+    if ((garry_i32)bytes_written != page_size)
+        return GARRY_FALSE;
     FlushFileBuffers(fd->fd);
+    return GARRY_TRUE;
 }
 
 garry_i32 garry_file_read(garry_file_descriptor* fd, garry_byte* buf, garry_i32 count)

@@ -57,10 +57,11 @@ garry_i32 garry_encode_kv(const garry_byte* key, garry_i32 klen,
  * @param klen    Output: length of decoded key
  * @param value   Output buffer for decoded value
  * @param vlen    Output: length of decoded value
+ * @return GARRY_TRUE on success, GARRY_FALSE on invalid input or decode error
  */
-void garry_decode_kv(const garry_byte* encoded, garry_i32 elen,
-                     garry_byte* key, garry_i32* klen,
-                     garry_byte* value, garry_i32* vlen);
+garry_bool garry_decode_kv(const garry_byte* encoded, garry_i32 elen,
+                           garry_byte* key, garry_i32* klen,
+                           garry_byte* value, garry_i32* vlen);
 
 /**
  * @brief Encode a key without its value (for B-tree index entries).
