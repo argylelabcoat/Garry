@@ -195,22 +195,13 @@ garry_bool garry_storage_exists(garry_engine_handle *eng, garry_txn_id txn,
 
 garry_i32 garry_storage_count(garry_engine_handle *eng, garry_txn_id txn)
 {
-    garry_storage_cursor cur;
     garry_i32 count;
 
     if (!eng) return 0;
     if (!garry_txn_is_active(txn, eng)) return 0;
 
     garry_rwlock_rdlock(&eng->root_lock);
-    cur = garry_storage_cursor_open(eng, txn, NULL, 0);
-    count = 0;
-    for (;;) {
-        if (!garry_storage_cursor_next(&cur, NULL, NULL, NULL, NULL)) {
-            break;
-        }
-        count++;
-    }
-    garry_storage_cursor_close(&cur);
+    count = eng->key_count;
     garry_rwlock_rdunlock(&eng->root_lock);
     return count;
 }

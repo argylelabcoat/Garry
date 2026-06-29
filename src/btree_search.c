@@ -16,6 +16,7 @@
 #include "btree_search.h"
 #include "btree_compression.h"
 #include "key_encoding.h"
+#include "garry/encoding.h"
 #include "buffer_pool.h"
 #include "btree_node.h"
 

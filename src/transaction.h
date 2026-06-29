@@ -57,9 +57,20 @@ typedef struct {
     garry_db_header header;
     garry_rwlock root_lock;
     garry_mutex txn_slot_mutex;
+    garry_i32 key_count;
 } garry_engine_handle;
 
 garry_engine_handle* garry_engine_init(const char *path, garry_engine_settings settings);
+/**
+ * Open an existing database.
+ *
+ * IMPORTANT: Garry databases are not safe for concurrent access from
+ * multiple processes. Only one process should open a database at a time.
+ * Cross-process access may cause data corruption.
+ *
+ * @param path Filesystem path of the database file.
+ * @return Engine handle, or NULL on failure.
+ */
 garry_engine_handle* garry_engine_open(const char *path);
 void garry_engine_close(garry_engine_handle *eng);
 

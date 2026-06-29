@@ -121,9 +121,9 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn,
  * Write a key-value pair under MVCC.
  *
  * Pipeline: acquire exclusive key lock → B-tree find-or-create →
- * compress value → MVCC set → WAL append. If the key doesn't exist,
+ * WAL append → compress value → MVCC set. If the key doesn't exist,
  * allocates a new version chain and inserts a B-tree descriptor.
- * The WAL record is written after the data commit for crash recovery.
+ * The WAL record is written before the data mutation for crash recovery.
  */
 garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
                              const garry_byte *key, garry_i32 klen,
@@ -135,6 +135,7 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
     garry_byte desc[GARRY_DESC_BUF_SIZE];
     garry_i32 desc_len;
     garry_bool ok;
+    garry_bool new_key;
 
     if (!eng || !key || klen <= 0 || !value || vlen <= 0) return 0;
     if (klen > GARRY_MAX_KEY_SIZE) return 0;
@@ -147,11 +148,13 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
     garry_rwlock_wrlock(&eng->root_lock);
 
     lookup_len = 0;
+    new_key = 0;
     memset(lookup, 0, sizeof(lookup));
     if (garry_leaf_find_search(eng->pool, eng->btree_root,
                                key, klen, lookup, &lookup_len)) {
         cid = garry_decode_cid_from_descriptor(lookup);
     } else {
+        new_key = 1;
         cid = garry_chain_allocate(eng, key, klen);
         if (cid < 0) {
             garry_rwlock_wrunlock(&eng->root_lock);
@@ -163,6 +166,15 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
             garry_pool_free_page(eng->pool, cid);
             garry_rwlock_wrunlock(&eng->root_lock);
             return 0;
+        }
+    }
+
+    {
+        garry_wal_record *rec;
+        rec = garry_make_update_record(txn, key, klen, value, vlen);
+        if (rec) {
+            garry_wal_log_append(&eng->wal, rec);
+            garry_wal_record_free(rec);
         }
     }
 
@@ -188,13 +200,8 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn,
         }
     }
 
-    {
-        garry_wal_record *rec;
-        rec = garry_make_update_record(txn, key, klen, value, vlen);
-        if (rec) {
-            garry_wal_log_append(&eng->wal, rec);
-            garry_wal_record_free(rec);
-        }
+    if (new_key) {
+        eng->key_count++;
     }
 
     garry_rwlock_wrunlock(&eng->root_lock);
@@ -260,6 +267,18 @@ garry_bool garry_storage_get_default(garry_engine_handle *eng, garry_txn_id txn,
     return 1;
 }
 
+/**
+ * Inspect whether a key has a value, children, or both.
+ *
+ * Returns one of:
+ *   GARRY_DATA_NOT_FOUND    (0) — key does not exist
+ *   GARRY_DATA_HAS_CHILDREN (1) — key has child nodes but no value
+ *   GARRY_DATA_HAS_VALUE   (10) — key has a value but no children
+ *   GARRY_DATA_HAS_BOTH    (11) — key has both a value and children
+ *
+ * Note: value 0 doubles as "not found" and boolean false. Callers
+ * should compare against the named constants rather than truthiness.
+ */
 garry_i32 garry_storage_data(garry_engine_handle *eng, garry_txn_id txn,
                              const garry_byte *key, garry_i32 klen)
 {

@@ -14,7 +14,6 @@
 
 #include "transaction.h"
 
-garry_txn_id garry_oldest_active_txid(garry_engine_handle *eng);
 void garry_mvcc_gc(garry_engine_handle *eng);
 
 #endif /* GARRY_GC_H */

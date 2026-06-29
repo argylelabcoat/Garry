@@ -25,6 +25,8 @@ garry_storage_cursor garry_storage_cursor_open(garry_engine_handle *eng, garry_t
                                                const garry_byte *prefix, garry_i32 plen);
 garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key, garry_i32 *klen,
                                      garry_byte *value, garry_i32 *vlen);
+garry_bool garry_storage_cursor_peek(garry_storage_cursor *cur,
+                                     garry_byte *key, garry_i32 *klen);
 void garry_storage_cursor_close(garry_storage_cursor *cur);
 
 #endif /* GARRY_STORAGE_CURSOR_H */

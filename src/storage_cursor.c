@@ -50,8 +50,11 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
 
     if (!cur || cur->btree_cur.exhausted) return 0;
 
+    garry_rwlock_rdlock(&cur->eng->root_lock);
+
     for (;;) {
         if (!garry_btree_cursor_next(cur->eng->pool, &cur->btree_cur, &bkey, &bklen)) {
+            garry_rwlock_rdunlock(&cur->eng->root_lock);
             return 0;
         }
 
@@ -86,17 +89,19 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
                 *vlen = mv_len;
             } else if (value && !vlen) {
                 free(val);
+                garry_rwlock_rdunlock(&cur->eng->root_lock);
                 return 0;
             } else if (vlen) {
                 *vlen = 0;
             }
             free(val);
+            garry_rwlock_rdunlock(&cur->eng->root_lock);
             return 1;
         }
     }
 }
 
-garry_bool garry_storage_cursor_peek(const garry_storage_cursor *cur,
+garry_bool garry_storage_cursor_peek(garry_storage_cursor *cur,
                                      garry_byte *key, garry_i32 *klen)
 {
     garry_byte_array bkey;

@@ -39,6 +39,8 @@ typedef struct {
     garry_i32 page_size;        ///< Page size in bytes (must be power of two).
     garry_i32 max_txns;         ///< Maximum concurrent transactions.
     garry_i32 max_versions;     ///< Maximum version-chain depth per key.
+    garry_i32 max_key_size;     ///< Maximum size of a user-supplied key in bytes.
+    garry_i32 max_subscripts;   ///< Maximum number of subscripts in a composite key.
     garry_i32 compression;      ///< Compression mode (@ref GARRY_COMPRESS_NONE or @ref GARRY_COMPRESS_LZ4).
     garry_i32 btree_flags;      ///< B-tree behavior flags.
 } garry_config;

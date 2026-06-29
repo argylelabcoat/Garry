@@ -30,6 +30,9 @@ static garry_u32 find_slot(garry_buffer_pool *pool, garry_i32 pid) {
     return GARRY_INVALID_SLOT;
 }
 
+/* Returns GARRY_INVALID_SLOT if all loaded slots are pinned (no eviction
+ * candidate) or if the pool has zero capacity. Callers should treat this
+ * as "pool exhausted" — either increase pool_size or reduce pin pressure. */
 static garry_u32 find_eviction_candidate(garry_buffer_pool *pool) {
     garry_u32 i;
     garry_u32 best = GARRY_INVALID_SLOT;

@@ -151,6 +151,116 @@ static void test_version_chain_prune_preserves_on_full_page(void)
     remove("/tmp/garry_prune_test.db");
 }
 
+/* CRITICAL FIX: version chain visibility — reader must see its own uncommitted writes */
+static void test_visibility_sees_own_uncommitted_writes(void)
+{
+    garry_page_buffer buf;
+    garry_i32 vlen;
+    char *val;
+    garry_txn_id active[1];
+
+    garry_page_init(buf, GARRY_NODE_CHAIN, 0, 4096);
+    garry_chain_page_append(buf, 4096, 5, "hello", 5);
+
+    /* txn 5 is active (reading its own data) */
+    active[0] = 5;
+    val = garry_chain_page_find_visible(NULL, buf, 4096, 5, active, 1, &vlen);
+    GARRY_CHECK(val != NULL);
+    GARRY_CHECK(vlen == 5);
+    GARRY_CHECK(memcmp(val, "hello", 5) == 0);
+    free(val);
+}
+
+/* CRITICAL FIX: version chain visibility — other active txn's writes are hidden */
+static void test_visibility_hides_other_active_txn_writes(void)
+{
+    garry_page_buffer buf;
+    garry_i32 vlen;
+    char *val;
+    garry_txn_id active[2];
+
+    garry_page_init(buf, GARRY_NODE_CHAIN, 0, 4096);
+    garry_chain_page_append(buf, 4096, 5, "hello", 5);
+
+    /* txn 5 wrote it, txn 10 is the reader. Both active. */
+    active[0] = 5;
+    active[1] = 10;
+    val = garry_chain_page_find_visible(NULL, buf, 4096, 10, active, 2, &vlen);
+    GARRY_CHECK(val == NULL);
+}
+
+/* CRITICAL FIX: version chain visibility — committed writes are visible */
+static void test_visibility_shows_committed_writes(void)
+{
+    garry_page_buffer buf;
+    garry_i32 vlen;
+    char *val;
+    garry_txn_id active[1];
+
+    garry_page_init(buf, GARRY_NODE_CHAIN, 0, 4096);
+    garry_chain_page_append(buf, 4096, 5, "hello", 5);
+
+    /* txn 5 committed (not in active list), reader is txn 10 */
+    active[0] = 10;
+    val = garry_chain_page_find_visible(NULL, buf, 4096, 10, active, 1, &vlen);
+    GARRY_CHECK(val != NULL);
+    GARRY_CHECK(vlen == 5);
+    GARRY_CHECK(memcmp(val, "hello", 5) == 0);
+    free(val);
+}
+
+/* HIGH FIX: garry_config has max_key_size and max_subscripts fields */
+static void test_config_has_new_fields(void)
+{
+    garry_config cfg;
+    cfg = garry_config_default();
+    GARRY_CHECK(cfg.max_key_size == GARRY_DEFAULT_MAX_KEY_SIZE);
+    GARRY_CHECK(cfg.max_subscripts == GARRY_DEFAULT_MAX_SUBSCRIPTS);
+    GARRY_CHECK(cfg.max_versions == GARRY_DEFAULT_MAX_VERSIONS);
+    GARRY_CHECK(cfg.pool_size == GARRY_DEFAULT_POOL_SIZE);
+    GARRY_CHECK(cfg.page_size == GARRY_DEFAULT_PAGE_SIZE);
+}
+
+/* HIGH FIX: O(1) count via key_count */
+static void test_count_is_o1(void)
+{
+    garry_database *db;
+    garry_txn txn;
+    garry_u8 key[256];
+    garry_i32 klen, count;
+    cleanup();
+    db = garry_database_create(TEST_DB);
+    GARRY_CHECK(db != NULL);
+
+    txn = garry_txn_begin(db);
+    klen = garry_make_key("k1", key);
+    garry_set(db, txn, key, klen, (const garry_u8*)"v1", 2);
+    klen = garry_make_key("k2", key);
+    garry_set(db, txn, key, klen, (const garry_u8*)"v2", 2);
+    klen = garry_make_key("k3", key);
+    garry_set(db, txn, key, klen, (const garry_u8*)"v3", 2);
+    garry_txn_commit(db, txn);
+
+    txn = garry_txn_begin(db);
+    count = garry_count(db, txn);
+    GARRY_CHECK(count == 3);
+    garry_txn_rollback(db, txn);
+
+    /* Update existing key — count should not change */
+    txn = garry_txn_begin(db);
+    klen = garry_make_key("k1", key);
+    garry_set(db, txn, key, klen, (const garry_u8*)"v1_new", 6);
+    garry_txn_commit(db, txn);
+
+    txn = garry_txn_begin(db);
+    count = garry_count(db, txn);
+    GARRY_CHECK(count == 3);
+    garry_txn_rollback(db, txn);
+
+    garry_database_close(db);
+    cleanup();
+}
+
 static void test_btree_delete_root_shrink(void)
 {
     garry_database *db;
@@ -273,6 +383,11 @@ int main(void)
     test_decode_kv_returns_bool();
     test_util_endian_roundtrip();
     test_version_chain_prune_preserves_on_full_page();
+    test_visibility_sees_own_uncommitted_writes();
+    test_visibility_hides_other_active_txn_writes();
+    test_visibility_shows_committed_writes();
+    test_config_has_new_fields();
+    test_count_is_o1();
     test_btree_delete_root_shrink();
     test_integer_subscript_roundtrip();
     test_lock_release_on_commit();

@@ -30,6 +30,8 @@ garry_config garry_config_default(void)
     c.page_size       = s.page_size;
     c.max_txns        = s.max_txns;
     c.max_versions    = s.max_versions;
+    c.max_key_size    = s.max_key_size;
+    c.max_subscripts  = s.max_subscripts;
     c.compression     = s.compression;
     c.btree_flags     = s.btree_flags;
     return c;

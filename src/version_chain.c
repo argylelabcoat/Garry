@@ -353,8 +353,7 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
             if (visible && txid_deleted != 0 && txid_deleted <= snap_txid) visible = 0;
             if (visible) {
                 for (k = 0; k < active_count; k++) {
-                    if (active[k] == snap_txid) continue;
-                    if (active[k] == txid_created) {
+                    if (active[k] == txid_created && active[k] != snap_txid) {
                         visible = 0;
                         break;
                     }

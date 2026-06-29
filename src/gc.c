@@ -19,22 +19,6 @@
 #include "garry_threading.h"
 #include <string.h>
 
-garry_txn_id garry_oldest_active_txid(garry_engine_handle *eng)
-{
-    garry_i32 i;
-    garry_txn_id oldest;
-
-    if (eng->active_count == 0) return eng->next_txid;
-
-    oldest = eng->active_txns[0];
-    for (i = 1; i < eng->active_count; i++) {
-        if (eng->active_txns[i] < oldest) {
-            oldest = eng->active_txns[i];
-        }
-    }
-    return oldest;
-}
-
 void garry_mvcc_gc(garry_engine_handle *eng)
 {
     garry_i32 pid;
