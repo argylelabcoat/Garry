@@ -11,3 +11,4 @@ Makefile
 *.db-wal
 *.db-ckpt
 clib/storage/build-win32/
+.cog/
