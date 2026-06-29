@@ -126,12 +126,6 @@ cmake -S . -B build-win32 \
 cmake --build build-win32
 ```
 
-### With Snappy Compression
-
-```bash
-cmake -S . -B build -DENABLE_SNAPPY=ON
-```
-
 ## Architecture
 
 - **B-tree** with 3 keys per leaf, prefix-compressed keys
