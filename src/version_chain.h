@@ -38,7 +38,9 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
                                     garry_txn_id snap_txid,
                                     garry_txn_id_ptr active, garry_i32 active_count,
                                     garry_i32 *vlen);
-void garry_chain_page_prune(garry_page_buffer buf, garry_u32 page_size,
+void garry_overflow_free(garry_buffer_pool *pool, garry_i32 head);
+void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
+                            garry_u32 page_size,
                             garry_txn_id_ptr active, garry_i32 active_count);
 garry_bool garry_chain_page_has_version(garry_page_buffer buf, garry_u32 page_size,
                                         garry_txn_id txn);

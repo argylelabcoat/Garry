@@ -408,14 +408,30 @@ char* garry_chain_page_find_visible(garry_buffer_pool *pool,
     return result;
 }
 
+void garry_overflow_free(garry_buffer_pool *pool, garry_i32 head)
+{
+    garry_i32 pid = head;
+    while (pid >= 0) {
+        garry_page_buffer *pbuf;
+        garry_i32 next;
+        pbuf = garry_pool_try_pin(pool, pid);
+        if (pbuf == NULL) break;
+        next = garry_read_int32((garry_byte*)*pbuf, GARRY_PAGE_HEADER_SIZE);
+        garry_pool_release_page(pool, pid);
+        pid = next;
+    }
+}
+
 /**
  * Prune old versions that are no longer visible to any active transaction.
  *
  * Keeps the latest version unconditionally. For older versions, checks
  * visibility against all active snapshot IDs. Copies surviving entries
- * into a fresh page buffer and overwrites the original.
+ * into a fresh page buffer and overwrites the original. Frees overflow
+ * pages from discarded entries.
  */
-void garry_chain_page_prune(garry_page_buffer buf, garry_u32 page_size,
+void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf,
+                            garry_u32 page_size,
                             garry_txn_id_ptr active, garry_i32 active_count)
 {
     garry_page_buffer local;
@@ -457,6 +473,23 @@ void garry_chain_page_prune(garry_page_buffer buf, garry_u32 page_size,
             }
         } else {
             keep[i] = GARRY_TRUE;
+        }
+    }
+
+    for (i = 0; i < rec_count; i++) {
+        if (!keep[i]) {
+            rlen = garry_page_get(&local, i, rec, (garry_i32)page_size);
+            if (rlen >= GARRY_CHAIN_ENTRY_HEADER_SIZE + 4) {
+                garry_i32 fb2;
+                fb2 = (garry_i32)rec[13]; if (fb2 < 0) fb2 += 256;
+                if ((fb2 & GARRY_CHAIN_FLAG_OVERFLOW) != 0) {
+                    garry_i32 head_id;
+                    head_id = read_le32(rec, 14);
+                    if (pool != NULL && head_id >= 0) {
+                        garry_overflow_free(pool, head_id);
+                    }
+                }
+            }
         }
     }
 

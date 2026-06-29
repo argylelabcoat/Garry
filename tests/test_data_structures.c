@@ -203,7 +203,7 @@ static void test_version_chain_prune_with_active(void)
     garry_chain_page_append(buf, 4096, 3, "new3", 4);
 
     active[0] = 2;
-    garry_chain_page_prune(buf, 4096, active, 1);
+    garry_chain_page_prune(NULL, buf, 4096, active, 1);
 
     active[0] = 10;
     result = garry_chain_page_find_visible(NULL, buf, 4096, 3, active, 1, &vlen);

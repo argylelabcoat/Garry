@@ -60,7 +60,7 @@ void garry_mvcc_gc(garry_engine_handle *eng)
             garry_page_type pt;
             pt = ((garry_page_header*)*buf)->page_type;
             if (pt == GARRY_NODE_CHAIN) {
-                garry_chain_page_prune(*buf, (garry_u32)eng->page_size,
+                garry_chain_page_prune(eng->pool, *buf, (garry_u32)eng->page_size,
                                        snapshot, snapshot_count);
                 garry_pool_mark_dirty(eng->pool, pid);
             }
