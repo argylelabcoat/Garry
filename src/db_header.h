@@ -40,7 +40,7 @@ typedef struct {
 } garry_db_header;
 
 /**
- * @brief Write a 32-bit integer to a buffer in big-endian byte order.
+ * @brief Write a 32-bit integer to a buffer in little-endian byte order.
  *
  * @param buf     Output buffer
  * @param offset  Byte offset where integer is written
@@ -49,7 +49,7 @@ typedef struct {
 void garry_write_int32(garry_byte* buf, garry_i32 offset, garry_i32 val);
 
 /**
- * @brief Read a 32-bit integer from a buffer in big-endian byte order.
+ * @brief Read a 32-bit integer from a buffer in little-endian byte order.
  *
  * @param buf     Input buffer
  * @param offset  Byte offset where integer is stored
@@ -114,8 +114,8 @@ garry_bool garry_validate_db_header(garry_db_header* hdr);
 /**
  * @brief Compute the checksum for the first GARRY_CHECKSUM_OFFSET bytes.
  *
- * Uses a simple additive checksum over all bytes before the checksum field.
- * The checksum is stored at GARRY_CHECKSUM_OFFSET (byte 48).
+ * Uses FNV-1a hash truncated to 31 bits over all bytes before the
+ * checksum field. The checksum is stored at GARRY_CHECKSUM_OFFSET (byte 48).
  *
  * @param buf  Buffer containing the header (first 48 bytes used)
  * @return Computed checksum value

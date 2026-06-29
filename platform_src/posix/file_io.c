@@ -88,3 +88,8 @@ garry_i32 garry_file_write_bytes(garry_file_descriptor* fd, const garry_byte* bu
     ssize_t n = write(fd->fd, buf, (size_t)count);
     return (garry_i32)n;
 }
+
+garry_bool garry_file_truncate(garry_file_descriptor* fd, garry_i32 size)
+{
+    return (ftruncate(fd->fd, (off_t)size) == 0) ? GARRY_TRUE : GARRY_FALSE;
+}

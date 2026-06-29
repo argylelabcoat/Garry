@@ -155,3 +155,12 @@ garry_i32 garry_file_write_bytes(garry_file_descriptor* fd, const garry_byte* bu
         return -1;
     return (garry_i32)bytes_written;
 }
+
+garry_bool garry_file_truncate(garry_file_descriptor* fd, garry_i32 size)
+{
+    LARGE_INTEGER li;
+    li.QuadPart = size;
+    if (!SetFilePointerEx(fd->fd, li, NULL, FILE_BEGIN))
+        return GARRY_FALSE;
+    return SetEndOfFile(fd->fd) ? GARRY_TRUE : GARRY_FALSE;
+}

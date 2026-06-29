@@ -537,6 +537,7 @@ void garry_btree_delete(garry_buffer_pool *pool, garry_i32 *root,
     if (underflowed) {
         garry_load_node(pool, *root, &rnode);
         if (rnode.kind == GARRY_NODE_INTERNAL && rnode.entry_count == 0) {
+            garry_pool_free_page(pool, *root);
             *root = rnode.children[0];
         }
     }

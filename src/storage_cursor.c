@@ -84,6 +84,9 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
             if (value && vlen) {
                 memcpy(value, val, (size_t)mv_len);
                 *vlen = mv_len;
+            } else if (value && !vlen) {
+                free(val);
+                return 0;
             } else if (vlen) {
                 *vlen = 0;
             }
@@ -138,7 +141,9 @@ garry_bool garry_storage_cursor_skip_prefix(garry_storage_cursor *cur,
             }
         }
         if (!match) {
-            memcpy(cur->btree_cur.saved_key, key, sizeof(garry_byte_array));
+            if (klen <= (garry_i32)sizeof(garry_byte_array)) {
+                memcpy(cur->btree_cur.saved_key, key, (size_t)klen);
+            }
             cur->btree_cur.saved_klen = (garry_u32)klen;
             cur->btree_cur.has_saved = 1;
             return 1;

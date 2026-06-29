@@ -40,7 +40,7 @@ typedef struct {
     garry_i32 max_txns;         ///< Maximum concurrent transactions.
     garry_i32 max_versions;     ///< Maximum version-chain depth per key.
     garry_i32 compression;      ///< Compression mode (@ref GARRY_COMPRESS_NONE or @ref GARRY_COMPRESS_LZ4).
-    garry_i32 btree_flags;      ///< B-tree behavior flags (e.g. @ref GARRY_BTREE_FLAG_COMPRESS_KEYS).
+    garry_i32 btree_flags;      ///< B-tree behavior flags.
 } garry_config;
 
 /**

@@ -95,7 +95,7 @@ garry_i32 garry_decode_key_only(const garry_byte* encoded, garry_i32 elen,
  * @brief Encode a B-tree node descriptor (chain ID + child flag).
  *
  * Encodes the descriptor as a CBOR map with two entries:
- * {"cid": chain_id, "ch": has_children}. Used as the value in
+ * {"cid": chain_id, "hc": has_children}. Used as the value in
  * B-tree leaf entries to point to version chains.
  *
  * @param chain_id     Version chain ID for this key

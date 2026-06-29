@@ -133,9 +133,12 @@ garry_status_t garry_get(garry_database *db, garry_txn txn,
                          const garry_u8 *key, garry_i32 klen,
                          garry_u8 *value, garry_i32 *vlen)
 {
+    garry_bool found;
     if (!db) return GARRY_ERR_INVALID_ARG;
-    return garry_storage_get(db->eng, txn, key, klen, value, vlen)
-        ? GARRY_OK : GARRY_ERR_NOT_FOUND;
+    found = garry_storage_get(db->eng, txn, key, klen, value, vlen);
+    if (found) return GARRY_OK;
+    if (!garry_txn_is_active(txn, db->eng)) return GARRY_ERR_INVALID_ARG;
+    return GARRY_ERR_NOT_FOUND;
 }
 
 garry_status_t garry_set(garry_database *db, garry_txn txn,
@@ -260,6 +263,7 @@ garry_status_t garry_set_str(garry_database *db, garry_txn txn,
     klen = (garry_i32)strlen(key);
     if (klen > GARRY_MAX_KEY_SIZE) return GARRY_ERR_BUFFER_TOO_SMALL;
     vlen = (garry_i32)strlen(value);
+    if (vlen > GARRY_MAX_RECORD_SIZE) return GARRY_ERR_BUFFER_TOO_SMALL;
     return garry_set(db, txn, (const garry_u8*)key, klen,
                      (const garry_u8*)value, vlen);
 }

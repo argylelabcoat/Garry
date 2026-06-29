@@ -129,6 +129,10 @@ static void test_version_chain_prune_preserves_on_full_page(void)
     garry_page_buffer buf;
     garry_i32 i;
     garry_txn_id active[1] = {0};
+    garry_buffer_pool *pool;
+
+    pool = garry_pool_create("/tmp/garry_prune_test.db", 4, 4096);
+    GARRY_CHECK(pool != NULL);
 
     garry_page_init(buf, GARRY_NODE_CHAIN, 0, 4096);
 
@@ -136,10 +140,13 @@ static void test_version_chain_prune_preserves_on_full_page(void)
         garry_chain_page_append(buf, 4096, i, "x", 1);
     }
 
-    garry_chain_page_prune(NULL, buf, 4096, active, 1);
+    garry_chain_page_prune(pool, buf, 4096, active, 1);
 
     GARRY_CHECK(garry_chain_page_has_version(buf, 4096, 1) == 0);
     GARRY_CHECK(garry_chain_page_has_version(buf, 4096, 20) == 1);
+
+    garry_pool_close(pool);
+    remove("/tmp/garry_prune_test.db");
 }
 
 static void test_btree_delete_root_shrink(void)

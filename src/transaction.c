@@ -195,6 +195,8 @@ garry_engine_handle* garry_engine_open(const char *path)
 
     eng->pool = garry_pool_create(path, (garry_u32)garry_default_engine_settings().pool_size, (garry_u32)page_size);
     if (!eng->pool) {
+        free(eng->active_txns);
+        free(eng->txn_states);
         free(eng);
         return NULL;
     }
@@ -208,7 +210,9 @@ garry_engine_handle* garry_engine_open(const char *path)
         eng->pool->next_page = eng->header.total_pages;
         garry_pool_release_page(eng->pool, GARRY_HEADER_PAGE);
     } else {
-        free(eng->pool);
+        garry_pool_close(eng->pool);
+        free(eng->active_txns);
+        free(eng->txn_states);
         free(eng);
         return NULL;
     }
@@ -233,7 +237,7 @@ garry_engine_handle* garry_engine_open(const char *path)
     if (!eng->active_txns || !eng->txn_states) {
         free(eng->active_txns);
         free(eng->txn_states);
-        free(eng->pool);
+        garry_pool_close(eng->pool);
         free(eng);
         return NULL;
     }
@@ -290,6 +294,8 @@ void garry_engine_close(garry_engine_handle *eng)
         free(node);
         node = next;
     }
+    eng->lock_mgr.head = NULL;
+    eng->lock_mgr.count = 0;
     free(eng->active_txns);
     free(eng->txn_states);
     free(eng);
@@ -442,8 +448,8 @@ garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn,
             garry_i32 mc = eng->txn_states[slot].modified_count;
             if (mc < GARRY_MAX_MODIFIED_PAGES) {
                 eng->txn_states[slot].modified_pages[mc] = chain_page_id;
+                eng->txn_states[slot].modified_count = mc + 1;
             }
-            eng->txn_states[slot].modified_count = mc + 1;
         }
         garry_mutex_unlock(&eng->txn_slot_mutex);
     }
@@ -472,8 +478,8 @@ garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn,
             garry_i32 mc = eng->txn_states[slot].modified_count;
             if (mc < GARRY_MAX_MODIFIED_PAGES) {
                 eng->txn_states[slot].modified_pages[mc] = chain_page_id;
+                eng->txn_states[slot].modified_count = mc + 1;
             }
-            eng->txn_states[slot].modified_count = mc + 1;
         }
         garry_mutex_unlock(&eng->txn_slot_mutex);
     }

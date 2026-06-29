@@ -95,7 +95,7 @@ garry_i32 garry_length_prefix_size(garry_i32 plen)
     return (plen < GARRY_LEN_PREFIX_INLINE_MAX) ? 1 : 3;
 }
 
-void garry_encode_key_tuple(garry_key_tuple* t, garry_byte_array out)
+void garry_encode_key_tuple(const garry_key_tuple* t, garry_byte_array out)
 {
     garry_i32 offset, i, plen, j;
     memset(out, 0, sizeof(garry_byte_array));

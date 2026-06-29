@@ -208,6 +208,13 @@ void garry_load_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *n
     garry_byte ckey[GARRY_MAX_KEY_SIZE];
     garry_i32 ckey_len;
 
+    memset(node, 0, sizeof(garry_btree_node));
+    node->kind = GARRY_NODE_LEAF;
+    node->header.page_type = GARRY_NODE_LEAF;
+    node->entry_count = 0;
+    node->next_page = -1;
+    node->prev_page = -1;
+
     buf = garry_pool_try_pin(pool, pid);
     if (!buf) {
         buf = garry_pool_pin_page(pool, pid);

@@ -71,7 +71,6 @@ garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry
 {
     garry_i32 count, free_start, free_end, needed;
     garry_slot_entry slot;
-    (void)page_size;
     count = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_COUNT);
     free_start = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_FREE_START);
     free_end = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_FREE_END);
@@ -79,6 +78,9 @@ garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry
         return -1;
     }
     if (free_start + GARRY_SLOT_SIZE > free_end) {
+        return -1;
+    }
+    if (free_end - dlen < GARRY_PAGE_HEADER_SIZE) {
         return -1;
     }
     needed = dlen + GARRY_SLOT_SIZE;
@@ -104,9 +106,9 @@ garry_i32 garry_page_get(garry_page_buffer* buf, garry_i32 slot_idx, garry_byte*
 {
     garry_slot_entry entry;
     garry_i32 i;
-    (void)page_size;
     if (slot_idx < 0 || slot_idx >= garry_page_record_count(buf)) return -1;
     entry = garry_read_slot(buf, slot_idx);
+    if (entry.length > page_size - GARRY_PAGE_HEADER_SIZE) return -1;
     for (i = 0; i < entry.length; i++) {
         data[i] = (*buf)[entry.offset + i];
     }

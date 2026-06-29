@@ -107,6 +107,11 @@ void garry_lock_acquire(garry_lock_manager* mgr, garry_txn_id txn,
                 *ok = 0;
                 return;
             }
+            if (klen > GARRY_MAX_KEY_SIZE) {
+                free(n);
+                *ok = 0;
+                return;
+            }
             memcpy(n->key, key, (size_t)klen);
             n->key_len = klen;
             n->txn = txn;

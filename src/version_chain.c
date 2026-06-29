@@ -171,7 +171,10 @@ garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value,
         if (this_pid < 0) return -1;
 
         pbuf = garry_pool_pin_page(pool, this_pid);
-        if (pbuf == NULL) return -1;
+        if (pbuf == NULL) {
+            garry_pool_free_page(pool, this_pid);
+            return -1;
+        }
 
         garry_page_init(*pbuf, GARRY_NODE_OVERFLOW, 0, (garry_i32)pool->page_size);
 

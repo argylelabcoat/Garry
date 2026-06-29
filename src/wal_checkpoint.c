@@ -27,6 +27,8 @@ garry_bool garry_wal_checkpoint(garry_wal_log *wal, garry_engine_handle *eng,
     garry_mvcc_gc(eng);
     garry_pool_flush_all(eng->pool);
     garry_wal_log_flush(wal);
+    garry_file_truncate(&wal->fd, 0);
+    wal->last_lsn = 0;
 
     return GARRY_TRUE;
 }

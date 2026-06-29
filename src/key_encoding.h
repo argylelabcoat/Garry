@@ -99,7 +99,7 @@ garry_i32 garry_length_prefix_size(garry_i32 plen);
  * @param t    Key tuple to encode
  * @param out  Output byte array (must be large enough)
  */
-void garry_encode_key_tuple(garry_key_tuple* t, garry_byte_array out);
+void garry_encode_key_tuple(const garry_key_tuple* t, garry_byte_array out);
 
 /**
  * @brief Decode a byte buffer into a key tuple.

@@ -55,5 +55,6 @@ void garry_file_close(garry_file_descriptor* fd);
 garry_i32 garry_file_unlink(const char* path);
 garry_i32 garry_file_seek(garry_file_descriptor* fd, garry_i32 offset, int whence);
 garry_i32 garry_file_write_bytes(garry_file_descriptor* fd, const garry_byte* buf, garry_i32 count);
+garry_bool garry_file_truncate(garry_file_descriptor* fd, garry_i32 size);
 
 #endif

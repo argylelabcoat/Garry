@@ -84,7 +84,7 @@ GARRY_API garry_key_tuple garry_make_key_4(const char *p1, const char *p2, const
  * resulting byte array can be passed directly to @ref garry_set,
  * @ref garry_get, etc.
  */
-GARRY_API void garry_encode_key_tuple(garry_key_tuple *t, garry_byte_array out);
+GARRY_API void garry_encode_key_tuple(const garry_key_tuple *t, garry_byte_array out);
 
 /**
  * @brief Compare two encoded key buffers lexicographically.
