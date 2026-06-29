@@ -21,6 +21,7 @@
 #include "slotted_page.h"
 #include "db_header.h"
 #include "btree_node.h"
+#include "version_chain.h"
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -401,12 +402,26 @@ garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn,
     garry_page_buffer *buf;
     garry_bool ok;
     garry_i32 slot;
+    garry_i32 inline_cap;
 
     buf = garry_pool_pin_page(eng->pool, chain_page_id);
     if (!buf) return GARRY_FALSE;
 
-    ok = garry_chain_page_append(*buf, (garry_u32)eng->page_size,
-                                 txn, value, vlen);
+    inline_cap = garry_chain_inline_capacity((garry_u32)eng->page_size);
+
+    if (vlen > inline_cap) {
+        garry_i32 head;
+        head = garry_overflow_write(eng->pool, value, vlen);
+        if (head < 0) {
+            garry_pool_release_page(eng->pool, chain_page_id);
+            return GARRY_FALSE;
+        }
+        ok = garry_chain_page_append_overflow(*buf, (garry_u32)eng->page_size,
+                                              txn, vlen, head);
+    } else {
+        ok = garry_chain_page_append(*buf, (garry_u32)eng->page_size,
+                                     txn, value, vlen);
+    }
 
     if (ok) {
         garry_pool_mark_dirty(eng->pool, chain_page_id);

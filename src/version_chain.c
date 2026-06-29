@@ -45,13 +45,15 @@ void garry_chain_page_init(garry_page_buffer buf, garry_u32 page_size)
 garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size,
                                    garry_txn_id txn, const char *value, garry_i32 vlen)
 {
-    garry_byte entry_buf[GARRY_CHAIN_ENTRY_BUF_SIZE];
+    garry_byte entry_buf[GARRY_MAX_RECORD_SIZE];
     garry_i32 pos;
     garry_i32 v;
     garry_i32 i;
     garry_i32 slot_idx;
+    garry_i32 inline_cap;
 
-    if (vlen > 512 - GARRY_CHAIN_ENTRY_HEADER_SIZE) {
+    inline_cap = garry_chain_inline_capacity(page_size);
+    if (vlen > inline_cap) {
         return GARRY_FALSE;
     }
 

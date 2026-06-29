@@ -37,7 +37,7 @@
 /// Maximum number of subscripts (path components) in a composite key.
 #define GARRY_MAX_SUBSCRIPTS        16
 /// Maximum size of a single record (key + value) in bytes.
-#define GARRY_MAX_RECORD_SIZE     8192
+#define GARRY_MAX_RECORD_SIZE    16384
 /// Size of an overflow next-page pointer in bytes.
 #define GARRY_OVERFLOW_PTR_SIZE      4
 
@@ -69,7 +69,7 @@
 /// Default maximum number of subscripts in a composite key.
 #define GARRY_DEFAULT_MAX_SUBSCRIPTS 16
 /// Default maximum size of a single record in bytes.
-#define GARRY_DEFAULT_MAX_RECORD_SIZE 8192
+#define GARRY_DEFAULT_MAX_RECORD_SIZE 16384
 
 /* ---- Buffer sizes ---- */
 
