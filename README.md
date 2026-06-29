@@ -31,7 +31,7 @@ garry_set_str(db, txn, "hello", "world");
 garry_txn_commit(db, txn);
 
 txn = garry_txn_begin(db);
-char result[256];
+char result[GARRY_MAX_KEY_SIZE];
 garry_get_str(db, txn, "hello", result, sizeof(result));
 // result = "world"
 garry_txn_rollback(db, txn);
@@ -52,7 +52,7 @@ garry_txn txn = garry_txn_begin(db);
 garry_set(db, txn, key, n, value, vlen);
 
 /* Unsplit back to string */
-char buf[256];
+char buf[GARRY_MAX_KEY_SIZE];
 garry_i32 len = garry_key_unsplit(key, n, '/', buf, sizeof(buf));
 // buf = "users/matthew/articles/A04"
 ```

@@ -152,14 +152,13 @@ void garry_empty_byte_array(garry_byte_array out)
 void garry_encode_integer_subscript(garry_i32 n, garry_byte_array out)
 {
     garry_i32 i;
-    garry_i32 val;
+    garry_u32 val;
     memset(out, 0, sizeof(garry_byte_array));
     out[0] = (garry_byte)2;
-    val = n;
-    /* Write 8 little-endian bytes starting at index 1. */
+    val = (garry_u32)n;
     for (i = 1; i <= 8; i++) {
-        out[i] = (garry_byte)(val % 256);
-        val = val / 256;
+        out[i] = (garry_byte)(val & 0xFF);
+        val >>= 8;
     }
 }
 

@@ -48,7 +48,7 @@ void garry_write_slot(garry_page_buffer buf, garry_i32 idx, garry_slot_entry ent
 
 garry_i32 garry_page_record_count(garry_page_buffer* buf)
 {
-    return garry_read_int32((garry_byte*)*buf, 8);
+    return garry_read_int32((garry_byte*)*buf, GARRY_PAGE_HDR_OFF_COUNT);
 }
 
 void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 level, garry_i32 page_size)
@@ -57,14 +57,14 @@ void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 lev
     for (i = 0; i < page_size; i++) {
         buf[i] = 0;
     }
-    garry_write_int32(buf, 0, (garry_i32)ptype);
-    garry_write_int32(buf, 4, level);
-    garry_write_int32(buf, 8, 0);
-    garry_write_int32(buf, 12, GARRY_PAGE_HEADER_SIZE);
-    garry_write_int32(buf, 16, page_size);
-    garry_write_int32(buf, 20, 0);
-    garry_write_int32(buf, 24, 0);
-    garry_write_int32(buf, 28, 0);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_TYPE, (garry_i32)ptype);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_LEVEL, level);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_COUNT, 0);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_FREE_START, GARRY_PAGE_HEADER_SIZE);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_FREE_END, page_size);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_COMPRESSION, 0);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_PARENT, 0);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_CHECKSUM, 0);
 }
 
 garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry_i32 dlen, garry_i32 page_size)
@@ -72,9 +72,9 @@ garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry
     garry_i32 count, free_start, free_end, needed;
     garry_slot_entry slot;
     (void)page_size;
-    count = garry_read_int32(buf, 8);
-    free_start = garry_read_int32(buf, 12);
-    free_end = garry_read_int32(buf, 16);
+    count = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_COUNT);
+    free_start = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_FREE_START);
+    free_end = garry_read_int32(buf, GARRY_PAGE_HDR_OFF_FREE_END);
     if (free_start + GARRY_SLOT_SIZE > free_end) {
         return -1;
     }
@@ -90,9 +90,9 @@ garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte* data, garry
     slot.length = dlen;
     garry_write_slot(buf, count, slot);
     free_start = free_start + GARRY_SLOT_SIZE;
-    garry_write_int32(buf, 8, count + 1);
-    garry_write_int32(buf, 12, free_start);
-    garry_write_int32(buf, 16, free_end);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_COUNT, count + 1);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_FREE_START, free_start);
+    garry_write_int32(buf, GARRY_PAGE_HDR_OFF_FREE_END, free_end);
     garry_copy_bytes_in(buf, free_end, data, dlen);
     return count;
 }

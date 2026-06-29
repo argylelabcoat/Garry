@@ -56,6 +56,25 @@
 /// Size of a single slot entry in bytes.
 #define GARRY_SLOT_SIZE              4
 
+/* ---- Page header field offsets ---- */
+
+/// Byte offset of the page type field in the page header.
+#define GARRY_PAGE_HDR_OFF_TYPE         0
+/// Byte offset of the B-tree level field.
+#define GARRY_PAGE_HDR_OFF_LEVEL        4
+/// Byte offset of the record count field.
+#define GARRY_PAGE_HDR_OFF_COUNT        8
+/// Byte offset of the free-start pointer.
+#define GARRY_PAGE_HDR_OFF_FREE_START  12
+/// Byte offset of the free-end pointer.
+#define GARRY_PAGE_HDR_OFF_FREE_END    16
+/// Byte offset of the compression field.
+#define GARRY_PAGE_HDR_OFF_COMPRESSION 20
+/// Byte offset of the parent page pointer.
+#define GARRY_PAGE_HDR_OFF_PARENT      24
+/// Byte offset of the checksum field.
+#define GARRY_PAGE_HDR_OFF_CHECKSUM    28
+
 /* ---- Engine defaults ---- */
 
 /// Default number of pages in the in-memory pool.
