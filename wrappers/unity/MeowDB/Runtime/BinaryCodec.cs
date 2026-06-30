@@ -223,9 +223,8 @@ namespace MeowDB
         {
             var buf = new byte[17];
             buf[0] = tag;
-            byte[] raw = value.ToByteArray();
-            Array.Reverse(raw, 1, 16);
-            Buffer.BlockCopy(raw, 1, buf, 1, 16);
+            value.ToByteArray().CopyTo(buf, 1);
+            Array.Reverse(buf, 1, 16);
             return buf;
         }
 

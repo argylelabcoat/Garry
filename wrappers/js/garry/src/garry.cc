@@ -311,6 +311,12 @@ void GarryTransaction::Rollback(const Napi::CallbackInfo& info) {
     rolled_back_ = true;
 }
 
+GarryTransaction::~GarryTransaction() {
+    if (!committed_ && !rolled_back_ && db_) {
+        garry_txn_rollback(db_, txn_);
+    }
+}
+
 // --- GarryCursor ---
 
 Napi::Object GarryCursor::Init(Napi::Env env, Napi::Object exports) {
@@ -364,6 +370,18 @@ void GarryCursor::Close(const Napi::CallbackInfo& info) {
     }
     if (db_ && txn_) {
         garry_txn_commit(db_, txn_);
+        db_ = nullptr;
+        txn_ = 0;
+    }
+}
+
+GarryCursor::~GarryCursor() {
+    if (cursor_) {
+        garry_cursor_close(cursor_);
+        cursor_ = nullptr;
+    }
+    if (db_ && txn_) {
+        garry_txn_rollback(db_, txn_);
         db_ = nullptr;
         txn_ = 0;
     }

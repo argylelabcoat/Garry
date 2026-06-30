@@ -74,6 +74,7 @@ public:
     static Napi::Function ctor;
     static Napi::Object Init(Napi::Env env, Napi::Object exports);
     GarryTransaction(const Napi::CallbackInfo& info);
+    ~GarryTransaction();
 
 private:
     garry_database* db_;
@@ -97,6 +98,7 @@ public:
     static Napi::Function ctor;
     static Napi::Object Init(Napi::Env env, Napi::Object exports);
     GarryCursor(const Napi::CallbackInfo& info);
+    ~GarryCursor();
 
 private:
     garry_cursor* cursor_;

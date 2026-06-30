@@ -43,7 +43,7 @@ type
     MaxVersions: Integer;
     MaxKeySize: Integer;
     MaxSubscripts: Integer;
-    UseCompression: Boolean;
+    UseCompression: Integer;
     BTreeFlags: Integer;
   end;
 

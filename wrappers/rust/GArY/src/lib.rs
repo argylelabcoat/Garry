@@ -132,11 +132,10 @@ impl Database {
     }
 
     pub fn exists(&self, key: &str) -> Result<bool, GarryError> {
-        let c_key = CString::new(key)?;
-        let result = unsafe {
-            ffi::garry_exists(self.handle, 0, c_key.as_ptr() as *const u8, key.len() as i32)
-        };
-        Ok(result == ffi::GARRY_TRUE)
+        let txn = self.begin_transaction()?;
+        let result = txn.exists(key);
+        txn.commit()?;
+        result
     }
 
     pub fn count(&self) -> Result<i32, GarryError> {

@@ -59,6 +59,10 @@ static void db_free_instance(void *class_userdata,
     MeowDBData *data = (MeowDBData *)instance;
     if (!data) return;
     if (data->db) {
+        if (data->txn_active) {
+            garry_txn_rollback(data->db, data->txn_handle);
+            data->txn_active = 0;
+        }
         garry_database_close(data->db);
         data->db = NULL;
     }
@@ -96,6 +100,10 @@ static void db_open_call(
     if (!d) { garry_var_from_bool((uint8_t *)r_return, 0); return; }
 
     if (d->db) {
+        if (d->txn_active) {
+            garry_txn_rollback(d->db, d->txn_handle);
+            d->txn_active = 0;
+        }
         garry_database_close(d->db);
         d->db = NULL;
     }
@@ -128,6 +136,10 @@ static void db_open_ptrcall(
     }
 
     if (d->db) {
+        if (d->txn_active) {
+            garry_txn_rollback(d->db, d->txn_handle);
+            d->txn_active = 0;
+        }
         garry_database_close(d->db);
         d->db = NULL;
     }
@@ -202,11 +214,11 @@ static void db_get_call(
     char key[256] = {0};
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_u8 value[GARRY_MAX_RECORD_SIZE];
     garry_i32 vlen = (garry_i32)sizeof(value);
     garry_status_t rc = garry_get(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key), value, &vlen);
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     if (rc == GARRY_OK && vlen > 0) {
         garry_ensure_ctors();
@@ -238,11 +250,11 @@ static void db_get_ptrcall(
     char key[256] = {0};
     garry_str_to_c((const uint8_t *)args[0], key, (int)sizeof(key) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_u8 value[GARRY_MAX_RECORD_SIZE];
     garry_i32 vlen = (garry_i32)sizeof(value);
     garry_status_t rc = garry_get(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key), value, &vlen);
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     if (rc == GARRY_OK && vlen > 0) {
         garry_ensure_ctors();
@@ -296,10 +308,10 @@ static void db_set_call(
     memcpy(&data_ptr, packed_buf, sizeof(data_ptr));
     memcpy(&data_size, packed_buf + sizeof(data_ptr), sizeof(data_size));
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_status_t rc = garry_set(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key),
                                    data_ptr, (garry_i32)data_size);
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     garry_var_from_bool((uint8_t *)r_return, rc == GARRY_OK ? 1 : 0);
 }
@@ -325,10 +337,10 @@ static void db_set_ptrcall(
     memcpy(&data_ptr, packed_data, sizeof(data_ptr));
     memcpy(&data_size, packed_data + sizeof(data_ptr), sizeof(data_size));
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_status_t rc = garry_set(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key),
                                    data_ptr, (garry_i32)data_size);
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     *(GDExtensionBool *)r_return = rc == GARRY_OK ? 1 : 0;
 }
@@ -351,9 +363,9 @@ static void db_delete_call(
     char key[256] = {0};
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_status_t rc = garry_delete(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key));
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     garry_var_from_bool((uint8_t *)r_return, rc == GARRY_OK ? 1 : 0);
 }
@@ -373,9 +385,9 @@ static void db_delete_ptrcall(
     char key[256] = {0};
     garry_str_to_c((const uint8_t *)args[0], key, (int)sizeof(key) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_status_t rc = garry_delete(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key));
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     *(GDExtensionBool *)r_return = rc == GARRY_OK ? 1 : 0;
 }
@@ -398,9 +410,9 @@ static void db_exists_call(
     char key[256] = {0};
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_i32 data_type = garry_data(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key));
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     garry_var_from_bool((uint8_t *)r_return, (data_type == GARRY_DATA_HAS_VALUE || data_type == GARRY_DATA_HAS_BOTH) ? 1 : 0);
 }
@@ -420,9 +432,9 @@ static void db_exists_ptrcall(
     char key[256] = {0};
     garry_str_to_c((const uint8_t *)args[0], key, (int)sizeof(key) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_i32 data_type = garry_data(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key));
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     *(GDExtensionBool *)r_return = (data_type == GARRY_DATA_HAS_VALUE || data_type == GARRY_DATA_HAS_BOTH) ? 1 : 0;
 }
@@ -445,11 +457,11 @@ static void db_get_string_call(
     char key[256] = {0};
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     char value[16384] = {0};
     garry_i32 vlen = (garry_i32)sizeof(value);
     garry_status_t rc = garry_get_str(d->db, txn, key, value, vlen);
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     if (rc == GARRY_OK) {
         garry_var_from_cstr((uint8_t *)r_return, value);
@@ -473,11 +485,11 @@ static void db_get_string_ptrcall(
     char key[256] = {0};
     garry_str_to_c((const uint8_t *)args[0], key, (int)sizeof(key) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     char value[16384] = {0};
     garry_i32 vlen = (garry_i32)sizeof(value);
     garry_status_t rc = garry_get_str(d->db, txn, key, value, vlen);
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     if (rc == GARRY_OK) {
         garry_str_new((uint8_t *)r_return, value);
@@ -506,9 +518,9 @@ static void db_set_string_call(
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
     extract_string_arg(args, 1, value, (int)sizeof(value) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_status_t rc = garry_set_str(d->db, txn, key, value);
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     garry_var_from_bool((uint8_t *)r_return, rc == GARRY_OK ? 1 : 0);
 }
@@ -530,9 +542,9 @@ static void db_set_string_ptrcall(
     garry_str_to_c((const uint8_t *)args[0], key, (int)sizeof(key) - 1);
     garry_str_to_c((const uint8_t *)args[1], value, (int)sizeof(value) - 1);
 
-    garry_txn txn = garry_txn_begin(d->db);
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
     garry_status_t rc = garry_set_str(d->db, txn, key, value);
-    garry_txn_commit(d->db, txn);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     *(GDExtensionBool *)r_return = rc == GARRY_OK ? 1 : 0;
 }
@@ -548,6 +560,11 @@ static void db_begin_transaction_call(
         GDExtensionCallError *r_error) {
     (void)method_userdata; (void)args; (void)argc; (void)r_return;
     r_error->error = GDEXTENSION_CALL_OK;
+    MeowDBData *d = (MeowDBData *)instance;
+    if (!d || !d->db) return;
+    if (d->txn_active) return;
+    d->txn_handle = garry_txn_begin(d->db);
+    d->txn_active = 1;
 }
 
 static void db_begin_transaction_ptrcall(
@@ -555,7 +572,12 @@ static void db_begin_transaction_ptrcall(
         GDExtensionClassInstancePtr instance,
         const GDExtensionConstTypePtr *args,
         GDExtensionTypePtr r_return) {
-    (void)method_userdata; (void)args; (void)r_return; (void)instance;
+    (void)method_userdata; (void)args; (void)r_return;
+    MeowDBData *d = (MeowDBData *)instance;
+    if (!d || !d->db) return;
+    if (d->txn_active) return;
+    d->txn_handle = garry_txn_begin(d->db);
+    d->txn_active = 1;
 }
 
 /* --- commit() -> void --- */
@@ -569,6 +591,10 @@ static void db_commit_call(
         GDExtensionCallError *r_error) {
     (void)method_userdata; (void)args; (void)argc; (void)r_return;
     r_error->error = GDEXTENSION_CALL_OK;
+    MeowDBData *d = (MeowDBData *)instance;
+    if (!d || !d->db || !d->txn_active) return;
+    garry_txn_commit(d->db, d->txn_handle);
+    d->txn_active = 0;
 }
 
 static void db_commit_ptrcall(
@@ -576,7 +602,11 @@ static void db_commit_ptrcall(
         GDExtensionClassInstancePtr instance,
         const GDExtensionConstTypePtr *args,
         GDExtensionTypePtr r_return) {
-    (void)method_userdata; (void)args; (void)r_return; (void)instance;
+    (void)method_userdata; (void)args; (void)r_return;
+    MeowDBData *d = (MeowDBData *)instance;
+    if (!d || !d->db || !d->txn_active) return;
+    garry_txn_commit(d->db, d->txn_handle);
+    d->txn_active = 0;
 }
 
 /* --- rollback() -> void --- */
@@ -590,6 +620,10 @@ static void db_rollback_call(
         GDExtensionCallError *r_error) {
     (void)method_userdata; (void)args; (void)argc; (void)r_return;
     r_error->error = GDEXTENSION_CALL_OK;
+    MeowDBData *d = (MeowDBData *)instance;
+    if (!d || !d->db || !d->txn_active) return;
+    garry_txn_rollback(d->db, d->txn_handle);
+    d->txn_active = 0;
 }
 
 static void db_rollback_ptrcall(
@@ -597,7 +631,11 @@ static void db_rollback_ptrcall(
         GDExtensionClassInstancePtr instance,
         const GDExtensionConstTypePtr *args,
         GDExtensionTypePtr r_return) {
-    (void)method_userdata; (void)args; (void)r_return; (void)instance;
+    (void)method_userdata; (void)args; (void)r_return;
+    MeowDBData *d = (MeowDBData *)instance;
+    if (!d || !d->db || !d->txn_active) return;
+    garry_txn_rollback(d->db, d->txn_handle);
+    d->txn_active = 0;
 }
 
 /* =========================================================================

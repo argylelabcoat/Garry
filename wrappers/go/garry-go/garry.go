@@ -241,16 +241,10 @@ func (d *Database) SetStr(txn Txn, key, value string) error {
 func (d *Database) GetStr(txn Txn, key string) (string, error) {
 	ckey := C.CString(key)
 	defer C.free(unsafe.Pointer(ckey))
-	buf := make([]byte, 4096)
+	buf := make([]byte, 65536)
 	ret := C.garry_get_str(d.db, txn.handle, ckey, (*C.char)(unsafe.Pointer(&buf[0])), C.garry_i32(len(buf)))
 	if Status(ret) == ErrNotFound {
 		return "", ErrNotFound
-	}
-	if Status(ret) == ErrBufferTooSmall {
-		var vlen C.garry_i32
-		C.garry_get(d.db, txn.handle, nil, 0, nil, &vlen)
-		buf = make([]byte, int(vlen)+1)
-		ret = C.garry_get_str(d.db, txn.handle, ckey, (*C.char)(unsafe.Pointer(&buf[0])), C.garry_i32(len(buf)))
 	}
 	if Status(ret) != OK {
 		return "", Status(ret)
