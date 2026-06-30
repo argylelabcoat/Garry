@@ -33,6 +33,8 @@ public static class KeyEncoder
             throw new ArgumentException("Key cannot be null or empty.", nameof(key));
 
         int length = key[0];
+        if (1 + length > key.Length)
+            throw new ArgumentException("Key data is truncated or corrupt.");
         return Encoding.UTF8.GetString(key, 1, length);
     }
 
