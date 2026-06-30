@@ -160,6 +160,57 @@ public class GarrySerializerTests
         Assert.Equal(original.Address.Zip, restored.Address.Zip);
     }
 
+    // Deep nesting test classes (10+ levels)
+    public class Level10 { public string DeepValue { get; set; } = ""; }
+    public class Level9 { public Level10 Child { get; set; } = new(); }
+    public class Level8 { public Level9 Child { get; set; } = new(); }
+    public class Level7 { public Level8 Child { get; set; } = new(); }
+    public class Level6 { public Level7 Child { get; set; } = new(); }
+    public class Level5 { public Level6 Child { get; set; } = new(); }
+    public class Level4 { public Level5 Child { get; set; } = new(); }
+    public class Level3 { public Level4 Child { get; set; } = new(); }
+    public class Level2 { public Level3 Child { get; set; } = new(); }
+    public class Level1 { public Level2 Child { get; set; } = new(); }
+
+    [Fact]
+    public void RoundTrip_DeeplyNestedObject_PreservesAllLevels()
+    {
+        var original = new Level1
+        {
+            Child = new Level2
+            {
+                Child = new Level3
+                {
+                    Child = new Level4
+                    {
+                        Child = new Level5
+                        {
+                            Child = new Level6
+                            {
+                                Child = new Level7
+                                {
+                                    Child = new Level8
+                                    {
+                                        Child = new Level9
+                                        {
+                                            Child = new Level10 { DeepValue = "found it" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        var pairs = GarrySerializer.Serialize("Root", original);
+        var restored = GarrySerializer.Deserialize<Level1>("Root", pairs);
+
+        Assert.NotNull(restored);
+        Assert.Equal("found it", restored!.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue);
+    }
+
     [Fact]
     public void RoundTrip_ArrayProperties_PreservesAllElements()
     {
