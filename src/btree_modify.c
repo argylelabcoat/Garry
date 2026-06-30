@@ -44,16 +44,25 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page, cons
                                     garry_i32 klen, const garry_byte *value, garry_i32 vlen,
                                     garry_byte *sep, garry_i32 *sep_len, garry_i32 *new_child);
 
+/**
+ * @brief Split a full leaf node during insertion.
+ */
 static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page, garry_btree_node *node,
                              const garry_byte *key, garry_i32 klen, const garry_byte *value,
                              garry_i32 vlen, garry_byte *sep, garry_i32 *sep_len,
                              garry_i32 *new_page);
 
+/**
+ * @brief Split a full internal node during insertion.
+ */
 static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page, garry_btree_node *node,
                                  garry_i32 insert_idx, const garry_byte *insert_key,
                                  garry_i32 insert_klen, garry_i32 insert_child, garry_byte *sep,
                                  garry_i32 *sep_len, garry_i32 *new_page);
 
+/**
+ * @brief Rebalance a child node that underflowed after deletion.
+ */
 static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
                                   garry_btree_node *parent, garry_i32 child_idx);
 
@@ -129,6 +138,9 @@ garry_bool garry_btree_insert(garry_buffer_pool *pool, garry_i32 *root, const ga
     return inserted;
 }
 
+/**
+ * @brief Recursively insert a key-value pair into the B-tree (definition).
+ */
 static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page, const garry_byte *key,
                                    garry_i32 klen, const garry_byte *value, garry_i32 vlen,
                                    garry_byte *sep, garry_i32 *sep_len, garry_i32 *new_child)
@@ -564,6 +576,9 @@ static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page
     return GARRY_TRUE;
 }
 
+/**
+ * @brief Recursively delete a key from the B-tree (definition).
+ */
 static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page, const garry_byte *key,
                                    garry_i32 klen)
 {

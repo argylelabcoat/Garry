@@ -50,6 +50,14 @@ garry_status_t garry_wal_log_init(garry_wal_log *wal, const char *log_path,
     return GARRY_OK;
 }
 
+/**
+ * @brief Serialize and write a single WAL record to the log file.
+ *
+ * @param wal  WAL log handle.
+ * @param rec  Record to serialize and write.
+ *
+ * @return GARRY_TRUE if the full record was written, GARRY_FALSE on I/O error.
+ */
 static garry_bool wal_write_record(garry_wal_log *wal, const garry_wal_record *rec)
 {
     garry_byte buf[GARRY_WAL_RECORD_SIZE];

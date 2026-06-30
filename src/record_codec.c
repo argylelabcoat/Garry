@@ -298,6 +298,15 @@ garry_i32 garry_decode_key_only(const garry_byte *encoded, garry_i32 elen, garry
     return klen;
 }
 
+/**
+ * @brief Encode a CBOR unsigned integer at the given position.
+ *
+ * @param out  Output buffer to write encoded bytes.
+ * @param pos  Current write position in out.
+ * @param val  Non-negative integer to encode (0..4294967295).
+ *
+ * @return Updated position after the encoded bytes.
+ */
 static garry_i32 encode_uint(garry_byte *out, garry_i32 pos, garry_i32 val)
 {
     if (val >= 0 && val < 24)
@@ -329,6 +338,15 @@ static garry_i32 encode_uint(garry_byte *out, garry_i32 pos, garry_i32 val)
     }
 }
 
+/**
+ * @brief Encode a CBOR negative integer at the given position.
+ *
+ * @param out     Output buffer to write encoded bytes.
+ * @param pos     Current write position in out.
+ * @param abs_val Absolute value of the negative integer to encode.
+ *
+ * @return Updated position after the encoded bytes.
+ */
 static garry_i32 encode_negint(garry_byte *out, garry_i32 pos, garry_i32 abs_val)
 {
     if (abs_val < 24)
@@ -412,6 +430,16 @@ garry_i32 garry_encode_descriptor(garry_i32 chain_id, garry_bool has_children, g
     return pos;
 }
 
+/**
+ * @brief Decode a CBOR unsigned integer from the encoded buffer.
+ *
+ * @param encoded  Buffer containing CBOR-encoded data.
+ * @param elen     Total length of valid data in encoded.
+ * @param pos      Current read position in encoded.
+ * @param val      [out] Decoded unsigned integer value.
+ *
+ * @return Updated position after the decoded bytes, or -1 on malformed input.
+ */
 static garry_i32 decode_uint(const garry_byte *encoded, garry_i32 elen, garry_i32 pos,
                              garry_i32 *val)
 {
@@ -463,6 +491,16 @@ static garry_i32 decode_uint(const garry_byte *encoded, garry_i32 elen, garry_i3
     return -1;
 }
 
+/**
+ * @brief Decode a CBOR negative integer from the encoded buffer.
+ *
+ * @param encoded  Buffer containing CBOR-encoded data.
+ * @param elen     Total length of valid data in encoded.
+ * @param pos      Current read position in encoded.
+ * @param val      [out] Decoded negative integer value.
+ *
+ * @return Updated position after the decoded bytes, or -1 on malformed input.
+ */
 static garry_i32 decode_negint(const garry_byte *encoded, garry_i32 elen, garry_i32 pos,
                                garry_i32 *val)
 {

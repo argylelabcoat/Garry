@@ -24,6 +24,13 @@
 #define MIN_MATCH       4
 #define MAX_MATCH       65536
 
+/**
+ * @brief Convert a single byte to an unsigned integer value.
+ *
+ * @param b The byte to convert.
+ *
+ * @return The byte value as a non-negative integer (0-255).
+ */
 static int lz4_byte_to_int(char b)
 {
     int v = (unsigned char)b;
@@ -44,6 +51,21 @@ size_t lz4_compress_bound(size_t src_len)
     return src_len + (src_len / 255) + 16;
 }
 
+/**
+ * @brief Find the best LZ77 match at the current position using hash-based search.
+ *
+ * Searches the hash table for the longest matching sequence of bytes
+ * starting at position ip. Updates the hash table with the current position.
+ *
+ * @param src        Source data buffer.
+ * @param src_len    Total length of source data.
+ * @param ip         Current input position to search from.
+ * @param hash_table Hash table mapping 3-byte prefixes to recent positions.
+ * @param min_match  Minimum match length to consider (typically 4).
+ * @param max_match  Maximum match distance to search back.
+ * @param match_off  [out] Offset of the best match relative to ip.
+ * @param match_len  [out] Length of the best match found.
+ */
 static void lz77_match_find(const char *src, size_t src_len, size_t ip, int *hash_table,
                             int min_match, size_t max_match, size_t *match_off, size_t *match_len)
 {

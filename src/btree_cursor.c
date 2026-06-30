@@ -18,6 +18,16 @@
 #include "btree_search.h"
 #include <string.h>
 
+/**
+ * @brief Check if a key matches a given prefix.
+ *
+ * @param key     Key bytes to test.
+ * @param klen    Length of key in bytes.
+ * @param prefix  Prefix bytes to match against.
+ * @param plen    Length of prefix in bytes.
+ *
+ * @return GARRY_TRUE if the first plen bytes of key match prefix.
+ */
 static garry_bool prefix_match(const garry_byte *key, garry_i32 klen, const garry_byte *prefix,
                                garry_i32 plen)
 {

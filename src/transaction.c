@@ -58,6 +58,15 @@ garry_i32 garry_chain_id_decode(const garry_byte *encoded)
     return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 }
 
+/**
+ * @brief Remove a transaction from the active transaction list.
+ *
+ * Shifts all subsequent entries left to fill the gap. Caller must hold
+ * the txn_slot_mutex.
+ *
+ * @param eng  Engine handle containing the active transaction list.
+ * @param txn  Transaction ID to remove.
+ */
 static void remove_active_txn(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_i32 i, j;
@@ -76,6 +85,14 @@ static void remove_active_txn(garry_engine_handle *eng, garry_txn_id txn)
     }
 }
 
+/**
+ * @brief Find the slot index for a given transaction in the active list.
+ *
+ * @param eng  Engine handle containing the active transaction list.
+ * @param txn  Transaction ID to search for.
+ *
+ * @return Slot index (>= 0) if found, or -1 if the transaction is not active.
+ */
 static garry_i32 find_txn_slot(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_i32 i;
