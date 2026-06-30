@@ -1,0 +1,33 @@
+{
+  "name": "com.argylelabcoat.meowdb",
+  "version": "0.1.0",
+  "displayName": "MeowDB",
+  "description": "C# wrapper for the Garry storage engine. Provides an object mapper that flattens .NET objects to hierarchical key trees.",
+  "unity": "2021.3",
+  "unityRelease": "0f1",
+  "documentationUrl": "https://github.com/argylelabcoat/garry/tree/main/wrappers/unity/MeowDB/Documentation~",
+  "changelogUrl": "https://github.com/argylelabcoat/garry/releases",
+  "licensesUrl": "https://github.com/argylelabcoat/garry/blob/main/LICENSE",
+  "license": "BSD-3-Clause",
+  "author": {
+    "name": "Matthew Hughes",
+    "email": "matthew@argylelab.co",
+    "url": "https://github.com/argylelabcoat"
+  },
+  "keywords": [
+    "storage",
+    "database",
+    "key-value",
+    "btree",
+    "object-mapper",
+    "serialization"
+  ],
+  "type": "library",
+  "samples": [
+    {
+      "displayName": "Basic Usage",
+      "description": "Basic CRUD operations with MeowDB",
+      "path": "Samples~/BasicUsage"
+    }
+  ]
+}
