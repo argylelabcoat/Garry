@@ -306,6 +306,8 @@ impl Transaction {
 
 pub struct Cursor {
     handle: *mut ffi::garry_cursor,
+    db: *mut ffi::garry_database,
+    txn: i32,
 }
 
 unsafe impl Send for Cursor {}
@@ -318,11 +320,11 @@ impl Cursor {
             None => (std::ptr::null(), 0),
         };
         let handle = unsafe { ffi::garry_cursor_open(db.handle, txn.txn, ptr, len) };
-        txn.commit()?;
         if handle.is_null() {
+            unsafe { ffi::garry_txn_rollback(db.handle, txn.txn); }
             return Err(GarryError::NullPointer);
         }
-        Ok(Cursor { handle })
+        Ok(Cursor { handle, db: db.handle, txn: txn.txn })
     }
 
     pub fn next(&self) -> Result<Option<(Vec<u8>, Vec<u8>)>, GarryError> {
@@ -377,6 +379,9 @@ impl Drop for Cursor {
             unsafe {
                 ffi::garry_cursor_close(self.handle);
             }
+        }
+        unsafe {
+            ffi::garry_txn_commit(self.db, self.txn);
         }
     }
 }

@@ -847,9 +847,22 @@ function TGarryDatabase.OpenCursor(const Prefix: TBytes): TGarryCursor;
 var
   Cur: PGarryCursorHandle;
   Txn: Integer;
+  PPrefix: PByte;
+  PLen: Integer;
 begin
   Txn := GetTxn;
-  Cur := garry_cursor_open(FHandle, Txn, @Prefix[0], Length(Prefix));
+  if (Length(Prefix) > 0) then
+  begin
+    PPrefix := @Prefix[0];
+    PLen := Length(Prefix);
+  end
+  else
+  begin
+    PPrefix := nil;
+    PLen := 0;
+  end;
+  Cur := garry_cursor_open(FHandle, Txn, PPrefix, PLen);
+  garry_txn_commit(FHandle, Txn);
   Result := TGarryCursor.Create(Cur, Self);
 end;
 

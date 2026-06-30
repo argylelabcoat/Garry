@@ -127,6 +127,8 @@ const TAG_F32: u8 = 0x0A;
 const TAG_F64: u8 = 0x0B;
 const TAG_STRING: u8 = 0x0C;
 const TAG_BYTES: u8 = 0x0D;
+const TAG_ARRAY: u8 = 0x0E;
+const TAG_MAP: u8 = 0x0F;
 
 pub fn encode(value: &Value) -> Vec<u8> {
     let mut buf = Vec::new();
