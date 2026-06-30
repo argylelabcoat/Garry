@@ -22,9 +22,27 @@
 #include <string.h>
 #include <stdlib.h>
 
+/**
+ * @brief Recursively insert a key-value pair into the B-tree.
+ *
+ * At a leaf, inserts or updates the entry directly, splitting if full.
+ * At an internal node, recurses into the appropriate child and handles
+ * upward split propagation by inserting a separator and new child pointer.
+ *
+ * @param pool      Buffer pool.
+ * @param page      Current page ID being processed.
+ * @param key       Key to insert.
+ * @param klen      Length of key in bytes.
+ * @param value     Value to insert.
+ * @param vlen      Length of value in bytes.
+ * @param sep       Output buffer for the separator key if a split occurred.
+ * @param sep_len   Output location for the separator key length.
+ * @param new_child Output location for the new child page ID from a split.
+ * @return 1 if the key was inserted or updated, 0 on failure.
+ */
 static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page, const garry_byte *key,
-                                   garry_i32 klen, const garry_byte *value, garry_i32 vlen,
-                                   garry_byte *sep, garry_i32 *sep_len, garry_i32 *new_child);
+                                    garry_i32 klen, const garry_byte *value, garry_i32 vlen,
+                                    garry_byte *sep, garry_i32 *sep_len, garry_i32 *new_child);
 
 static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page, garry_btree_node *node,
                              const garry_byte *key, garry_i32 klen, const garry_byte *value,
@@ -39,8 +57,20 @@ static garry_bool internal_split(garry_buffer_pool *pool, garry_i32 page, garry_
 static garry_bool rebalance_child(garry_buffer_pool *pool, garry_i32 parent_page,
                                   garry_btree_node *parent, garry_i32 child_idx);
 
+/**
+ * @brief Recursively delete a key from the B-tree.
+ *
+ * At a leaf, removes the matching entry. At an internal node, recurses
+ * into the appropriate child and rebalances if the child underflows.
+ *
+ * @param pool  Buffer pool.
+ * @param page  Current page ID being processed.
+ * @param key   Key to delete.
+ * @param klen  Length of key in bytes.
+ * @return GARRY_TRUE if the current node underflowed after deletion.
+ */
 static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page, const garry_byte *key,
-                                   garry_i32 klen);
+                                    garry_i32 klen);
 
 /**
  * Insert a key-value pair into the B-tree rooted at *root.
@@ -575,8 +605,19 @@ static garry_bool btree_delete_rec(garry_buffer_pool *pool, garry_i32 page, cons
     }
 }
 
+/**
+ * @brief Delete a key from the B-tree and shrink the root if needed.
+ *
+ * Performs a recursive delete. If the root becomes an empty internal
+ * node, it is freed and the root pointer is updated to its only child.
+ *
+ * @param pool  Buffer pool.
+ * @param root  Pointer to the root page ID (updated if root shrinks).
+ * @param key   Key to delete.
+ * @param klen  Length of key in bytes.
+ */
 void garry_btree_delete(garry_buffer_pool *pool, garry_i32 *root, const garry_byte *key,
-                        garry_i32 klen)
+                         garry_i32 klen)
 {
     garry_bool underflowed;
     garry_btree_node rnode;

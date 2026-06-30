@@ -22,6 +22,18 @@
 #include <string.h>
 #include <stdlib.h>
 
+/**
+ * @brief Retrieve the first visible key in the B-tree.
+ *
+ * Opens a cursor and returns the first key-value pair that is visible
+ * under the given transaction's MVCC snapshot.
+ *
+ * @param eng   Engine handle.
+ * @param txn   Transaction ID for visibility.
+ * @param key   Buffer to receive the first key.
+ * @param klen  Output parameter for key length.
+ * @return 1 if a visible key was found, 0 otherwise.
+ */
 garry_bool garry_storage_first(garry_engine_handle *eng, garry_txn_id txn, garry_byte *key,
                                garry_i32 *klen)
 {
@@ -42,8 +54,20 @@ garry_bool garry_storage_first(garry_engine_handle *eng, garry_txn_id txn, garry
     return ok;
 }
 
+/**
+ * @brief Retrieve the last visible key in the B-tree.
+ *
+ * Traverses to the rightmost leaf and walks entries in reverse to
+ * find the last key visible under the given transaction's MVCC snapshot.
+ *
+ * @param eng   Engine handle.
+ * @param txn   Transaction ID for visibility.
+ * @param key   Buffer to receive the last key.
+ * @param klen  Output parameter for key length.
+ * @return 1 if a visible key was found, 0 otherwise.
+ */
 garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn, garry_byte *key,
-                              garry_i32 *klen)
+                               garry_i32 *klen)
 {
     garry_btree_node node;
     garry_i32 page;
@@ -107,9 +131,23 @@ garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn, garry_
     return 0;
 }
 
+/**
+ * @brief Find the next visible key strictly greater than a given key.
+ *
+ * Iterates from the start until a key lexicographically greater than
+ * @p after is found that is visible under the given transaction.
+ *
+ * @param eng       Engine handle.
+ * @param txn       Transaction ID for visibility.
+ * @param after     Key to search after.
+ * @param after_len Length of @p after.
+ * @param key       Buffer to receive the next key.
+ * @param klen      Output parameter for key length.
+ * @return 1 if a visible next key was found, 0 otherwise.
+ */
 garry_bool garry_storage_next_key(garry_engine_handle *eng, garry_txn_id txn,
-                                  const garry_byte *after, garry_i32 after_len, garry_byte *key,
-                                  garry_i32 *klen)
+                                   const garry_byte *after, garry_i32 after_len, garry_byte *key,
+                                   garry_i32 *klen)
 {
     garry_storage_cursor cur;
     garry_byte k[sizeof(garry_byte_array)];
@@ -145,9 +183,23 @@ garry_bool garry_storage_next_key(garry_engine_handle *eng, garry_txn_id txn,
     }
 }
 
+/**
+ * @brief Find the previous visible key strictly less than a given key.
+ *
+ * Scans all visible keys and returns the one closest to but lexicographically
+ * less than @p before.
+ *
+ * @param eng        Engine handle.
+ * @param txn        Transaction ID for visibility.
+ * @param before     Key to search before.
+ * @param before_len Length of @p before.
+ * @param key        Buffer to receive the previous key.
+ * @param klen       Output parameter for key length.
+ * @return 1 if a visible previous key was found, 0 otherwise.
+ */
 garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
-                                  const garry_byte *before, garry_i32 before_len, garry_byte *key,
-                                  garry_i32 *klen)
+                                   const garry_byte *before, garry_i32 before_len, garry_byte *key,
+                                   garry_i32 *klen)
 {
     garry_storage_cursor cur;
     garry_byte prev_key[sizeof(garry_byte_array)];
@@ -194,8 +246,20 @@ garry_bool garry_storage_prev_key(garry_engine_handle *eng, garry_txn_id txn,
     return found;
 }
 
+/**
+ * @brief Check whether a key exists with a visible version.
+ *
+ * Performs a B-tree leaf lookup and decodes the version chain descriptor
+ * to determine if the key is present under MVCC visibility.
+ *
+ * @param eng   Engine handle.
+ * @param txn   Transaction ID for visibility.
+ * @param key   Key to look up.
+ * @param klen  Key length.
+ * @return 1 if the key exists and is visible, 0 otherwise.
+ */
 garry_bool garry_storage_exists(garry_engine_handle *eng, garry_txn_id txn, const garry_byte *key,
-                                garry_i32 klen)
+                                 garry_i32 klen)
 {
     garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
     garry_i32 lookup_len;
@@ -222,6 +286,17 @@ garry_bool garry_storage_exists(garry_engine_handle *eng, garry_txn_id txn, cons
     return (cid >= 0) ? 1 : 0;
 }
 
+/**
+ * @brief Return the approximate count of visible keys.
+ *
+ * Reads the engine's key count under a read lock. This is an
+ * approximate count that does not account for MVCC tombstones
+ * or uncommitted entries.
+ *
+ * @param eng  Engine handle.
+ * @param txn  Transaction ID (used for active-transaction check).
+ * @return Approximate key count, or 0 if the engine is inactive.
+ */
 garry_i32 garry_storage_count(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_i32 count;

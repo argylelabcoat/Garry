@@ -26,6 +26,13 @@
 #include <string.h>
 #include <limits.h>
 
+/**
+ * @brief Encode a chain ID as 4 bytes in little-endian order.
+ *
+ * @param chain_id Chain ID to encode
+ * @param out      Output buffer of at least 4 bytes
+ * @return Number of bytes written (always 4)
+ */
 garry_i32 garry_chain_id_encode(garry_i32 chain_id, garry_byte *out)
 {
     out[0] = (garry_byte)(chain_id & 0xFF);
@@ -35,6 +42,12 @@ garry_i32 garry_chain_id_encode(garry_i32 chain_id, garry_byte *out)
     return 4;
 }
 
+/**
+ * @brief Decode a 4-byte little-endian encoded chain ID.
+ *
+ * @param encoded Pointer to 4 bytes of encoded data
+ * @return Decoded chain ID
+ */
 garry_i32 garry_chain_id_decode(const garry_byte *encoded)
 {
     garry_i32 b0, b1, b2, b3;
@@ -74,6 +87,15 @@ static garry_i32 find_txn_slot(garry_engine_handle *eng, garry_txn_id txn)
     return -1;
 }
 
+/**
+ * @brief Initialize a new storage engine with the given settings.
+ *
+ * Creates the buffer pool, WAL, lock manager, and header page.
+ *
+ * @param path     Filesystem path for the database files
+ * @param settings Engine configuration parameters
+ * @return Engine handle, or NULL on failure
+ */
 garry_engine_handle *garry_engine_init(const char *path, garry_engine_settings settings)
 {
     garry_engine_handle *eng;
@@ -182,6 +204,14 @@ garry_engine_handle *garry_engine_init(const char *path, garry_engine_settings s
     return eng;
 }
 
+/**
+ * @brief Open an existing storage engine from disk.
+ *
+ * Reads the persisted header to restore pool, WAL, and btree state.
+ *
+ * @param path Filesystem path of the database to open
+ * @return Engine handle, or NULL on failure
+ */
 garry_engine_handle *garry_engine_open(const char *path)
 {
     garry_engine_handle *eng;
@@ -304,6 +334,14 @@ garry_engine_handle *garry_engine_open(const char *path)
     return eng;
 }
 
+/**
+ * @brief Shut down the storage engine, flushing all state to disk.
+ *
+ * Persists the DB header, flushes the buffer pool, closes the WAL,
+ * and frees all engine resources.
+ *
+ * @param eng Engine handle to close (NULL is a no-op)
+ */
 void garry_engine_close(garry_engine_handle *eng)
 {
     garry_lock_node *node, *next;
@@ -339,6 +377,14 @@ void garry_engine_close(garry_engine_handle *eng)
     free(eng);
 }
 
+/**
+ * @brief Allocate a new version chain page and initialize it.
+ *
+ * @param eng  Engine handle
+ * @param key  Key associated with this chain (currently unused)
+ * @param klen Key length (currently unused)
+ * @return Page ID of the new chain page, or -1 on failure
+ */
 garry_i32 garry_chain_allocate(garry_engine_handle *eng, const garry_byte *key, garry_i32 klen)
 {
     garry_i32 pid;
@@ -361,6 +407,14 @@ garry_i32 garry_chain_allocate(garry_engine_handle *eng, const garry_byte *key, 
     return pid;
 }
 
+/**
+ * @brief Begin a new MVCC transaction.
+ *
+ * Allocates a transaction slot under the mutex and returns a unique ID.
+ *
+ * @param eng Engine handle
+ * @return Transaction ID, or -1 if the maximum is reached
+ */
 garry_txn_id garry_mvcc_begin(garry_engine_handle *eng)
 {
     garry_txn_id txn;
@@ -387,6 +441,15 @@ garry_txn_id garry_mvcc_begin(garry_engine_handle *eng)
     return txn;
 }
 
+/**
+ * @brief Commit an MVCC transaction, finalizing its writes.
+ *
+ * Marks the transaction as committed, releases its lock, and flushes
+ * all pages modified by this transaction.
+ *
+ * @param eng Engine handle
+ * @param txn Transaction ID to commit
+ */
 void garry_mvcc_commit(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_i32 slot;
@@ -422,6 +485,14 @@ void garry_mvcc_commit(garry_engine_handle *eng, garry_txn_id txn)
     }
 }
 
+/**
+ * @brief Roll back an MVCC transaction, discarding its writes.
+ *
+ * Marks the transaction as rolled back and releases its lock.
+ *
+ * @param eng Engine handle
+ * @param txn Transaction ID to roll back
+ */
 void garry_mvcc_rollback(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_i32 slot;
@@ -437,6 +508,13 @@ void garry_mvcc_rollback(garry_engine_handle *eng, garry_txn_id txn)
     garry_lock_release(&eng->lock_mgr, txn);
 }
 
+/**
+ * @brief Check whether a transaction is currently active.
+ *
+ * @param txn Transaction ID to query
+ * @param eng Engine handle
+ * @return GARRY_TRUE if the transaction is active, GARRY_FALSE otherwise
+ */
 garry_bool garry_txn_is_active(garry_txn_id txn, garry_engine_handle *eng)
 {
     garry_bool result;
@@ -446,6 +524,15 @@ garry_bool garry_txn_is_active(garry_txn_id txn, garry_engine_handle *eng)
     return result;
 }
 
+/**
+ * @brief Read the visible version of a value from a version chain page.
+ *
+ * @param eng           Engine handle
+ * @param txn           Transaction ID for visibility
+ * @param chain_page_id Page ID of the version chain
+ * @param vlen          Output length of the visible value
+ * @return Pointer to the value data, or NULL if not found
+ */
 char *garry_mvcc_get(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id,
                      garry_i32 *vlen)
 {
@@ -465,6 +552,18 @@ char *garry_mvcc_get(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain
     return result;
 }
 
+/**
+ * @brief Append a new version to a version chain page.
+ *
+ * Handles inline storage for small values and overflow pages for large ones.
+ *
+ * @param eng           Engine handle
+ * @param txn           Transaction ID
+ * @param chain_page_id Page ID of the version chain
+ * @param value         Value bytes to write
+ * @param vlen          Length of the value
+ * @return GARRY_TRUE on success, GARRY_FALSE on failure
+ */
 garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id,
                           const char *value, garry_i32 vlen)
 {
@@ -516,6 +615,14 @@ garry_bool garry_mvcc_set(garry_engine_handle *eng, garry_txn_id txn, garry_i32 
     return ok;
 }
 
+/**
+ * @brief Append a tombstone to a version chain page to mark deletion.
+ *
+ * @param eng           Engine handle
+ * @param txn           Transaction ID
+ * @param chain_page_id Page ID of the version chain
+ * @return GARRY_TRUE on success, GARRY_FALSE on failure
+ */
 garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain_page_id)
 {
     garry_page_buffer *buf;
@@ -549,6 +656,15 @@ garry_bool garry_mvcc_delete(garry_engine_handle *eng, garry_txn_id txn, garry_i
     return ok;
 }
 
+/**
+ * @brief Write a large value to an overflow page outside the version chain.
+ *
+ * @param eng   Engine handle
+ * @param txn   Transaction ID (reserved for future use)
+ * @param value Value bytes to store
+ * @param vlen  Length of the value
+ * @return Page ID of the overflow head, or -1 on failure
+ */
 garry_i32 garry_mvcc_chain_overflow(garry_engine_handle *eng, garry_txn_id txn, const char *value,
                                     garry_i32 vlen)
 {
@@ -557,6 +673,18 @@ garry_i32 garry_mvcc_chain_overflow(garry_engine_handle *eng, garry_txn_id txn, 
     return head;
 }
 
+/**
+ * @brief Apply a recovered WAL entry to a version chain page.
+ *
+ * Used during crash recovery to replay committed writes.
+ *
+ * @param eng           Engine handle
+ * @param chain_page_id Page ID of the version chain
+ * @param txn           Transaction ID to apply under
+ * @param value         Value bytes from the WAL record
+ * @param vlen          Length of the value
+ * @return GARRY_TRUE on success, GARRY_FALSE on failure
+ */
 garry_bool garry_mvcc_recovery_apply(garry_engine_handle *eng, garry_i32 chain_page_id,
                                      garry_txn_id txn, const char *value, garry_i32 vlen)
 {

@@ -49,7 +49,21 @@ garry_i32 garry_leaf_find(garry_btree_node *node, const garry_byte *key, garry_i
  */
 garry_i32 garry_internal_find(garry_btree_node *node, const garry_byte *key, garry_i32 klen);
 
-/* Search for a key's value in a leaf tree rooted at `root`. */
+/**
+ * @brief Search for a key's value by traversing from root to leaf.
+ *
+ * Descends the B-tree from @p root, using binary search at each
+ * internal node, then locates the exact key in the leaf. Copies the
+ * matching value into @p result.
+ *
+ * @param pool       Buffer pool for page access
+ * @param root       Root page ID of the B-tree
+ * @param key        Key bytes to search for
+ * @param klen       Key length in bytes
+ * @param result     Output buffer for the found value
+ * @param result_len Output: length of the found value
+ * @return GARRY_TRUE if the key was found, GARRY_FALSE otherwise
+ */
 garry_bool garry_leaf_find_search(garry_buffer_pool *pool, garry_i32 root, const garry_byte *key,
                                   garry_i32 klen, garry_byte *result, garry_i32 *result_len);
 

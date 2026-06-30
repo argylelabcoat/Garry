@@ -17,6 +17,18 @@
 #include "wal_log.h"
 #include <string.h>
 
+/**
+ * @brief Initialize a WAL log handle.
+ *
+ * Opens or creates the WAL log file and checkpoint path, initializes
+ * the LSN counter and append mutex.
+ *
+ * @param wal             WAL log handle to initialize.
+ * @param log_path        Path to the WAL log file.
+ * @param checkpoint_path Path to the checkpoint directory.
+ *
+ * @return GARRY_OK on success, GARRY_ERR_INVALID_ARG or GARRY_ERR_IO on failure.
+ */
 garry_status_t garry_wal_log_init(garry_wal_log *wal, const char *log_path,
                                   const char *checkpoint_path)
 {
@@ -58,6 +70,17 @@ static garry_bool wal_write_record(garry_wal_log *wal, const garry_wal_record *r
     return (n == GARRY_WAL_RECORD_SIZE) ? GARRY_TRUE : GARRY_FALSE;
 }
 
+/**
+ * @brief Append a WAL record and return a new LSN.
+ *
+ * Serializes the record to the log file under the append mutex and
+ * increments the LSN counter.
+ *
+ * @param wal    WAL log handle.
+ * @param record The WAL record to append.
+ *
+ * @return The new log sequence number, or -1 on failure.
+ */
 garry_log_sequence_number garry_wal_log_append(garry_wal_log *wal, const garry_wal_record *record)
 {
     garry_log_sequence_number lsn;
@@ -75,6 +98,14 @@ garry_log_sequence_number garry_wal_log_append(garry_wal_log *wal, const garry_w
     return lsn;
 }
 
+/**
+ * @brief Flush WAL log to durable storage.
+ *
+ * Calls fsync on the WAL file descriptor to guarantee that all
+ * buffered writes are persisted to disk.
+ *
+ * @param wal WAL log handle.
+ */
 void garry_wal_log_flush(garry_wal_log *wal)
 {
     if (!wal->fd.is_open)
@@ -82,6 +113,14 @@ void garry_wal_log_flush(garry_wal_log *wal)
     garry_file_sync(&wal->fd);
 }
 
+/**
+ * @brief Close a WAL log handle.
+ *
+ * Flushes pending writes, closes the file descriptor, and destroys
+ * the append mutex.
+ *
+ * @param wal WAL log handle to close.
+ */
 void garry_wal_log_close(garry_wal_log *wal)
 {
     if (!wal->fd.is_open)

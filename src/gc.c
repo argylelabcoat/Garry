@@ -19,6 +19,15 @@
 #include "garry_threading.h"
 #include <string.h>
 
+/**
+ * @brief Run MVCC garbage collection on all version chain pages.
+ *
+ * Takes a snapshot of active transactions, then iterates over all
+ * pages in the database. For each version chain page, prunes entries
+ * that are no longer visible to any active transaction.
+ *
+ * @param eng Engine handle containing the buffer pool and transaction state.
+ */
 void garry_mvcc_gc(garry_engine_handle *eng)
 {
     garry_i32 pid;

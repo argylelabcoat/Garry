@@ -18,6 +18,18 @@
 #include "buffer_pool.h"
 #include "version_chain.h"
 
+/**
+ * @brief Perform a WAL checkpoint.
+ *
+ * Flushes all dirty buffer pool pages, syncs the WAL, and truncates
+ * the log file. Records the checkpoint LSN before truncation.
+ *
+ * @param wal           WAL log to checkpoint.
+ * @param eng           Engine handle with the buffer pool.
+ * @param checkpoint_lsn Output parameter receiving the LSN at checkpoint time.
+ *
+ * @return GARRY_TRUE on success, GARRY_FALSE if the WAL is not open.
+ */
 garry_bool garry_wal_checkpoint(garry_wal_log *wal, garry_engine_handle *eng,
                                 garry_log_sequence_number *checkpoint_lsn)
 {

@@ -17,6 +17,16 @@
 #include "key_encoding.h"
 #include <string.h>
 
+/**
+ * @brief Compute the length of the common prefix between two byte sequences.
+ *
+ * @param a     First byte sequence.
+ * @param alen  Length of the first sequence.
+ * @param b     Second byte sequence.
+ * @param blen  Length of the second sequence.
+ *
+ * @return Number of bytes shared from the start.
+ */
 garry_i32 garry_common_prefix_length(const garry_byte *a, garry_i32 alen, const garry_byte *b,
                                      garry_i32 blen)
 {
@@ -30,6 +40,18 @@ garry_i32 garry_common_prefix_length(const garry_byte *a, garry_i32 alen, const 
     return i;
 }
 
+/**
+ * @brief Compute the minimum separator between two keys.
+ *
+ * Finds the shortest key that is strictly greater than left and less
+ * than or equal to right. Used for B-tree internal node split keys.
+ *
+ * @param result Output buffer for the separator key.
+ * @param left   Left key (lower bound).
+ * @param llen   Length of the left key.
+ * @param right  Right key (upper bound).
+ * @param rlen   Length of the right key.
+ */
 void garry_minimum_separator(garry_byte_array result, const garry_byte *left, garry_i32 llen,
                              const garry_byte *right, garry_i32 rlen)
 {
@@ -59,6 +81,17 @@ void garry_minimum_separator(garry_byte_array result, const garry_byte *left, ga
     }
 }
 
+/**
+ * @brief Compress a key using prefix compression.
+ *
+ * Stores the prefix length and suffix bytes. The compressed format is:
+ * [prefix_len, suffix_len, suffix_bytes...].
+ *
+ * @param result     Output buffer for the compressed key.
+ * @param full_key   The full uncompressed key.
+ * @param klen       Length of the full key.
+ * @param prefix_len Number of bytes shared with the predecessor key.
+ */
 void garry_compress_key(garry_byte_array result, const garry_byte *full_key, garry_i32 klen,
                         garry_i32 prefix_len)
 {
@@ -73,6 +106,18 @@ void garry_compress_key(garry_byte_array result, const garry_byte *full_key, gar
     }
 }
 
+/**
+ * @brief Decompress a prefix-compressed key.
+ *
+ * Reconstructs the full key by copying prefix_len bytes from prev_key
+ * and appending the suffix bytes from the compressed representation.
+ *
+ * @param result     Output buffer for the decompressed key.
+ * @param compressed The compressed key bytes.
+ * @param clen       Length of the compressed key (unused).
+ * @param prev_key   The predecessor key for prefix reconstruction.
+ * @param prev_len   Length of the predecessor key (unused).
+ */
 void garry_decompress_key(garry_byte_array result, const garry_byte *compressed, garry_i32 clen,
                           const garry_byte *prev_key, garry_i32 prev_len)
 {
@@ -92,6 +137,16 @@ void garry_decompress_key(garry_byte_array result, const garry_byte *compressed,
     }
 }
 
+/**
+ * @brief Compare two byte sequences for equality.
+ *
+ * @param a     First byte sequence.
+ * @param alen  Length of the first sequence.
+ * @param b     Second byte sequence.
+ * @param blen  Length of the second sequence.
+ *
+ * @return 1 if equal, 0 otherwise.
+ */
 garry_bool garry_byte_equal(const garry_byte *a, garry_i32 alen, const garry_byte *b,
                             garry_i32 blen)
 {

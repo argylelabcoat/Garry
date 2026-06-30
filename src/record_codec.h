@@ -115,12 +115,71 @@ garry_i32 garry_encode_descriptor(garry_i32 chain_id, garry_bool has_children, g
 void garry_decode_descriptor(const garry_byte *encoded, garry_i32 elen, garry_i32 *chain_id,
                              garry_bool *has_children);
 
-/* CBOR raw helpers (from cbor_lib, trivial byte-level). */
+/**
+ * @brief Encode a CBOR array header at the given position.
+ *
+ * Writes the array major type header for @p count elements. Uses
+ * inline encoding for counts < 24, 1-byte encoding otherwise.
+ *
+ * @param out    Output buffer
+ * @param pos    Current write position in the buffer
+ * @param count  Number of elements in the array
+ * @return New position after the header
+ */
 garry_i32 garry_cbor_encode_array_header_raw(garry_byte *out, garry_i32 pos, garry_i32 count);
+
+/**
+ * @brief Encode a CBOR byte string at the given position.
+ *
+ * Writes the byte string major type header followed by the raw data.
+ * Uses inline encoding for lengths < 24, 1-byte encoding otherwise.
+ *
+ * @param data  Byte string data to encode
+ * @param dlen  Length of the data in bytes
+ * @param out   Output buffer
+ * @param pos   Current write position in the buffer
+ * @return New position after the encoded byte string
+ */
 garry_i32 garry_cbor_encode_byte_string_raw(const garry_byte *data, garry_i32 dlen, garry_byte *out,
                                             garry_i32 pos);
+
+/**
+ * @brief Decode a CBOR array header and return the element count.
+ *
+ * Reads the array major type header at @p pos and returns the number
+ * of elements in the array.
+ *
+ * @param buf  Input buffer containing CBOR data
+ * @param blen Length of the input buffer
+ * @param pos  Position of the array header
+ * @return Number of elements in the array, or 0 on malformed input
+ */
 garry_i32 garry_cbor_decode_array_header_raw(const garry_byte *buf, garry_i32 blen, garry_i32 pos);
+
+/**
+ * @brief Return the byte size of a CBOR array header.
+ *
+ * Computes how many bytes the array header occupies without decoding
+ * the element count.
+ *
+ * @param buf  Input buffer containing CBOR data
+ * @param pos  Position of the array header
+ * @return Size of the header in bytes (1 or 2)
+ */
 garry_i32 garry_cbor_array_header_size_raw(const garry_byte *buf, garry_i32 pos);
+
+/**
+ * @brief Decode a CBOR byte string at the given position.
+ *
+ * Reads the byte string header and copies the data into @p out_data.
+ *
+ * @param buf      Input buffer containing CBOR data
+ * @param blen     Length of the input buffer
+ * @param pos      Position of the byte string
+ * @param out_data Output buffer for the decoded bytes
+ * @param dlen     Output: length of the decoded byte string
+ * @return New position after the byte string, or 0 on error
+ */
 garry_i32 garry_cbor_decode_byte_string_raw(const garry_byte *buf, garry_i32 blen, garry_i32 pos,
                                             garry_byte *out_data, garry_i32 *dlen);
 

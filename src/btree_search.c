@@ -20,6 +20,14 @@
 #include "buffer_pool.h"
 #include "btree_node.h"
 
+/**
+ * @brief Find a key in a leaf node by linear scan.
+ *
+ * @param node  Leaf node to search.
+ * @param key   Key to find.
+ * @param klen  Length of key in bytes.
+ * @return Index of the matching entry, or -1 if not found.
+ */
 garry_i32 garry_leaf_find(garry_btree_node *node, const garry_byte *key, garry_i32 klen)
 {
     garry_i32 i;
@@ -33,6 +41,17 @@ garry_i32 garry_leaf_find(garry_btree_node *node, const garry_byte *key, garry_i
     return -1;
 }
 
+/**
+ * @brief Find the child pointer to descend into for a given key.
+ *
+ * Scans internal node keys to locate the first entry greater than or
+ * equal to the search key, returning its index as the child to follow.
+ *
+ * @param node  Internal node to search.
+ * @param key   Search key.
+ * @param klen  Length of key in bytes.
+ * @return Child index to descend into.
+ */
 garry_i32 garry_internal_find(garry_btree_node *node, const garry_byte *key, garry_i32 klen)
 {
     garry_i32 i;
@@ -46,8 +65,22 @@ garry_i32 garry_internal_find(garry_btree_node *node, const garry_byte *key, gar
     return node->entry_count;
 }
 
+/**
+ * @brief Search from root to leaf for a key and return its value.
+ *
+ * Descends the tree using garry_internal_find at each internal node,
+ * then uses garry_leaf_find at the leaf to locate the exact key.
+ *
+ * @param pool       Buffer pool.
+ * @param root       Root page ID of the B-tree.
+ * @param key        Key to search for.
+ * @param klen       Length of key in bytes.
+ * @param result     Output buffer for the value data.
+ * @param result_len Output location for the value length.
+ * @return 1 if found, 0 if not found.
+ */
 garry_bool garry_leaf_find_search(garry_buffer_pool *pool, garry_i32 root, const garry_byte *key,
-                                  garry_i32 klen, garry_byte *result, garry_i32 *result_len)
+                                   garry_i32 klen, garry_byte *result, garry_i32 *result_len)
 {
     garry_btree_node node;
     garry_i32 idx;

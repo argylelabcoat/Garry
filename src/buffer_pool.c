@@ -22,6 +22,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief Find the slot index holding a given page ID.
+ *
+ * @param pool  Buffer pool to search.
+ * @param pid   Page ID to find.
+ * @return Slot index, or GARRY_INVALID_SLOT if not found.
+ */
 static garry_u32 find_slot(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 i;
@@ -33,9 +40,16 @@ static garry_u32 find_slot(garry_buffer_pool *pool, garry_i32 pid)
     return GARRY_INVALID_SLOT;
 }
 
-/* Returns GARRY_INVALID_SLOT if all loaded slots are pinned (no eviction
- * candidate) or if the pool has zero capacity. Callers should treat this
- * as "pool exhausted" — either increase pool_size or reduce pin pressure. */
+/**
+ * @brief Find a slot suitable for eviction.
+ *
+ * Returns an unloaded slot immediately if one exists. Otherwise returns
+ * the least-recently-accessed slot with zero pins. Returns
+ * GARRY_INVALID_SLOT if all loaded slots are pinned (pool exhausted).
+ *
+ * @param pool  Buffer pool to search.
+ * @return Slot index to evict, or GARRY_INVALID_SLOT if none available.
+ */
 static garry_u32 find_eviction_candidate(garry_buffer_pool *pool)
 {
     garry_u32 i;
@@ -57,6 +71,16 @@ static garry_u32 find_eviction_candidate(garry_buffer_pool *pool)
     return best;
 }
 
+/**
+ * @brief Ensure a page is loaded into the pool, evicting if necessary.
+ *
+ * If the page is already cached, returns its slot index. Otherwise
+ * evicts a candidate slot (flushing it if dirty) and loads the page.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to ensure is loaded.
+ * @return Slot index of the loaded page, or GARRY_INVALID_SLOT on failure.
+ */
 static garry_u32 ensure_loaded(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 idx, victim;
@@ -86,6 +110,17 @@ static garry_u32 ensure_loaded(garry_buffer_pool *pool, garry_i32 pid)
     return victim;
 }
 
+/**
+ * @brief Create and initialize a new buffer pool.
+ *
+ * Opens (or creates) the database file and allocates slot arrays for
+ * the given capacity and page size.
+ *
+ * @param path      Path to the database file.
+ * @param capacity  Maximum number of pages to cache.
+ * @param page_size Size of each page in bytes.
+ * @return Pointer to the new pool, or NULL on failure.
+ */
 garry_buffer_pool *garry_pool_create(const char *path, garry_u32 capacity, garry_u32 page_size)
 {
     garry_buffer_pool *pool;
@@ -118,6 +153,17 @@ garry_buffer_pool *garry_pool_create(const char *path, garry_u32 capacity, garry
     return pool;
 }
 
+/**
+ * @brief Pin a page, loading it if necessary.
+ *
+ * Loads the page into the pool (evicting if needed), increments its
+ * pin count, and returns a pointer to the page buffer. The caller
+ * must call garry_pool_release_page when done.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to pin.
+ * @return Pointer to the page buffer, or NULL on failure.
+ */
 garry_page_buffer *garry_pool_pin_page(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 idx;
@@ -139,6 +185,16 @@ garry_page_buffer *garry_pool_pin_page(garry_buffer_pool *pool, garry_i32 pid)
     return &pool->pages[idx];
 }
 
+/**
+ * @brief Try to pin an already-loaded page without loading from disk.
+ *
+ * Returns a pointer to the page buffer only if the page is already
+ * cached in the pool. Does not trigger I/O on cache miss.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to try pinning.
+ * @return Pointer to the page buffer, or NULL if not loaded.
+ */
 garry_page_buffer *garry_pool_try_pin(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 idx;
@@ -160,6 +216,15 @@ garry_page_buffer *garry_pool_try_pin(garry_buffer_pool *pool, garry_i32 pid)
     return &pool->pages[idx];
 }
 
+/**
+ * @brief Release a pin on a page.
+ *
+ * Decrements the pin count for the given page. The page becomes
+ * eligible for eviction once its pin count reaches zero.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to release.
+ */
 void garry_pool_release_page(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 idx;
@@ -176,6 +241,13 @@ void garry_pool_release_page(garry_buffer_pool *pool, garry_i32 pid)
     garry_rwlock_wrunlock(&pool->slot_locks[0]);
 }
 
+/**
+ * @brief Get the current pin count for a page.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to query.
+ * @return Current pin count, or 0 if the page is not loaded.
+ */
 garry_u32 garry_pool_pin_count(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 idx;
@@ -198,6 +270,14 @@ garry_u32 garry_pool_pin_count(garry_buffer_pool *pool, garry_i32 pid)
     return result;
 }
 
+/**
+ * @brief Mark a loaded page as dirty.
+ *
+ * The page will be flushed to disk on eviction or pool close.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to mark dirty.
+ */
 void garry_pool_mark_dirty(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 idx;
@@ -212,6 +292,16 @@ void garry_pool_mark_dirty(garry_buffer_pool *pool, garry_i32 pid)
     garry_rwlock_wrunlock(&pool->slot_locks[0]);
 }
 
+/**
+ * @brief Allocate a new page from the pool.
+ *
+ * First reuses a page from the free list if available. Otherwise
+ * increments next_page to create a fresh page. Evicts a victim slot
+ * if necessary, flushing dirty pages first.
+ *
+ * @param pool  Buffer pool.
+ * @return Page ID of the newly allocated page, or -1 on failure.
+ */
 garry_i32 garry_pool_allocate(garry_buffer_pool *pool)
 {
     garry_u32 victim;
@@ -298,6 +388,16 @@ garry_i32 garry_pool_allocate(garry_buffer_pool *pool)
     return pid;
 }
 
+/**
+ * @brief Return a page to the free list for later reuse.
+ *
+ * Flushes the page if dirty, evicts it from the cache, then writes
+ * the free-list forward pointer into the page data so
+ * garry_pool_allocate can traverse the chain.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to free.
+ */
 void garry_pool_free_page(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 idx;
@@ -335,6 +435,13 @@ void garry_pool_free_page(garry_buffer_pool *pool, garry_i32 pid)
     garry_rwlock_wrunlock(&pool->slot_locks[0]);
 }
 
+/**
+ * @brief Check whether a page is currently loaded in the pool.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to check.
+ * @return GARRY_TRUE if loaded, GARRY_FALSE otherwise.
+ */
 garry_bool garry_pool_is_loaded(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_bool result;
@@ -346,6 +453,13 @@ garry_bool garry_pool_is_loaded(garry_buffer_pool *pool, garry_i32 pid)
     return result;
 }
 
+/**
+ * @brief Flush a single dirty page to disk.
+ *
+ * @param pool  Buffer pool.
+ * @param pid   Page ID to flush.
+ * @return GARRY_TRUE on success, GARRY_FALSE on failure.
+ */
 garry_bool garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid)
 {
     garry_u32 idx;
@@ -369,6 +483,11 @@ garry_bool garry_pool_flush_page(garry_buffer_pool *pool, garry_i32 pid)
     return GARRY_TRUE;
 }
 
+/**
+ * @brief Flush all dirty pages in the pool to disk.
+ *
+ * @param pool  Buffer pool.
+ */
 void garry_pool_flush_all(garry_buffer_pool *pool)
 {
     garry_u32 i;
@@ -391,6 +510,11 @@ void garry_pool_flush_all(garry_buffer_pool *pool)
     garry_rwlock_wrunlock(&pool->slot_locks[0]);
 }
 
+/**
+ * @brief Flush all dirty pages, close the file, and free the pool.
+ *
+ * @param pool  Buffer pool to close.
+ */
 void garry_pool_close(garry_buffer_pool *pool)
 {
     garry_u32 i;

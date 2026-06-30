@@ -25,6 +25,18 @@
 
 #define GARRY_MAX_RECOVERY_COMMITTED 1024
 
+/**
+ * @brief Replay WAL records for crash recovery.
+ *
+ * Performs two passes over the WAL: first collects all committed
+ * transaction IDs, then replays update records for those transactions
+ * into the main database. Uncommitted transactions are skipped.
+ *
+ * @param wal WAL log to replay.
+ * @param eng Engine handle to apply recovered mutations to.
+ *
+ * @return GARRY_TRUE on successful recovery, GARRY_FALSE on error.
+ */
 garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
 {
     garry_byte rec[GARRY_WAL_RECORD_SIZE];

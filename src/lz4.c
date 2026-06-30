@@ -30,6 +30,13 @@ static int lz4_byte_to_int(char b)
     return v;
 }
 
+/**
+ * @brief Compute the maximum compressed output size for a given input length.
+ *
+ * @param src_len Length of the source data.
+ *
+ * @return Maximum possible compressed size, or 0 if src_len exceeds LZ4_MAX_INPUT_SIZE.
+ */
 size_t lz4_compress_bound(size_t src_len)
 {
     if (src_len > LZ4_MAX_INPUT_SIZE)
@@ -98,6 +105,18 @@ static void lz77_match_find(const char *src, size_t src_len, size_t ip, int *has
     }
 }
 
+/**
+ * @brief Compress data using LZ4 block format.
+ *
+ * Allocates and returns a buffer containing the LZ4-compressed representation
+ * of the source data. Uses a hash table for LZ77 match finding.
+ *
+ * @param src     Source data to compress.
+ * @param src_len Length of the source data.
+ * @param out_len Output parameter receiving the compressed length.
+ *
+ * @return Pointer to the compressed buffer (caller must free), or NULL on error.
+ */
 char *lz4_compress(const char *src, size_t src_len, size_t *out_len)
 {
     int *hash_table;
@@ -307,6 +326,19 @@ char *lz4_compress(const char *src, size_t src_len, size_t *out_len)
     return out_buf;
 }
 
+/**
+ * @brief Decompress LZ4 block-compressed data.
+ *
+ * Allocates and returns a buffer containing the decompressed data.
+ * Validates bounds during decompression to prevent buffer overflows.
+ *
+ * @param src         Compressed input data.
+ * @param src_len     Length of the compressed data.
+ * @param dst_capacity Maximum output buffer capacity.
+ * @param out_len     Output parameter receiving the decompressed length.
+ *
+ * @return Pointer to the decompressed buffer (caller must free), or NULL on error.
+ */
 char *lz4_decompress(const char *src, size_t src_len, size_t dst_capacity, size_t *out_len)
 {
     char *out_buf;
@@ -458,6 +490,11 @@ char *lz4_decompress(const char *src, size_t src_len, size_t dst_capacity, size_
     return out_buf;
 }
 
+/**
+ * @brief Free a buffer allocated by lz4_compress or lz4_decompress.
+ *
+ * @param ptr Pointer to the buffer to free (may be NULL).
+ */
 void lz4_free(void *ptr)
 {
     free(ptr);

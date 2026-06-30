@@ -29,17 +29,50 @@ typedef struct
     garry_mutex append_mutex;
 } garry_wal_log;
 
-/* WAL_INIT(log_path, checkpoint_path) RET wal_handle */
+/**
+ * @brief Initialize a WAL log.
+ *
+ * Opens the log and checkpoint files, initializes the append mutex,
+ * and sets the initial LSN to 0.
+ *
+ * @param wal             WAL log struct to initialize
+ * @param log_path        Filesystem path for the WAL log file
+ * @param checkpoint_path Filesystem path for the checkpoint file
+ * @return GARRY_OK on success, or an error status on failure
+ */
 garry_status_t garry_wal_log_init(garry_wal_log *wal, const char *log_path,
                                   const char *checkpoint_path);
 
-/* WAL_APPEND(wal, record) RET log_sequence_number */
+/**
+ * @brief Append a record to the WAL log.
+ *
+ * Serializes the record to the on-disk format and writes it to the
+ * log file. The append is mutex-serialized. Returns the new LSN.
+ *
+ * @param wal     WAL log to append to
+ * @param record  WAL record to append
+ * @return New log sequence number, or -1 on write failure
+ */
 garry_log_sequence_number garry_wal_log_append(garry_wal_log *wal, const garry_wal_record *record);
 
-/* WAL_FLUSH(wal) */
+/**
+ * @brief Flush the WAL log to durable storage.
+ *
+ * Calls fsync on the WAL log file to ensure all buffered writes
+ * are persisted to disk.
+ *
+ * @param wal  WAL log to flush
+ */
 void garry_wal_log_flush(garry_wal_log *wal);
 
-/* WAL_CLOSE(wal) */
+/**
+ * @brief Close the WAL log and release resources.
+ *
+ * Flushes the log to durable storage, closes the file descriptor,
+ * and destroys the append mutex.
+ *
+ * @param wal  WAL log to close
+ */
 void garry_wal_log_close(garry_wal_log *wal);
 
 #endif /* GARRY_WAL_LOG_H */

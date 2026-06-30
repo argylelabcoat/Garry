@@ -17,6 +17,15 @@
 #include "hierarchical.h"
 #include <string.h>
 
+/**
+ * @brief Count the number of subscripts in a hierarchical key.
+ *
+ * Walks the length-prefixed subscripts and counts them.
+ *
+ * @param key   Encoded hierarchical key.
+ * @param klen  Key length in bytes.
+ * @return Number of subscripts in the key.
+ */
 garry_i32 garry_subscript_count(const garry_byte *key, garry_i32 klen)
 {
     garry_i32 count;
@@ -35,6 +44,17 @@ garry_i32 garry_subscript_count(const garry_byte *key, garry_i32 klen)
     return count;
 }
 
+/**
+ * @brief Get the byte offset of the Nth subscript in a hierarchical key.
+ *
+ * Skips the first @p idx subscripts and returns the byte offset
+ * where the idx-th subscript begins.
+ *
+ * @param key   Encoded hierarchical key.
+ * @param klen  Key length in bytes.
+ * @param idx   Subscript index (0-based) to locate.
+ * @return Byte offset of the subscript, or -1 if out of bounds.
+ */
 garry_i32 garry_get_subscript_offset(const garry_byte *key, garry_i32 klen, garry_i32 idx)
 {
     garry_i32 offset;
@@ -55,6 +75,18 @@ garry_i32 garry_get_subscript_offset(const garry_byte *key, garry_i32 klen, garr
     return offset;
 }
 
+/**
+ * @brief Check if a specific subscript equals an expected string.
+ *
+ * Extracts the @p idx-th subscript from the key and compares it
+ * byte-for-byte against @p expected.
+ *
+ * @param key      Encoded hierarchical key.
+ * @param klen     Key length in bytes.
+ * @param idx      Subscript index (0-based) to compare.
+ * @param expected Expected string value to match.
+ * @return 1 if the subscript matches, 0 otherwise.
+ */
 garry_bool garry_subscript_equal(const garry_byte *key, garry_i32 klen, garry_i32 idx,
                                  const char *expected)
 {
@@ -97,6 +129,19 @@ garry_bool garry_subscript_equal(const garry_byte *key, garry_i32 klen, garry_i3
     return 1;
 }
 
+/**
+ * @brief Extract the prefix of a hierarchical key containing the first N subscripts.
+ *
+ * Copies the bytes corresponding to the first @p nsubs subscripts
+ * into the output buffer.
+ *
+ * @param key      Encoded hierarchical key.
+ * @param klen     Key length in bytes.
+ * @param nsubs    Number of subscripts to include in the prefix.
+ * @param out      Output buffer for the prefix.
+ * @param out_size Size of the output buffer.
+ * @return Length of the prefix copied, or -1 if the output buffer is too small.
+ */
 garry_i32 garry_key_prefix(const garry_byte *key, garry_i32 klen, garry_i32 nsubs, garry_byte *out,
                            garry_i32 out_size)
 {
@@ -113,6 +158,18 @@ garry_i32 garry_key_prefix(const garry_byte *key, garry_i32 klen, garry_i32 nsub
     return plen;
 }
 
+/**
+ * @brief Extract a single subscript from a hierarchical key by index.
+ *
+ * Decodes the length-prefixed subscript at position @p idx and
+ * copies its raw bytes into @p sub.
+ *
+ * @param key     Encoded hierarchical key.
+ * @param klen    Key length in bytes.
+ * @param idx     Subscript index (0-based) to extract.
+ * @param sub     Output buffer for the subscript data.
+ * @param sub_len Output parameter for the subscript length.
+ */
 void garry_extract_subscript(const garry_byte *key, garry_i32 klen, garry_i32 idx, garry_byte *sub,
                              garry_i32 *sub_len)
 {
@@ -132,6 +189,20 @@ void garry_extract_subscript(const garry_byte *key, garry_i32 klen, garry_i32 id
     }
 }
 
+/**
+ * @brief Concatenate a parent prefix with a new subscript.
+ *
+ * Appends a length-prefixed subscript to an existing parent key prefix,
+ * producing a new hierarchical key.
+ *
+ * @param parent     Parent key prefix.
+ * @param parent_len Length of @p parent.
+ * @param sub        Subscript to append.
+ * @param sub_len    Length of @p sub.
+ * @param out        Output buffer for the concatenated key.
+ * @param out_size   Size of the output buffer.
+ * @return Total length of the concatenated key, or -1 if output buffer is too small.
+ */
 garry_i32 garry_concat_prefix(const garry_byte *parent, garry_i32 parent_len, const garry_byte *sub,
                               garry_i32 sub_len, garry_byte *out, garry_i32 out_size)
 {

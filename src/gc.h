@@ -14,6 +14,15 @@
 
 #include "transaction.h"
 
+/**
+ * @brief Run MVCC garbage collection on version chain pages.
+ *
+ * Snapshots the set of active transactions, then iterates all pages
+ * in the database. For each version chain page, prunes entries that
+ * are no longer visible to any active transaction, reclaiming space.
+ *
+ * @param eng  Storage engine handle
+ */
 void garry_mvcc_gc(garry_engine_handle *eng);
 
 #endif /* GARRY_GC_H */

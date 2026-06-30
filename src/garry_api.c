@@ -35,6 +35,12 @@ struct garry_cursor
     garry_storage_cursor scur;
 };
 
+/**
+ * @brief Create a new database with default settings.
+ *
+ * @param path Filesystem path for the database files
+ * @return Database handle, or NULL on failure
+ */
 garry_database *garry_database_create(const char *path)
 {
     garry_engine_handle *eng;
@@ -60,6 +66,13 @@ garry_database *garry_database_create(const char *path)
     return db;
 }
 
+/**
+ * @brief Create a new database with caller-specified configuration.
+ *
+ * @param path   Filesystem path for the database files
+ * @param config Configuration overrides applied to default settings
+ * @return Database handle, or NULL on failure
+ */
 garry_database *garry_database_create_with_config(const char *path, garry_config config)
 {
     garry_engine_handle *eng;
@@ -94,6 +107,12 @@ garry_database *garry_database_create_with_config(const char *path, garry_config
     return db;
 }
 
+/**
+ * @brief Open an existing database.
+ *
+ * @param path Filesystem path of the database to open
+ * @return Database handle, or NULL on failure
+ */
 garry_database *garry_database_open(const char *path)
 {
     garry_engine_handle *eng;
@@ -116,6 +135,11 @@ garry_database *garry_database_open(const char *path)
     return db;
 }
 
+/**
+ * @brief Close a database and release all associated resources.
+ *
+ * @param db Database handle to close (NULL is a no-op)
+ */
 void garry_database_close(garry_database *db)
 {
     if (!db)
@@ -124,6 +148,12 @@ void garry_database_close(garry_database *db)
     free(db);
 }
 
+/**
+ * @brief Begin a new transaction.
+ *
+ * @param db Database handle
+ * @return Transaction ID, or -1 on failure
+ */
 garry_txn garry_txn_begin(garry_database *db)
 {
     if (!db)
@@ -131,6 +161,12 @@ garry_txn garry_txn_begin(garry_database *db)
     return garry_storage_begin(db->eng);
 }
 
+/**
+ * @brief Commit an active transaction, persisting all writes.
+ *
+ * @param db  Database handle
+ * @param txn Transaction ID to commit
+ */
 void garry_txn_commit(garry_database *db, garry_txn txn)
 {
     if (!db)
@@ -138,6 +174,12 @@ void garry_txn_commit(garry_database *db, garry_txn txn)
     garry_storage_commit(db->eng, txn);
 }
 
+/**
+ * @brief Roll back an active transaction, discarding all writes.
+ *
+ * @param db  Database handle
+ * @param txn Transaction ID to roll back
+ */
 void garry_txn_rollback(garry_database *db, garry_txn txn)
 {
     if (!db)
@@ -145,6 +187,17 @@ void garry_txn_rollback(garry_database *db, garry_txn txn)
     garry_storage_rollback(db->eng, txn);
 }
 
+/**
+ * @brief Retrieve a value by key within a transaction.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Key bytes to look up
+ * @param klen  Length of the key
+ * @param value Output buffer for the value
+ * @param vlen  On input, capacity of value buffer; on output, actual value length
+ * @return GARRY_OK on success, GARRY_ERR_NOT_FOUND if key absent
+ */
 garry_status_t garry_get(garry_database *db, garry_txn txn, const garry_u8 *key, garry_i32 klen,
                          garry_u8 *value, garry_i32 *vlen)
 {
@@ -159,6 +212,17 @@ garry_status_t garry_get(garry_database *db, garry_txn txn, const garry_u8 *key,
     return GARRY_ERR_NOT_FOUND;
 }
 
+/**
+ * @brief Store a key-value pair within a transaction.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Key bytes
+ * @param klen  Length of the key
+ * @param value Value bytes to store
+ * @param vlen  Length of the value
+ * @return GARRY_OK on success, or an error code
+ */
 garry_status_t garry_set(garry_database *db, garry_txn txn, const garry_u8 *key, garry_i32 klen,
                          const garry_u8 *value, garry_i32 vlen)
 {
@@ -168,6 +232,15 @@ garry_status_t garry_set(garry_database *db, garry_txn txn, const garry_u8 *key,
                                                                    : GARRY_ERR_INVALID_ARG;
 }
 
+/**
+ * @brief Delete a key-value pair within a transaction.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Key bytes to delete
+ * @param klen  Length of the key
+ * @return GARRY_OK on success, GARRY_ERR_NOT_FOUND if key absent
+ */
 garry_status_t garry_delete(garry_database *db, garry_txn txn, const garry_u8 *key, garry_i32 klen)
 {
     if (!db)
@@ -175,6 +248,19 @@ garry_status_t garry_delete(garry_database *db, garry_txn txn, const garry_u8 *k
     return garry_storage_delete(db->eng, txn, key, klen) ? GARRY_OK : GARRY_ERR_NOT_FOUND;
 }
 
+/**
+ * @brief Retrieve a value by key, returning a default if absent.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Key bytes to look up
+ * @param klen  Length of the key
+ * @param def   Default value bytes
+ * @param dlen  Length of the default value
+ * @param value Output buffer for the result
+ * @param vlen  On input, capacity of value buffer; on output, actual length
+ * @return GARRY_OK on success, or an error code
+ */
 garry_status_t garry_get_default(garry_database *db, garry_txn txn, const garry_u8 *key,
                                  garry_i32 klen, const garry_u8 *def, garry_i32 dlen,
                                  garry_u8 *value, garry_i32 *vlen)
@@ -186,6 +272,15 @@ garry_status_t garry_get_default(garry_database *db, garry_txn txn, const garry_
                : GARRY_ERR_INVALID_ARG;
 }
 
+/**
+ * @brief Return the size in bytes of the value for a given key.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Key bytes
+ * @param klen  Length of the key
+ * @return Value size, or 0 if the key does not exist
+ */
 garry_i32 garry_data(garry_database *db, garry_txn txn, const garry_u8 *key, garry_i32 klen)
 {
     if (!db)
@@ -193,6 +288,15 @@ garry_i32 garry_data(garry_database *db, garry_txn txn, const garry_u8 *key, gar
     return garry_storage_data(db->eng, txn, key, klen);
 }
 
+/**
+ * @brief Seek to the first key in the database.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Output buffer for the first key
+ * @param klen  Output length of the first key
+ * @return GARRY_TRUE if a first key exists, GARRY_FALSE otherwise
+ */
 garry_bool garry_first(garry_database *db, garry_txn txn, garry_u8 *key, garry_i32 *klen)
 {
     if (!db)
@@ -200,6 +304,15 @@ garry_bool garry_first(garry_database *db, garry_txn txn, garry_u8 *key, garry_i
     return garry_storage_first(db->eng, txn, key, klen);
 }
 
+/**
+ * @brief Seek to the last key in the database.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Output buffer for the last key
+ * @param klen  Output length of the last key
+ * @return GARRY_TRUE if a last key exists, GARRY_FALSE otherwise
+ */
 garry_bool garry_last(garry_database *db, garry_txn txn, garry_u8 *key, garry_i32 *klen)
 {
     if (!db)
@@ -207,6 +320,17 @@ garry_bool garry_last(garry_database *db, garry_txn txn, garry_u8 *key, garry_i3
     return garry_storage_last(db->eng, txn, key, klen);
 }
 
+/**
+ * @brief Advance to the key immediately after the given key.
+ *
+ * @param db        Database handle
+ * @param txn       Transaction ID
+ * @param after     Key bytes to seek past
+ * @param after_len Length of the after key
+ * @param key       Output buffer for the next key
+ * @param klen      Output length of the next key
+ * @return GARRY_TRUE if a next key exists, GARRY_FALSE otherwise
+ */
 garry_bool garry_next_key(garry_database *db, garry_txn txn, const garry_u8 *after,
                           garry_i32 after_len, garry_u8 *key, garry_i32 *klen)
 {
@@ -215,6 +339,17 @@ garry_bool garry_next_key(garry_database *db, garry_txn txn, const garry_u8 *aft
     return garry_storage_next_key(db->eng, txn, after, after_len, key, klen);
 }
 
+/**
+ * @brief Retreat to the key immediately before the given key.
+ *
+ * @param db         Database handle
+ * @param txn        Transaction ID
+ * @param before     Key bytes to seek before
+ * @param before_len Length of the before key
+ * @param key        Output buffer for the previous key
+ * @param klen       Output length of the previous key
+ * @return GARRY_TRUE if a previous key exists, GARRY_FALSE otherwise
+ */
 garry_bool garry_prev_key(garry_database *db, garry_txn txn, const garry_u8 *before,
                           garry_i32 before_len, garry_u8 *key, garry_i32 *klen)
 {
@@ -223,6 +358,15 @@ garry_bool garry_prev_key(garry_database *db, garry_txn txn, const garry_u8 *bef
     return garry_storage_prev_key(db->eng, txn, before, before_len, key, klen);
 }
 
+/**
+ * @brief Check whether a key exists in the database.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Key bytes
+ * @param klen  Length of the key
+ * @return GARRY_TRUE if the key exists, GARRY_FALSE otherwise
+ */
 garry_bool garry_exists(garry_database *db, garry_txn txn, const garry_u8 *key, garry_i32 klen)
 {
     if (!db)
@@ -230,6 +374,13 @@ garry_bool garry_exists(garry_database *db, garry_txn txn, const garry_u8 *key, 
     return garry_storage_exists(db->eng, txn, key, klen);
 }
 
+/**
+ * @brief Return the total number of key-value pairs in the database.
+ *
+ * @param db  Database handle
+ * @param txn Transaction ID
+ * @return Count of entries, or 0 on failure
+ */
 garry_i32 garry_count(garry_database *db, garry_txn txn)
 {
     if (!db)
@@ -237,6 +388,15 @@ garry_i32 garry_count(garry_database *db, garry_txn txn)
     return garry_storage_count(db->eng, txn);
 }
 
+/**
+ * @brief Open a cursor for iterating over keys matching a prefix.
+ *
+ * @param db     Database handle
+ * @param txn    Transaction ID
+ * @param prefix Key prefix to match (NULL for all keys)
+ * @param plen   Prefix length (0 if prefix is NULL)
+ * @return Cursor handle, or NULL on failure
+ */
 garry_cursor *garry_cursor_open(garry_database *db, garry_txn txn, const garry_u8 *prefix,
                                 garry_i32 plen)
 {
@@ -253,6 +413,16 @@ garry_cursor *garry_cursor_open(garry_database *db, garry_txn txn, const garry_u
     return cur;
 }
 
+/**
+ * @brief Advance the cursor and return the next key-value pair.
+ *
+ * @param cur  Cursor handle
+ * @param key  Output buffer for the key
+ * @param klen Output length of the key
+ * @param value Output buffer for the value
+ * @param vlen On input, capacity of value buffer; on output, actual length
+ * @return GARRY_TRUE if a next entry exists, GARRY_FALSE at end
+ */
 garry_bool garry_cursor_next(garry_cursor *cur, garry_u8 *key, garry_i32 *klen, garry_u8 *value,
                              garry_i32 *vlen)
 {
@@ -261,6 +431,14 @@ garry_bool garry_cursor_next(garry_cursor *cur, garry_u8 *key, garry_i32 *klen, 
     return garry_storage_cursor_next(&cur->scur, key, klen, value, vlen);
 }
 
+/**
+ * @brief Advance the cursor and return only the next key.
+ *
+ * @param cur  Cursor handle
+ * @param key  Output buffer for the key
+ * @param klen Output length of the key
+ * @return GARRY_TRUE if a next key exists, GARRY_FALSE at end
+ */
 garry_bool garry_cursor_next_key(garry_cursor *cur, garry_u8 *key, garry_i32 *klen)
 {
     if (!cur)
@@ -268,6 +446,11 @@ garry_bool garry_cursor_next_key(garry_cursor *cur, garry_u8 *key, garry_i32 *kl
     return garry_storage_cursor_next(&cur->scur, key, klen, NULL, NULL);
 }
 
+/**
+ * @brief Close a cursor and release its resources.
+ *
+ * @param cur Cursor handle to close (NULL is a no-op)
+ */
 void garry_cursor_close(garry_cursor *cur)
 {
     if (!cur)
@@ -276,6 +459,15 @@ void garry_cursor_close(garry_cursor *cur)
     free(cur);
 }
 
+/**
+ * @brief Store a string key-value pair within a transaction.
+ *
+ * @param db    Database handle
+ * @param txn   Transaction ID
+ * @param key   Null-terminated key string
+ * @param value Null-terminated value string
+ * @return GARRY_OK on success, or an error code
+ */
 garry_status_t garry_set_str(garry_database *db, garry_txn txn, const char *key, const char *value)
 {
     garry_i32 klen, vlen;
@@ -291,6 +483,16 @@ garry_status_t garry_set_str(garry_database *db, garry_txn txn, const char *key,
     return garry_set(db, txn, (const garry_u8 *)key, klen, (const garry_u8 *)value, vlen);
 }
 
+/**
+ * @brief Retrieve a string value by key within a transaction.
+ *
+ * @param db         Database handle
+ * @param txn        Transaction ID
+ * @param key        Null-terminated key string
+ * @param value      Output buffer for the null-terminated value
+ * @param value_size Size of the value buffer in bytes
+ * @return GARRY_OK on success, or an error code
+ */
 garry_status_t garry_get_str(garry_database *db, garry_txn txn, const char *key, char *value,
                              garry_i32 value_size)
 {

@@ -34,20 +34,60 @@ typedef struct
     garry_byte_array new_data;
 } garry_wal_record;
 
-/* MAKE_UPDATE_RECORD(txn, key, klen, new_val, vlen) RET wal_record_opt */
+/**
+ * @brief Create an update WAL record.
+ *
+ * Heap-allocates a WAL record of kind GARRY_WAL_UPDATE, copying the
+ * key and new value into the record's internal buffers.
+ *
+ * @param txn     Transaction ID that owns this update
+ * @param key     Key bytes for the update
+ * @param klen    Key length in bytes
+ * @param new_val New value bytes
+ * @param vlen    New value length in bytes
+ * @return Heap-allocated WAL record, or NULL on allocation failure
+ */
 garry_wal_record *garry_make_update_record(garry_txn_id txn, const garry_byte *key, garry_i32 klen,
                                            const garry_byte *new_val, garry_i32 vlen);
 
-/* MAKE_COMMIT_RECORD(txn) RET wal_record_opt */
+/**
+ * @brief Create a commit WAL record.
+ *
+ * Heap-allocates a WAL record of kind GARRY_WAL_COMMIT for the given
+ * transaction.
+ *
+ * @param txn  Transaction ID being committed
+ * @return Heap-allocated WAL record, or NULL on allocation failure
+ */
 garry_wal_record *garry_make_commit_record(garry_txn_id txn);
 
-/* MAKE_ABORT_RECORD(txn) RET wal_record_opt */
+/**
+ * @brief Create an abort WAL record.
+ *
+ * Heap-allocates a WAL record of kind GARRY_WAL_ABORT for the given
+ * transaction.
+ *
+ * @param txn  Transaction ID being aborted
+ * @return Heap-allocated WAL record, or NULL on allocation failure
+ */
 garry_wal_record *garry_make_abort_record(garry_txn_id txn);
 
-/* MAKE_CHECKPOINT_RECORD(txn) RET wal_record_opt */
+/**
+ * @brief Create a checkpoint WAL record.
+ *
+ * Heap-allocates a WAL record of kind GARRY_WAL_CHECKPOINT for the
+ * given transaction.
+ *
+ * @param txn  Transaction ID associated with the checkpoint
+ * @return Heap-allocated WAL record, or NULL on allocation failure
+ */
 garry_wal_record *garry_make_checkpoint_record(garry_txn_id txn);
 
-/* Free a heap-allocated WAL record. */
+/**
+ * @brief Free a heap-allocated WAL record.
+ *
+ * @param rec  WAL record to free (may be NULL)
+ */
 void garry_wal_record_free(garry_wal_record *rec);
 
 /* WAL record on-disk format constants. */

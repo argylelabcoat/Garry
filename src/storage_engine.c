@@ -18,6 +18,13 @@
 #include "buffer_pool.h"
 #include <string.h>
 
+/**
+ * @brief Initialize a new storage engine instance.
+ *
+ * @param path     Filesystem path for the database files
+ * @param settings Engine configuration parameters
+ * @return Engine handle, or NULL on failure
+ */
 garry_engine_handle *garry_storage_init(const char *path, garry_engine_settings settings)
 {
     garry_engine_handle *eng;
@@ -29,6 +36,12 @@ garry_engine_handle *garry_storage_init(const char *path, garry_engine_settings 
     return eng;
 }
 
+/**
+ * @brief Open an existing storage engine from disk.
+ *
+ * @param path Filesystem path of the database to open
+ * @return Engine handle, or NULL on failure
+ */
 garry_engine_handle *garry_storage_open(const char *path)
 {
     if (!path)
@@ -36,6 +49,11 @@ garry_engine_handle *garry_storage_open(const char *path)
     return garry_engine_open(path);
 }
 
+/**
+ * @brief Close the storage engine, persisting header and flushing all state.
+ *
+ * @param eng Engine handle to close (NULL is a no-op)
+ */
 void garry_storage_close(garry_engine_handle *eng)
 {
     garry_page_buffer *hdr_buf;

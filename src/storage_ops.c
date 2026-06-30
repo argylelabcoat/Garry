@@ -30,6 +30,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+/**
+ * @brief Decode a version chain ID from a B-tree lookup descriptor.
+ *
+ * Handles both CBOR-encoded descriptors (2-byte maps) and legacy
+ * single-byte inline chain IDs.
+ *
+ * @param lookup_result  Raw descriptor bytes from the B-tree leaf.
+ * @return Chain ID (>= 0) on success, -1 on error or invalid descriptor.
+ */
 garry_i32 garry_decode_cid_from_descriptor(const garry_byte *lookup_result)
 {
     garry_i32 chain_id;
@@ -275,6 +284,22 @@ garry_bool garry_storage_delete(garry_engine_handle *eng, garry_txn_id txn, cons
     return ok;
 }
 
+/**
+ * @brief Get a key's value, returning a default if not found.
+ *
+ * Attempts a normal get; if the key is not visible under MVCC,
+ * copies the provided default value into the result buffer.
+ *
+ * @param eng        Engine handle.
+ * @param txn        Transaction ID for visibility.
+ * @param key        Key to look up.
+ * @param klen       Key length.
+ * @param def        Default value to return if key is not found.
+ * @param dlen       Length of @p def.
+ * @param result     Buffer to receive the value or default.
+ * @param result_len Output parameter for result length.
+ * @return 1 if the key was found or the default was applied, 0 on error.
+ */
 garry_bool garry_storage_get_default(garry_engine_handle *eng, garry_txn_id txn,
                                      const garry_byte *key, garry_i32 klen, const garry_byte *def,
                                      garry_i32 dlen, garry_byte *result, garry_i32 *result_len)

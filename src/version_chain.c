@@ -31,11 +31,33 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief Initialize a version chain page.
+ *
+ * Sets the page type to GARRY_NODE_CHAIN with zero records.
+ *
+ * @param buf       Page buffer to initialize.
+ * @param page_size Size of the page in bytes.
+ */
 void garry_chain_page_init(garry_page_buffer buf, garry_u32 page_size)
 {
     garry_page_init(buf, GARRY_NODE_CHAIN, 0, (garry_i32)page_size);
 }
 
+/**
+ * @brief Append an inline version entry to a chain page.
+ *
+ * Encodes a version entry with the given transaction ID, value length,
+ * and inline value bytes. The value must fit within the inline capacity.
+ *
+ * @param buf       Page buffer to append to.
+ * @param page_size Size of the page in bytes.
+ * @param txn       Transaction ID that created this version.
+ * @param value     Pointer to the value bytes (may be NULL if vlen == 0).
+ * @param vlen      Length of the value in bytes.
+ *
+ * @return GARRY_TRUE on success, GARRY_FALSE if the value exceeds inline capacity.
+ */
 garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size, garry_txn_id txn,
                                    const char *value, garry_i32 vlen)
 {
@@ -112,6 +134,18 @@ garry_bool garry_chain_page_append(garry_page_buffer buf, garry_u32 page_size, g
     return GARRY_TRUE;
 }
 
+/**
+ * @brief Append a tombstone entry to a chain page.
+ *
+ * A tombstone marks the key as deleted by the given transaction.
+ * The entry has zero value length and the is_tombstone flag set.
+ *
+ * @param buf       Page buffer to append to.
+ * @param page_size Size of the page in bytes.
+ * @param txn       Transaction ID that created the tombstone.
+ *
+ * @return GARRY_TRUE on success, GARRY_FALSE if the page is full.
+ */
 garry_bool garry_chain_page_append_tombstone(garry_page_buffer buf, garry_u32 page_size,
                                              garry_txn_id txn)
 {
@@ -174,17 +208,50 @@ garry_bool garry_chain_page_append_tombstone(garry_page_buffer buf, garry_u32 pa
     return GARRY_TRUE;
 }
 
+/**
+ * @brief Compute the usable data capacity of an overflow page.
+ *
+ * Returns the number of value bytes that fit in a single overflow page
+ * after accounting for the page header and overflow pointer.
+ *
+ * @param page_size Total page size in bytes.
+ *
+ * @return Usable data capacity in bytes.
+ */
 garry_i32 garry_overflow_chunk_size(garry_u32 page_size)
 {
     return (garry_i32)page_size - GARRY_PAGE_HEADER_SIZE - GARRY_OVERFLOW_PTR_SIZE;
 }
 
+/**
+ * @brief Compute the maximum inline value size for a chain page.
+ *
+ * Returns the number of value bytes that fit inline in a chain entry
+ * after accounting for the page header, overflow pointer, and entry header.
+ *
+ * @param page_size Total page size in bytes.
+ *
+ * @return Maximum inline value length in bytes.
+ */
 garry_i32 garry_chain_inline_capacity(garry_u32 page_size)
 {
     return (garry_i32)page_size - GARRY_PAGE_HEADER_SIZE - GARRY_OVERFLOW_PTR_SIZE -
            GARRY_CHAIN_ENTRY_HEADER_SIZE;
 }
 
+/**
+ * @brief Write a value to a chain of overflow pages.
+ *
+ * Allocates overflow pages and copies value bytes into them, linking
+ * each page to the next via the overflow pointer field. Returns the
+ * head page ID for later retrieval.
+ *
+ * @param pool   Buffer pool to allocate pages from.
+ * @param value  Pointer to the value bytes to store.
+ * @param vlen   Length of the value in bytes.
+ *
+ * @return Head page ID on success, -1 on allocation failure.
+ */
 garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value, garry_i32 vlen)
 {
     garry_i32 head = -1;
@@ -251,6 +318,19 @@ garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value, garry
     return head;
 }
 
+/**
+ * @brief Read a value from a chain of overflow pages.
+ *
+ * Walks the overflow page chain starting at the head page and copies
+ * value bytes into the output buffer.
+ *
+ * @param pool      Buffer pool to pin pages from.
+ * @param head      Head page ID of the overflow chain.
+ * @param total_len Total number of bytes to read.
+ * @param out_buf   Destination buffer for the value bytes.
+ *
+ * @return GARRY_TRUE if all bytes were read, GARRY_FALSE on error.
+ */
 garry_bool garry_overflow_read(garry_buffer_pool *pool, garry_i32 head, garry_i32 total_len,
                                char *out_buf)
 {
@@ -294,6 +374,20 @@ garry_bool garry_overflow_read(garry_buffer_pool *pool, garry_i32 head, garry_i3
     return (copied == total_len) ? GARRY_TRUE : GARRY_FALSE;
 }
 
+/**
+ * @brief Append an overflow version entry to a chain page.
+ *
+ * Encodes a version entry that references an overflow page chain
+ * instead of storing the value inline.
+ *
+ * @param buf       Page buffer to append to.
+ * @param page_size Size of the page in bytes.
+ * @param txn       Transaction ID that created this version.
+ * @param total_len Total length of the overflow value in bytes.
+ * @param head      Head page ID of the overflow chain.
+ *
+ * @return GARRY_TRUE on success, GARRY_FALSE if the page is full.
+ */
 garry_bool garry_chain_page_append_overflow(garry_page_buffer buf, garry_u32 page_size,
                                             garry_txn_id txn, garry_i32 total_len, garry_i32 head)
 {
@@ -495,6 +589,15 @@ char *garry_chain_page_find_visible(garry_buffer_pool *pool, garry_page_buffer b
     return result;
 }
 
+/**
+ * @brief Free all pages in an overflow chain.
+ *
+ * Walks the overflow page chain starting at head, unpins each page,
+ * and releases it back to the buffer pool.
+ *
+ * @param pool Buffer pool that owns the pages.
+ * @param head Head page ID of the overflow chain.
+ */
 void garry_overflow_free(garry_buffer_pool *pool, garry_i32 head)
 {
     garry_i32 pid = head;
@@ -639,6 +742,18 @@ void garry_chain_page_prune(garry_buffer_pool *pool, garry_page_buffer buf, garr
     free(tmp);
 }
 
+/**
+ * @brief Check if a chain page contains a version from a given transaction.
+ *
+ * Scans all entries in the chain page and returns true if any entry
+ * was created by the specified transaction ID.
+ *
+ * @param buf       Page buffer to search.
+ * @param page_size Size of the page in bytes.
+ * @param txn       Transaction ID to look for.
+ *
+ * @return GARRY_TRUE if the transaction has a version, GARRY_FALSE otherwise.
+ */
 garry_bool garry_chain_page_has_version(garry_page_buffer buf, garry_u32 page_size,
                                         garry_txn_id txn)
 {

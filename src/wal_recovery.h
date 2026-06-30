@@ -15,6 +15,17 @@
 #include "transaction.h"
 #include "wal_log.h"
 
+/**
+ * @brief Replay the WAL log to recover committed mutations.
+ *
+ * Performs a two-pass recovery: first collects all committed
+ * transaction IDs, then replays update records for those transactions
+ * into the B-tree. Uncommitted transactions are skipped.
+ *
+ * @param wal  WAL log to replay
+ * @param eng  Storage engine to apply recovered mutations to
+ * @return GARRY_TRUE on successful recovery, GARRY_FALSE on error
+ */
 garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng);
 
 #endif /* GARRY_WAL_RECOVERY_H */

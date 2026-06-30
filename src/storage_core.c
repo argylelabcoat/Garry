@@ -22,6 +22,17 @@ garry_i32 garry_page_header_size(void)
     return GARRY_PAGE_HEADER_SIZE;
 }
 
+/**
+ * @brief Create a new page header with default values.
+ *
+ * Initializes a page header with the given type and level, zero records,
+ * and free space spanning the full page after the header.
+ *
+ * @param pt    Page type (leaf, internal, chain, overflow, etc.).
+ * @param level Tree level (0 for leaf).
+ *
+ * @return Initialized page header struct.
+ */
 garry_page_header garry_create_header(garry_page_type pt, garry_i32 level)
 {
     garry_page_header hdr;

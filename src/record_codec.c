@@ -22,6 +22,18 @@
 
 #define CBOR_INLINE_THRESHOLD 24
 
+/**
+ * @brief Encode a CBOR array header.
+ *
+ * Writes a CBOR major type 4 (array) header with the given element count.
+ * Uses inline encoding for counts < 24, otherwise a 1-byte additional info.
+ *
+ * @param out   Output buffer to write to.
+ * @param pos   Current write position in the output buffer.
+ * @param count Number of elements in the array.
+ *
+ * @return Updated write position after the header.
+ */
 garry_i32 garry_cbor_encode_array_header_raw(garry_byte *out, garry_i32 pos, garry_i32 count)
 {
     if (count < CBOR_INLINE_THRESHOLD)
@@ -37,6 +49,19 @@ garry_i32 garry_cbor_encode_array_header_raw(garry_byte *out, garry_i32 pos, gar
     }
 }
 
+/**
+ * @brief Encode a CBOR byte string.
+ *
+ * Writes a CBOR major type 2 (byte string) header followed by the data bytes.
+ * Uses inline length for lengths < 24, otherwise a 1-byte additional info.
+ *
+ * @param data  Pointer to the data bytes to encode.
+ * @param dlen  Length of the data in bytes.
+ * @param out   Output buffer to write to.
+ * @param pos   Current write position in the output buffer.
+ *
+ * @return Updated write position after the encoded byte string.
+ */
 garry_i32 garry_cbor_encode_byte_string_raw(const garry_byte *data, garry_i32 dlen, garry_byte *out,
                                             garry_i32 pos)
 {
@@ -55,6 +80,18 @@ garry_i32 garry_cbor_encode_byte_string_raw(const garry_byte *data, garry_i32 dl
     return pos + dlen;
 }
 
+/**
+ * @brief Decode a CBOR array header and return the element count.
+ *
+ * Reads the CBOR major type 4 header at the given position and returns
+ * the number of elements in the array.
+ *
+ * @param buf  Input buffer containing CBOR data.
+ * @param blen Length of the input buffer.
+ * @param pos  Read position in the input buffer.
+ *
+ * @return Number of array elements, or 0 on malformed input.
+ */
 garry_i32 garry_cbor_decode_array_header_raw(const garry_byte *buf, garry_i32 blen, garry_i32 pos)
 {
     garry_i32 fb, ai;
@@ -77,6 +114,16 @@ garry_i32 garry_cbor_decode_array_header_raw(const garry_byte *buf, garry_i32 bl
     return 0;
 }
 
+/**
+ * @brief Return the byte size of a CBOR array header.
+ *
+ * Returns 1 for inline counts (< 24) or 2 for 1-byte additional info.
+ *
+ * @param buf Input buffer containing CBOR data.
+ * @param pos Position of the array header.
+ *
+ * @return 1 or 2, the number of bytes in the header.
+ */
 garry_i32 garry_cbor_array_header_size_raw(const garry_byte *buf, garry_i32 pos)
 {
     garry_i32 fb, ai;
@@ -91,6 +138,20 @@ garry_i32 garry_cbor_array_header_size_raw(const garry_byte *buf, garry_i32 pos)
     return 1;
 }
 
+/**
+ * @brief Decode a CBOR byte string from a buffer.
+ *
+ * Reads the CBOR major type 2 header and copies the data bytes to the
+ * output buffer. Sets *dlen to the decoded string length.
+ *
+ * @param buf     Input buffer containing CBOR data.
+ * @param blen    Length of the input buffer.
+ * @param pos     Read position in the input buffer.
+ * @param out_data Destination buffer for the decoded bytes.
+ * @param dlen    Output parameter receiving the decoded string length.
+ *
+ * @return Updated read position after the byte string, or 0 on error.
+ */
 garry_i32 garry_cbor_decode_byte_string_raw(const garry_byte *buf, garry_i32 blen, garry_i32 pos,
                                             garry_byte *out_data, garry_i32 *dlen)
 {
@@ -122,6 +183,19 @@ garry_i32 garry_cbor_decode_byte_string_raw(const garry_byte *buf, garry_i32 ble
     return pos + slen;
 }
 
+/**
+ * @brief Encode a key-value pair as a CBOR array of two byte strings.
+ *
+ * Writes [array(2), key_bytes, value_bytes] to the output buffer.
+ *
+ * @param key     Pointer to the key bytes.
+ * @param klen    Length of the key in bytes.
+ * @param value   Pointer to the value bytes.
+ * @param vlen    Length of the value in bytes.
+ * @param out_buf Output buffer for the encoded record.
+ *
+ * @return Number of bytes written, or 0 on error.
+ */
 garry_i32 garry_encode_kv(const garry_byte *key, garry_i32 klen, const garry_byte *value,
                           garry_i32 vlen, garry_byte *out_buf)
 {
@@ -137,6 +211,21 @@ garry_i32 garry_encode_kv(const garry_byte *key, garry_i32 klen, const garry_byt
     return pos;
 }
 
+/**
+ * @brief Decode a key-value pair from a CBOR-encoded record.
+ *
+ * Parses the array(2) format written by garry_encode_kv.
+ * Sets *key, *klen, *value, and *vlen from the decoded byte strings.
+ *
+ * @param encoded CBOR-encoded input buffer.
+ * @param elen    Length of the encoded data.
+ * @param key     Output buffer for the decoded key.
+ * @param klen    Output parameter receiving the key length.
+ * @param value   Output buffer for the decoded value.
+ * @param vlen    Output parameter receiving the value length.
+ *
+ * @return GARRY_TRUE on success, GARRY_FALSE on malformed input.
+ */
 garry_bool garry_decode_kv(const garry_byte *encoded, garry_i32 elen, garry_byte *key,
                            garry_i32 *klen, garry_byte *value, garry_i32 *vlen)
 {
@@ -175,11 +264,33 @@ garry_bool garry_decode_kv(const garry_byte *encoded, garry_i32 elen, garry_byte
     return GARRY_TRUE;
 }
 
+/**
+ * @brief Encode a single key as a CBOR byte string.
+ *
+ * Writes the key bytes with a CBOR byte string header to the output buffer.
+ *
+ * @param key     Pointer to the key bytes.
+ * @param klen    Length of the key in bytes.
+ * @param out_buf Output buffer for the encoded key.
+ *
+ * @return Number of bytes written.
+ */
 garry_i32 garry_encode_key_only(const garry_byte *key, garry_i32 klen, garry_byte *out_buf)
 {
     return garry_cbor_encode_byte_string_raw(key, klen, out_buf, 0);
 }
 
+/**
+ * @brief Decode a single key from a CBOR-encoded byte string.
+ *
+ * Reads the CBOR byte string header and copies the key bytes to the output.
+ *
+ * @param encoded CBOR-encoded input buffer.
+ * @param elen    Length of the encoded data.
+ * @param key     Output buffer for the decoded key.
+ *
+ * @return Length of the decoded key in bytes.
+ */
 garry_i32 garry_decode_key_only(const garry_byte *encoded, garry_i32 elen, garry_byte *key)
 {
     garry_i32 klen;

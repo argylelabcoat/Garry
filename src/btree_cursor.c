@@ -32,6 +32,19 @@ static garry_bool prefix_match(const garry_byte *key, garry_i32 klen, const garr
     return 1;
 }
 
+/**
+ * @brief Open a B-tree cursor at the first matching leaf position.
+ *
+ * Traverses the B-tree from the root to the leftmost leaf that could
+ * contain keys matching the prefix. Positions the cursor at slot 0.
+ *
+ * @param pool   Buffer pool for page access.
+ * @param root   Root page ID of the B-tree.
+ * @param prefix Key prefix to filter results (NULL for no filter).
+ * @param plen   Length of the prefix in bytes.
+ *
+ * @return Initialized cursor handle.
+ */
 garry_btree_cursor_handle garry_btree_cursor_open(garry_buffer_pool *pool, garry_i32 root,
                                                   const garry_byte_array *prefix, garry_u32 plen)
 {
@@ -88,6 +101,19 @@ garry_btree_cursor_handle garry_btree_cursor_open(garry_buffer_pool *pool, garry
     }
 }
 
+/**
+ * @brief Advance the cursor to the next matching key.
+ *
+ * Skips keys that do not match the configured prefix and crosses
+ * leaf page boundaries via next_page links.
+ *
+ * @param pool Buffer pool for page access.
+ * @param cur  Cursor handle to advance.
+ * @param key  Output buffer for the next key.
+ * @param klen Output parameter receiving the key length.
+ *
+ * @return GARRY_TRUE if a key was found, GARRY_FALSE if exhausted.
+ */
 garry_bool garry_btree_cursor_next(garry_buffer_pool *pool, garry_btree_cursor_handle *cur,
                                    garry_byte_array *key, garry_u32 *klen)
 {
@@ -148,6 +174,19 @@ garry_bool garry_btree_cursor_next(garry_buffer_pool *pool, garry_btree_cursor_h
     }
 }
 
+/**
+ * @brief Peek at the current cursor position without advancing.
+ *
+ * Returns the key at the current position. If no key is cached,
+ * loads the current leaf page to read it.
+ *
+ * @param pool Buffer pool for page access.
+ * @param cur  Cursor handle to peek at.
+ * @param key  Output buffer for the key.
+ * @param klen Output parameter receiving the key length.
+ *
+ * @return GARRY_TRUE if a key is available, GARRY_FALSE otherwise.
+ */
 garry_bool garry_btree_cursor_peek(garry_buffer_pool *pool, const garry_btree_cursor_handle *cur,
                                    garry_byte_array *key, garry_u32 *klen)
 {
@@ -171,11 +210,27 @@ garry_bool garry_btree_cursor_peek(garry_buffer_pool *pool, const garry_btree_cu
     return 0;
 }
 
+/**
+ * @brief Get the value associated with the current cursor position.
+ *
+ * Copies the value from the current position into the output buffer.
+ * Must be called after a successful next() or peek().
+ *
+ * @param cur Cursor handle to read from.
+ * @param out Output buffer for the value.
+ */
 void garry_btree_cursor_value(const garry_btree_cursor_handle *cur, garry_byte_array *out)
 {
     memcpy(*out, cur->current_value, sizeof(garry_byte_array));
 }
 
+/**
+ * @brief Close a B-tree cursor.
+ *
+ * Marks the cursor as exhausted so no further iteration is possible.
+ *
+ * @param cur Cursor handle to close.
+ */
 void garry_btree_cursor_close(garry_btree_cursor_handle *cur)
 {
     cur->exhausted = 1;

@@ -16,6 +16,12 @@
 #include "wal_record.h"
 #include "wal_log.h"
 
+/**
+ * @brief Begin a new transaction via the storage layer.
+ *
+ * @param eng Engine handle
+ * @return Transaction ID, or -1 on failure
+ */
 garry_txn_id garry_storage_begin(garry_engine_handle *eng)
 {
     if (!eng)
@@ -23,6 +29,12 @@ garry_txn_id garry_storage_begin(garry_engine_handle *eng)
     return garry_mvcc_begin(eng);
 }
 
+/**
+ * @brief Commit a transaction, appending a WAL commit record first.
+ *
+ * @param eng Engine handle
+ * @param txn Transaction ID to commit
+ */
 void garry_storage_commit(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_wal_record *rec;
@@ -42,6 +54,12 @@ void garry_storage_commit(garry_engine_handle *eng, garry_txn_id txn)
     garry_mvcc_commit(eng, txn);
 }
 
+/**
+ * @brief Roll back a transaction, appending a WAL abort record first.
+ *
+ * @param eng Engine handle
+ * @param txn Transaction ID to roll back
+ */
 void garry_storage_rollback(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_wal_record *rec;

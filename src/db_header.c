@@ -17,16 +17,41 @@
 #include "util_endian.h"
 #include <string.h>
 
+/**
+ * @brief Write a 32-bit little-endian integer to a buffer.
+ *
+ * @param buf    Destination buffer.
+ * @param offset Byte offset to write at.
+ * @param val    32-bit value to write.
+ */
 void garry_write_int32(garry_byte *buf, garry_i32 offset, garry_i32 val)
 {
     garry_write_le32(buf, offset, val);
 }
 
+/**
+ * @brief Read a 32-bit little-endian integer from a buffer.
+ *
+ * @param buf    Source buffer.
+ * @param offset Byte offset to read from.
+ *
+ * @return The decoded 32-bit integer.
+ */
 garry_i32 garry_read_int32(garry_byte *buf, garry_i32 offset)
 {
     return garry_read_le32((const garry_byte *)buf, offset);
 }
 
+/**
+ * @brief Create a new database header from engine settings.
+ *
+ * Populates header fields with magic, version, page size, and limits
+ * from the settings. Returns a zeroed header if page size is invalid.
+ *
+ * @param settings Engine settings specifying database configuration.
+ *
+ * @return Initialized database header.
+ */
 garry_db_header garry_create_db_header(garry_engine_settings *settings)
 {
     garry_db_header hdr;
@@ -54,11 +79,27 @@ garry_db_header garry_create_db_header(garry_engine_settings *settings)
     return hdr;
 }
 
+/**
+ * @brief Create a database header from settings (alias for garry_create_db_header).
+ *
+ * @param settings Engine settings specifying database configuration.
+ *
+ * @return Initialized database header.
+ */
 garry_db_header garry_make_db_header_from_settings(garry_engine_settings *settings)
 {
     return garry_create_db_header(settings);
 }
 
+/**
+ * @brief Serialize a database header to a byte buffer.
+ *
+ * Writes all header fields as little-endian 32-bit integers and
+ * computes and appends the FNV-1a checksum.
+ *
+ * @param buf Destination buffer for the serialized header.
+ * @param hdr Header struct to serialize.
+ */
 void garry_write_db_header(garry_byte *buf, garry_db_header *hdr)
 {
     garry_i32 cs;
@@ -78,6 +119,16 @@ void garry_write_db_header(garry_byte *buf, garry_db_header *hdr)
     garry_write_int32(buf, GARRY_HDR_OFF_CHECKSUM, cs);
 }
 
+/**
+ * @brief Deserialize a database header from a byte buffer.
+ *
+ * Reads all header fields and validates the checksum. If the checksum
+ * does not match, the magic field is set to 0 to signal corruption.
+ *
+ * @param buf Source buffer containing the serialized header.
+ *
+ * @return Deserialized header struct.
+ */
 garry_db_header garry_read_db_header(garry_byte *buf)
 {
     garry_db_header hdr;
@@ -104,6 +155,16 @@ garry_db_header garry_read_db_header(garry_byte *buf)
     return hdr;
 }
 
+/**
+ * @brief Validate a database header.
+ *
+ * Checks magic number, version, page size bounds, and positive
+ * limits for max_txns and max_versions.
+ *
+ * @param hdr Header struct to validate.
+ *
+ * @return 1 if valid, 0 if any check fails.
+ */
 garry_bool garry_validate_db_header(garry_db_header *hdr)
 {
     if (hdr->magic != GARRY_DB_MAGIC)
@@ -121,6 +182,16 @@ garry_bool garry_validate_db_header(garry_db_header *hdr)
     return 1;
 }
 
+/**
+ * @brief Compute the FNV-1a checksum of the database header.
+ *
+ * Hashes the first GARRY_HEADER_CHECKSUM_LEN bytes of the buffer
+ * using FNV-1a and masks to GARRY_CHECKSUM_MASK.
+ *
+ * @param buf Buffer containing the serialized header.
+ *
+ * @return 32-bit checksum value.
+ */
 garry_i32 garry_compute_header_checksum(garry_byte *buf)
 {
     garry_u32 hash = GARRY_FNV1A_OFFSET_BASIS;

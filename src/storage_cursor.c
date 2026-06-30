@@ -20,8 +20,20 @@
 #include <string.h>
 #include <stdlib.h>
 
+/**
+ * @brief Open a cursor scoped to a key prefix.
+ *
+ * Positions the cursor at the first key matching the given prefix
+ * under a read lock on the root.
+ *
+ * @param eng    Engine handle.
+ * @param txn    Transaction ID for visibility.
+ * @param prefix Key prefix to scope iteration, or NULL for all keys.
+ * @param plen   Length of @p prefix.
+ * @return Initialized cursor positioned before the first matching key.
+ */
 garry_storage_cursor garry_storage_cursor_open(garry_engine_handle *eng, garry_txn_id txn,
-                                               const garry_byte *prefix, garry_i32 plen)
+                                                const garry_byte *prefix, garry_i32 plen)
 {
     garry_storage_cursor cur;
     garry_byte_array pfx;
@@ -44,6 +56,19 @@ garry_storage_cursor garry_storage_cursor_open(garry_engine_handle *eng, garry_t
     return cur;
 }
 
+/**
+ * @brief Advance the cursor to the next visible key.
+ *
+ * Steps through B-tree entries, decoding version chains and checking
+ * MVCC visibility. Skips invisible or deleted entries automatically.
+ *
+ * @param cur   Cursor to advance.
+ * @param key   Buffer to receive the key, or NULL to skip.
+ * @param klen  Output parameter for key length, or NULL.
+ * @param value Buffer to receive the value, or NULL to skip.
+ * @param vlen  Output parameter for value length, or NULL.
+ * @return 1 if a visible entry was found, 0 if exhausted.
+ */
 garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key, garry_i32 *klen,
                                      garry_byte *value, garry_i32 *vlen)
 {
@@ -121,6 +146,17 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
     }
 }
 
+/**
+ * @brief Peek at the current cursor position without advancing.
+ *
+ * Returns the key at the cursor's current position without
+ * resolving MVCC visibility or advancing the cursor.
+ *
+ * @param cur   Cursor to peek at.
+ * @param key   Buffer to receive the key, or NULL to skip.
+ * @param klen  Output parameter for key length, or NULL.
+ * @return 1 if the cursor has a valid position, 0 otherwise.
+ */
 garry_bool garry_storage_cursor_peek(garry_storage_cursor *cur, garry_byte *key, garry_i32 *klen)
 {
     garry_byte_array bkey;
@@ -143,6 +179,17 @@ garry_bool garry_storage_cursor_peek(garry_storage_cursor *cur, garry_byte *key,
     return 1;
 }
 
+/**
+ * @brief Skip past all keys matching a given prefix.
+ *
+ * Advances the cursor past entries whose keys start with
+ * @p skip_prefix, stopping at the first non-matching key.
+ *
+ * @param cur          Cursor to advance.
+ * @param skip_prefix  Prefix to skip over.
+ * @param skip_plen    Length of @p skip_prefix.
+ * @return 1 if a non-matching key was found, 0 if exhausted.
+ */
 garry_bool garry_storage_cursor_skip_prefix(garry_storage_cursor *cur,
                                             const garry_byte *skip_prefix, garry_i32 skip_plen)
 {
@@ -189,6 +236,14 @@ garry_bool garry_storage_cursor_skip_prefix(garry_storage_cursor *cur,
     }
 }
 
+/**
+ * @brief Close a cursor and release its resources.
+ *
+ * Frees the underlying B-tree cursor. Safe to call on a
+ * NULL pointer or already-closed cursor.
+ *
+ * @param cur  Cursor to close, or NULL.
+ */
 void garry_storage_cursor_close(garry_storage_cursor *cur)
 {
     if (!cur)

@@ -21,6 +21,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief Create a new empty lock manager.
+ *
+ * Returns a stack-allocated lock manager with no held locks.
+ *
+ * @return Initialized lock manager.
+ */
 garry_lock_manager garry_create_lock_manager(void)
 {
     garry_lock_manager m;
@@ -29,6 +36,17 @@ garry_lock_manager garry_create_lock_manager(void)
     return m;
 }
 
+/**
+ * @brief Check whether a transaction already holds a lock on a key.
+ *
+ * Walks the lock list for the given transaction and compares keys.
+ *
+ * @param mgr   Lock manager.
+ * @param txn   Transaction ID to check.
+ * @param key   Key to check.
+ * @param klen  Key length.
+ * @return 1 if the lock is held, 0 otherwise.
+ */
 garry_bool garry_lock_held(garry_lock_manager *mgr, garry_txn_id txn, const garry_byte *key,
                            garry_i32 klen)
 {
@@ -60,6 +78,19 @@ garry_bool garry_lock_held(garry_lock_manager *mgr, garry_txn_id txn, const garr
     return 0;
 }
 
+/**
+ * @brief Check whether a requested lock conflicts with locks held by other transactions.
+ *
+ * A conflict exists if any other transaction holds a shared or exclusive
+ * lock on the same key and the requested mode or the held mode is exclusive.
+ *
+ * @param mgr   Lock manager.
+ * @param txn   Transaction ID requesting the lock.
+ * @param key   Key to check.
+ * @param klen  Key length.
+ * @param mode  Requested lock mode (shared or exclusive).
+ * @return 1 if a conflict exists, 0 otherwise.
+ */
 garry_bool garry_has_conflict(garry_lock_manager *mgr, garry_txn_id txn, const garry_byte *key,
                               garry_i32 klen, garry_lock_mode mode)
 {
@@ -99,6 +130,19 @@ garry_bool garry_has_conflict(garry_lock_manager *mgr, garry_txn_id txn, const g
     return conflict;
 }
 
+/**
+ * @brief Acquire a lock on a key for a transaction.
+ *
+ * If the transaction already holds the lock, succeeds immediately.
+ * Otherwise checks for conflicts and, if none, allocates a new lock node.
+ *
+ * @param mgr   Lock manager.
+ * @param txn   Transaction ID.
+ * @param key   Key to lock.
+ * @param klen  Key length.
+ * @param mode  Lock mode (shared or exclusive).
+ * @param ok    Output parameter set to 1 on success, 0 on conflict or error.
+ */
 void garry_lock_acquire(garry_lock_manager *mgr, garry_txn_id txn, const garry_byte *key,
                         garry_i32 klen, garry_lock_mode mode, garry_bool *ok)
 {
@@ -141,6 +185,14 @@ void garry_lock_acquire(garry_lock_manager *mgr, garry_txn_id txn, const garry_b
     }
 }
 
+/**
+ * @brief Release all locks held by a transaction.
+ *
+ * Walks the lock list and removes every node belonging to @p txn.
+ *
+ * @param mgr  Lock manager.
+ * @param txn  Transaction ID whose locks should be released.
+ */
 void garry_lock_release(garry_lock_manager *mgr, garry_txn_id txn)
 {
     garry_lock_node **pp = &mgr->head;

@@ -18,6 +18,15 @@
 #include "db_header.h"
 #include <string.h>
 
+/**
+ * @brief Read a slot entry from the slot directory.
+ *
+ * Decodes the offset and length fields from the slot at position @p idx.
+ *
+ * @param buf  Page buffer.
+ * @param idx  Slot index to read.
+ * @return Decoded slot entry with offset and length.
+ */
 garry_slot_entry garry_read_slot(garry_page_buffer *buf, garry_i32 idx)
 {
     garry_slot_entry entry;
@@ -40,6 +49,15 @@ garry_slot_entry garry_read_slot(garry_page_buffer *buf, garry_i32 idx)
     return entry;
 }
 
+/**
+ * @brief Write a slot entry into the slot directory.
+ *
+ * Encodes the offset and length fields into the slot at position @p idx.
+ *
+ * @param buf    Page buffer.
+ * @param idx    Slot index to write.
+ * @param entry  Slot entry to encode.
+ */
 void garry_write_slot(garry_page_buffer buf, garry_i32 idx, garry_slot_entry entry)
 {
     garry_i32 slot_offset;
@@ -50,11 +68,28 @@ void garry_write_slot(garry_page_buffer buf, garry_i32 idx, garry_slot_entry ent
     buf[slot_offset + 3] = (garry_byte)((entry.length / 256) % 256);
 }
 
+/**
+ * @brief Read the record count from the page header.
+ *
+ * @param buf  Page buffer.
+ * @return Number of records stored in the page.
+ */
 garry_i32 garry_page_record_count(garry_page_buffer *buf)
 {
     return garry_read_int32((garry_byte *)*buf, GARRY_PAGE_HDR_OFF_COUNT);
 }
 
+/**
+ * @brief Initialize a page buffer with default header values.
+ *
+ * Zeros the entire page and writes the node type, level, and
+ * initializes free-space pointers to their initial positions.
+ *
+ * @param buf       Page buffer to initialize.
+ * @param ptype     Node type (leaf, internal, etc.).
+ * @param level     Tree level of this node.
+ * @param page_size Total page size in bytes.
+ */
 void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 level,
                      garry_i32 page_size)
 {
@@ -73,6 +108,19 @@ void garry_page_init(garry_page_buffer buf, garry_node_kind ptype, garry_i32 lev
     garry_write_int32(buf, GARRY_PAGE_HDR_OFF_CHECKSUM, 0);
 }
 
+/**
+ * @brief Insert a record into a slotted page.
+ *
+ * Appends a new slot to the directory and copies the record data
+ * into the free space at the end of the page. Returns the index
+ * of the newly inserted slot.
+ *
+ * @param buf       Page buffer.
+ * @param data      Record data to insert.
+ * @param dlen      Length of record data.
+ * @param page_size Total page size in bytes.
+ * @return Slot index of the inserted record, or -1 if the page is full.
+ */
 garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte *data, garry_i32 dlen,
                             garry_i32 page_size)
 {
@@ -114,6 +162,17 @@ garry_i32 garry_page_insert(garry_page_buffer buf, const garry_byte *data, garry
     return count;
 }
 
+/**
+ * @brief Retrieve a record from a slotted page by slot index.
+ *
+ * Looks up the slot entry and copies the record data into the output buffer.
+ *
+ * @param buf       Page buffer.
+ * @param slot_idx  Index of the slot to retrieve.
+ * @param data      Output buffer for the record data.
+ * @param page_size Total page size in bytes (for bounds checking).
+ * @return Length of the retrieved record, or -1 on invalid index.
+ */
 garry_i32 garry_page_get(garry_page_buffer *buf, garry_i32 slot_idx, garry_byte *data,
                          garry_i32 page_size)
 {
@@ -131,6 +190,17 @@ garry_i32 garry_page_get(garry_page_buffer *buf, garry_i32 slot_idx, garry_byte 
     return entry.length;
 }
 
+/**
+ * @brief Copy bytes into a page buffer at a given offset.
+ *
+ * Byte-by-byte copy from a source buffer into the page at the
+ * specified offset position.
+ *
+ * @param buf    Page buffer to write into.
+ * @param offset Byte offset within the page.
+ * @param src    Source data to copy.
+ * @param len    Number of bytes to copy.
+ */
 void garry_copy_bytes_in(garry_page_buffer buf, garry_i32 offset, const garry_byte *src,
                          garry_i32 len)
 {

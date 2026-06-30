@@ -19,6 +19,14 @@
 #include "db_header.h"
 #include <string.h>
 
+/**
+ * @brief Encode an unsigned integer as a CBOR major type 0 value.
+ *
+ * @param buf   Output buffer to write encoded bytes.
+ * @param pos   Current write position in buf.
+ * @param val   Non-negative integer to encode.
+ * @return Updated position after encoded bytes.
+ */
 static garry_i32 encode_cbor_uint(garry_byte *buf, garry_i32 pos, garry_i32 val)
 {
     if (val < 0)
@@ -52,8 +60,17 @@ static garry_i32 encode_cbor_uint(garry_byte *buf, garry_i32 pos, garry_i32 val)
     }
 }
 
+/**
+ * @brief Decode a CBOR major type 0 unsigned integer from a buffer.
+ *
+ * @param buf   Input buffer containing CBOR-encoded data.
+ * @param pos   Current read position in buf.
+ * @param elen  Total length of valid data in buf.
+ * @param val   Output location for the decoded value.
+ * @return Updated position after decoded bytes.
+ */
 static garry_i32 decode_cbor_uint(const garry_byte *buf, garry_i32 pos, garry_i32 elen,
-                                  garry_i32 *val)
+                                   garry_i32 *val)
 {
     garry_i32 fb, b1, b2, b3, b4;
     if (pos >= elen)
@@ -111,6 +128,13 @@ static garry_i32 decode_cbor_uint(const garry_byte *buf, garry_i32 pos, garry_i3
     return pos + 1;
 }
 
+/**
+ * @brief Encode node metadata (next/prev page, children) into CBOR.
+ *
+ * @param node  B-tree node whose metadata to encode.
+ * @param buf   Output buffer for the CBOR-encoded metadata.
+ * @return Number of bytes written.
+ */
 garry_i32 garry_encode_node_meta(garry_btree_node *node, garry_byte *buf)
 {
     garry_i32 pos, num_children, i, meta_count;
@@ -145,6 +169,13 @@ garry_i32 garry_encode_node_meta(garry_btree_node *node, garry_byte *buf)
     return pos;
 }
 
+/**
+ * @brief Decode CBOR-encoded node metadata into a B-tree node.
+ *
+ * @param buf   Input buffer containing CBOR-encoded metadata.
+ * @param elen  Total length of valid data in buf.
+ * @param node  B-tree node to populate with decoded values.
+ */
 void garry_decode_node_meta(const garry_byte *buf, garry_i32 elen, garry_btree_node *node)
 {
     garry_i32 pos, arr_count, fb, ai, decoded, num_children, i;
@@ -195,8 +226,22 @@ void garry_decode_node_meta(const garry_byte *buf, garry_i32 elen, garry_btree_n
     }
 }
 
+/**
+ * @brief Insert a key-value pair into a leaf node at the given index.
+ *
+ * Shifts existing entries to the right to make room. The node must
+ * have fewer than GARRY_MAX_KEYS_PER_NODE entries.
+ *
+ * @param node   Leaf node to insert into.
+ * @param key    Key data to insert.
+ * @param klen   Length of key in bytes.
+ * @param value  Value data to insert.
+ * @param vlen   Length of value in bytes.
+ * @param idx    Insertion index within the node.
+ * @return 1 on success, 0 if the node is full.
+ */
 garry_bool garry_leaf_insert(garry_btree_node *node, const garry_byte *key, garry_i32 klen,
-                             const garry_byte *value, garry_i32 vlen, garry_i32 idx)
+                              const garry_byte *value, garry_i32 vlen, garry_i32 idx)
 {
     garry_i32 i;
     if (node->entry_count >= GARRY_MAX_KEYS_PER_NODE)
@@ -220,6 +265,12 @@ garry_bool garry_leaf_insert(garry_btree_node *node, const garry_byte *key, garr
     return 1;
 }
 
+/**
+ * @brief Allocate and initialize a new empty leaf page.
+ *
+ * @param pool  Buffer pool to allocate from.
+ * @return Page ID of the new leaf page, or -1 on failure.
+ */
 garry_i32 garry_allocate_leaf(garry_buffer_pool *pool)
 {
     garry_i32 pid;
@@ -236,6 +287,12 @@ garry_i32 garry_allocate_leaf(garry_buffer_pool *pool)
     return pid;
 }
 
+/**
+ * @brief Allocate and initialize a new empty internal node page.
+ *
+ * @param pool  Buffer pool to allocate from.
+ * @return Page ID of the new internal page, or -1 on failure.
+ */
 garry_i32 garry_allocate_internal(garry_buffer_pool *pool)
 {
     garry_i32 pid;
@@ -252,6 +309,16 @@ garry_i32 garry_allocate_internal(garry_buffer_pool *pool)
     return pid;
 }
 
+/**
+ * @brief Load a B-tree node from its page in the buffer pool.
+ *
+ * Reads the page type, level, metadata (next/prev page, children),
+ * and all key-value entries from the slotted page into the node struct.
+ *
+ * @param pool  Buffer pool containing the page.
+ * @param pid   Page ID of the node to load.
+ * @param node  Output node to populate.
+ */
 void garry_load_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *node)
 {
     garry_page_buffer *buf;
@@ -347,6 +414,16 @@ void garry_load_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *n
     garry_pool_release_page(pool, pid);
 }
 
+/**
+ * @brief Store a B-tree node back to its page in the buffer pool.
+ *
+ * Serializes the node metadata and all key-value entries into the
+ * slotted page, then marks the page dirty.
+ *
+ * @param pool  Buffer pool containing the page.
+ * @param pid   Page ID to store to.
+ * @param node  Node to serialize and write.
+ */
 void garry_store_node(garry_buffer_pool *pool, garry_i32 pid, garry_btree_node *node)
 {
     garry_page_buffer *buf;
