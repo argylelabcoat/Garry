@@ -93,7 +93,7 @@ namespace MeowDB
             using (var txn = BeginTransaction())
             {
                 byte[] prefixBytes = KeyEncoder.Encode(prefix);
-                IntPtr cursor = MeowNative.garry_cursor_open(_handle, 0, prefixBytes, prefixBytes.Length);
+                IntPtr cursor = MeowNative.garry_cursor_open(_handle, txn.Txn, prefixBytes, prefixBytes.Length);
                 if (cursor == IntPtr.Zero) return new List<KeyValuePair<string, byte[]>>();
 
                 try
@@ -133,7 +133,7 @@ namespace MeowDB
             using (var txn = BeginTransaction())
             {
                 byte[] prefixBytes = KeyEncoder.Encode(prefix);
-                IntPtr cursor = MeowNative.garry_cursor_open(_handle, 0, prefixBytes, prefixBytes.Length);
+                IntPtr cursor = MeowNative.garry_cursor_open(_handle, txn.Txn, prefixBytes, prefixBytes.Length);
                 if (cursor == IntPtr.Zero) return new List<T>();
 
                 try

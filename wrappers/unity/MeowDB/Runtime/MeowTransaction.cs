@@ -10,6 +10,8 @@ namespace MeowDB
         private bool _committed;
         private bool _disposed;
 
+        internal int Txn => _txn;
+
         internal MeowTransaction(IntPtr db)
         {
             _db = db;

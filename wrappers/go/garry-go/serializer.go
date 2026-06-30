@@ -1,6 +1,7 @@
 package garry
 
 import (
+	"errors"
 	"reflect"
 	"strconv"
 )
@@ -46,9 +47,13 @@ func serializeObject(prefix []string, v reflect.Value, pairs *[]KeyValuePair) {
 		keyParts[len(prefix)] = name
 
 		if isPrimitiveKind(fv.Kind()) {
+			encoded, err := EncodeValue(primitiveInterface(fv))
+			if err != nil {
+				continue
+			}
 			*pairs = append(*pairs, KeyValuePair{
 				Key:   EncodeKey(keyParts...),
-				Value: EncodeValue(primitiveInterface(fv)),
+				Value: encoded,
 			})
 		} else if fv.Kind() == reflect.Slice {
 			*pairs = append(*pairs, KeyValuePair{
@@ -74,9 +79,13 @@ func serializeArray(prefix []string, v reflect.Value, pairs *[]KeyValuePair) {
 		keyParts[len(prefix)] = strconv.Itoa(i)
 
 		if isPrimitiveKind(elem.Kind()) {
+			encoded, err := EncodeValue(primitiveInterface(elem))
+			if err != nil {
+				continue
+			}
 			*pairs = append(*pairs, KeyValuePair{
 				Key:   EncodeKey(keyParts...),
-				Value: EncodeValue(primitiveInterface(elem)),
+				Value: encoded,
 			})
 		} else if elem.Kind() == reflect.Slice {
 			*pairs = append(*pairs, KeyValuePair{
@@ -94,10 +103,10 @@ func serializeArray(prefix []string, v reflect.Value, pairs *[]KeyValuePair) {
 	}
 }
 
-func Deserialize(rootKey string, pairs []KeyValuePair, target interface{}) {
+func Deserialize(rootKey string, pairs []KeyValuePair, target interface{}) error {
 	rv := reflect.ValueOf(target)
 	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
-		panic("garry: target must be a pointer to struct")
+		return errors.New("garry: target must be a pointer to struct")
 	}
 	for _, p := range pairs {
 		if len(p.Value) == 0 {
@@ -109,6 +118,7 @@ func Deserialize(rootKey string, pairs []KeyValuePair, target interface{}) {
 		}
 		setNested(rv.Elem(), parts[1:], p.Value)
 	}
+	return nil
 }
 
 func setNested(v reflect.Value, parts []string, value []byte) {

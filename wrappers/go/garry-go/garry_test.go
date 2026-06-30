@@ -262,7 +262,7 @@ func TestCodecRoundTrip(t *testing.T) {
 		[]byte{1, 2, 3},
 	}
 	for _, orig := range tests {
-		encoded := EncodeValue(orig)
+		encoded, _ := EncodeValue(orig)
 		decoded, _ := DecodeValue(encoded)
 		if orig == nil {
 			if decoded != nil {

@@ -131,7 +131,7 @@ public sealed class GarryDatabase : IDisposable
                 Array.Copy(valueBuf, valueCopy, vlen);
 
                 var keyParts = KeyEncoder.DecodeParts(keyCopy);
-                results.Add((string.Join("/", keyParts), valueCopy));
+                results.Add((string.Join(".", keyParts), valueCopy));
             }
 
             return results;

@@ -208,7 +208,10 @@ impl fmt::Display for DecodeError {
 impl std::error::Error for DecodeError {}
 
 pub fn decode(data: &[u8]) -> Result<Value, DecodeError> {
-    let (value, _consumed) = decode_at(data, 0)?;
+    let (value, consumed) = decode_at(data, 0)?;
+    if consumed != data.len() {
+        return Err(DecodeError::TruncatedData);
+    }
     Ok(value)
 }
 
@@ -612,9 +615,12 @@ fn flatten_value(prefix_parts: &[&str], value: &Value, result: &mut Vec<(Vec<u8>
             }
         }
         Value::Array(arr) => {
+            let mut index_buf = String::new();
             for (i, v) in arr.iter().enumerate() {
+                index_buf.clear();
+                index_buf.push_str(&i.to_string());
                 let mut parts = prefix_parts.to_vec();
-                parts.push(Box::leak(i.to_string().into_boxed_str()));
+                parts.push(&index_buf);
                 flatten_value(&parts, v, result);
             }
         }
