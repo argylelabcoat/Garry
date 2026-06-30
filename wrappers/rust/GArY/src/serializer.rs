@@ -161,6 +161,7 @@ fn encode_into(value: &Value, buf: &mut Vec<u8>) {
         }
         Value::String(s) => {
             buf.push(TAG_STRING);
+            buf.extend_from_slice(&(s.len() as i32).to_le_bytes());
             buf.extend_from_slice(s.as_bytes());
         }
         Value::Bytes(b) => {
@@ -296,9 +297,22 @@ fn decode_at(data: &[u8], pos: usize) -> Result<(Value, usize), DecodeError> {
             Ok((Value::F64(v), cursor))
         }
         TAG_STRING => {
-            let s = std::str::from_utf8(&data[cursor..])
+            if cursor + 4 > data.len() {
+                return Err(DecodeError::TruncatedData);
+            }
+            let len = i32::from_le_bytes([
+                data[cursor],
+                data[cursor + 1],
+                data[cursor + 2],
+                data[cursor + 3],
+            ]) as usize;
+            cursor += 4;
+            if cursor + len > data.len() {
+                return Err(DecodeError::TruncatedData);
+            }
+            let s = std::str::from_utf8(&data[cursor..cursor + len])
                 .map_err(|_| DecodeError::InvalidUtf8)?;
-            cursor = data.len();
+            cursor += len;
             Ok((Value::String(s.to_owned()), cursor))
         }
         TAG_BYTES => {
