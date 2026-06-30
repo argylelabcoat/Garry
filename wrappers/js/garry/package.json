@@ -1,0 +1,36 @@
+{
+  "name": "@argylelabcoat/garry",
+  "version": "0.1.0",
+  "description": "Node.js binding for the Garry storage engine",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "DYLD_LIBRARY_PATH=../../../build:$DYLD_LIBRARY_PATH node --test test/*.test.js",
+    "build": "node-gyp rebuild",
+    "install": "node-gyp rebuild",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["storage", "database", "key-value", "btree"],
+  "author": "Matthew Hughes",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/argylelabcoat/garry",
+    "directory": "wrappers/js/garry"
+  },
+  "files": [
+    "lib/",
+    "src/",
+    "binding.gyp",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "os": ["darwin", "linux", "win32"],
+  "cpu": ["x64", "arm64"],
+  "gypfile": true,
+  "dependencies": {
+    "node-addon-api": "^7.0.0"
+  },
+  "devDependencies": {}
+}

@@ -109,7 +109,7 @@ public sealed class GarryDatabase : IDisposable
         ThrowIfDisposed();
         using var txn = BeginTransaction();
         var prefixBytes = KeyEncoder.Encode(prefix);
-        var cursor = GarryNative.garry_cursor_open(_handle, 0, prefixBytes, prefixBytes.Length);
+        var cursor = GarryNative.garry_cursor_open(_handle, txn.Handle, prefixBytes, prefixBytes.Length);
         if (cursor == IntPtr.Zero) return Array.Empty<(string, byte[])>();
 
         try
@@ -131,7 +131,7 @@ public sealed class GarryDatabase : IDisposable
                 Array.Copy(valueBuf, valueCopy, vlen);
 
                 var keyParts = KeyEncoder.DecodeParts(keyCopy);
-                results.Add((string.Join(".", keyParts), valueCopy));
+                results.Add((string.Join("/", keyParts), valueCopy));
             }
 
             return results;
@@ -150,7 +150,7 @@ public sealed class GarryDatabase : IDisposable
         ThrowIfDisposed();
         using var txn = BeginTransaction();
         var prefixBytes = KeyEncoder.Encode(prefix);
-        var cursor = GarryNative.garry_cursor_open(_handle, 0, prefixBytes, prefixBytes.Length);
+        var cursor = GarryNative.garry_cursor_open(_handle, txn.Handle, prefixBytes, prefixBytes.Length);
         if (cursor == IntPtr.Zero) return Array.Empty<T>();
 
         try

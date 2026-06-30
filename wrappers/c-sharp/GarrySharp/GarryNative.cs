@@ -114,5 +114,5 @@ internal static class GarryNative
     public static extern int garry_get_str(
         IntPtr db, int txn,
         [MarshalAs(UnmanagedType.LPStr)] string key,
-        byte[] value, ref int vlen);
+        byte[] value, int valueSize);
 }

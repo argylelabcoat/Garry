@@ -14,6 +14,8 @@ public sealed class GarryTransaction : IDisposable
     private bool _committed;
     private bool _disposed;
 
+    internal int Handle => _txn;
+
     internal GarryTransaction(IntPtr db)
     {
         _db = db;

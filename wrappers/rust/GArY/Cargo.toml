@@ -1,0 +1,16 @@
+[package]
+name = "garry"
+version = "0.1.0"
+edition = "2021"
+description = "Rust FFI bindings for the Garry storage engine"
+license = "BSD-3-Clause"
+authors = ["Matthew Hughes"]
+
+[lib]
+name = "garry"
+path = "src/lib.rs"
+
+[dependencies]
+
+[dev-dependencies]
+tempfile = "3"
