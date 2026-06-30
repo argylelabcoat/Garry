@@ -102,31 +102,66 @@ public static class GarrySerializer
             .Where(p => p.CanWrite && p.GetCustomAttribute<GarryIgnoreAttribute>() is null)
             .ToDictionary(p => p.GetCustomAttribute<GarryKeyAttribute>()?.Name ?? p.Name);
 
+        // Phase 1: Collect array elements
+        var arrayData = new Dictionary<string, SortedDictionary<int, (byte[] Value, string[] RemainingParts)>>();
+
         foreach (var (key, value) in pairs)
         {
             var parts = KeyEncoder.DecodeParts(key);
-            if (parts.Length < 2 || value.Length == 0) continue; // skip container markers
-
-            // Check if this is a direct child of root
+            if (parts.Length < 2 || value.Length == 0) continue;
             if (parts[0] != rootKey) continue;
-            if (parts.Length == 2 && props.TryGetValue(parts[1], out var prop))
+
+            if (parts.Length >= 3 && props.TryGetValue(parts[1], out var arrayProp) && arrayProp.PropertyType.IsArray)
             {
-                // Direct leaf property
-                prop.SetValue(result, BinaryCodec.Decode(value));
-            }
-            else if (parts.Length > 2)
-            {
-                // Nested property — find the root property and recurse
-                if (props.TryGetValue(parts[1], out var nestedProp))
+                if (int.TryParse(parts[2], out int index))
                 {
-                    var nestedObj = nestedProp.GetValue(result) ?? Activator.CreateInstance(nestedProp.PropertyType);
-                    if (nestedObj is not null)
-                    {
-                        SetNestedValue(nestedObj, parts.Skip(2).ToArray(), value);
-                        nestedProp.SetValue(result, nestedObj);
-                    }
+                    if (!arrayData.ContainsKey(parts[1]))
+                        arrayData[parts[1]] = new SortedDictionary<int, (byte[] Value, string[] RemainingParts)>();
+                    arrayData[parts[1]][index] = (value, parts.Skip(3).ToArray());
+                    continue;
                 }
             }
+
+            // Phase 1b: Non-array processing
+            if (parts.Length == 2 && props.TryGetValue(parts[1], out var leafProp))
+            {
+                leafProp.SetValue(result, BinaryCodec.Decode(value));
+            }
+            else if (parts.Length > 2 && props.TryGetValue(parts[1], out var nestedProp))
+            {
+                var nestedObj = nestedProp.GetValue(result) ?? Activator.CreateInstance(nestedProp.PropertyType);
+                if (nestedObj is not null)
+                {
+                    SetNestedValue(nestedObj, parts.Skip(2).ToArray(), value);
+                    nestedProp.SetValue(result, nestedObj);
+                }
+            }
+        }
+
+        // Phase 2: Create arrays with correct sizes
+        foreach (var (propName, elements) in arrayData)
+        {
+            if (!props.TryGetValue(propName, out var prop) || !prop.PropertyType.IsArray) continue;
+
+            var elementType = prop.PropertyType.GetElementType()!;
+            var array = Array.CreateInstance(elementType, elements.Count);
+
+            foreach (var kvp in elements)
+            {
+                if (IsPrimitive(elementType))
+                {
+                    array.SetValue(BinaryCodec.Decode(kvp.Value.Value), kvp.Key);
+                }
+                else
+                {
+                    var element = Activator.CreateInstance(elementType)!;
+                    if (kvp.Value.RemainingParts.Length > 0)
+                        SetNestedValue(element, kvp.Value.RemainingParts, kvp.Value.Value);
+                    array.SetValue(element, kvp.Key);
+                }
+            }
+
+            prop.SetValue(result, array);
         }
 
         return result;

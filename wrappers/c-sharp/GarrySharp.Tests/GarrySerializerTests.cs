@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using GarrySharp;
 using Xunit;
@@ -30,6 +31,13 @@ public class GarrySerializerTests
     {
         [GarryKey("person_name")]
         public string Name { get; set; } = "";
+    }
+
+    public class PersonWithArrays
+    {
+        public string Name { get; set; } = "";
+        public string[] Hobbies { get; set; } = Array.Empty<string>();
+        public int[] Scores { get; set; } = Array.Empty<int>();
     }
 
     [Fact]
@@ -150,5 +158,28 @@ public class GarrySerializerTests
         Assert.NotNull(restored.Address);
         Assert.Equal(original.Address!.City, restored.Address!.City);
         Assert.Equal(original.Address.Zip, restored.Address.Zip);
+    }
+
+    [Fact]
+    public void RoundTrip_ArrayProperties_PreservesAllElements()
+    {
+        var original = new PersonWithArrays
+        {
+            Name = "Bob",
+            Hobbies = new[] { "reading", "gaming", "hiking" },
+            Scores = new[] { 95, 87, 100, 72 }
+        };
+
+        var pairs = GarrySerializer.Serialize("Person", original);
+        var restored = GarrySerializer.Deserialize<PersonWithArrays>("Person", pairs);
+
+        Assert.NotNull(restored);
+        Assert.Equal("Bob", restored!.Name);
+        Assert.Equal(3, restored.Hobbies.Length);
+        Assert.Equal("reading", restored.Hobbies[0]);
+        Assert.Equal("gaming", restored.Hobbies[1]);
+        Assert.Equal("hiking", restored.Hobbies[2]);
+        Assert.Equal(4, restored.Scores.Length);
+        Assert.Equal(new[] { 95, 87, 100, 72 }, restored.Scores);
     }
 }
