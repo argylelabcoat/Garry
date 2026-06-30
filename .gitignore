@@ -12,3 +12,9 @@ Makefile
 *.db-ckpt
 clib/storage/build-win32/
 .cog/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
