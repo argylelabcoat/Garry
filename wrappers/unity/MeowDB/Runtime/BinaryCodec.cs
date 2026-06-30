@@ -224,8 +224,6 @@ namespace MeowDB
             var buf = new byte[17];
             buf[0] = tag;
             byte[] raw = value.ToByteArray();
-            // Guid.ToByteArray() is already in mixed endian, reverse for LE
-            Array.Reverse(buf, 1, 16);
             Buffer.BlockCopy(raw, 0, buf, 1, 16);
             return buf;
         }
@@ -362,7 +360,6 @@ namespace MeowDB
         {
             byte[] raw = new byte[16];
             Buffer.BlockCopy(data, 1, raw, 0, 16);
-            Array.Reverse(raw);
             return new Guid(raw);
         }
     }

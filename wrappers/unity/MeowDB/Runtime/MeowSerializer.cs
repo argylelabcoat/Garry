@@ -114,7 +114,7 @@ namespace MeowDB
                                 arrayData[parts[1]] = new SortedDictionary<int, KeyValuePair<byte[], string[]>>();
                             var remaining = new string[parts.Length - 3];
                             Array.Copy(parts, 3, remaining, 0, remaining.Length);
-                            arrayData[parts[1]][index] = new KeyValuePair<byte[], string[]>((value, remaining));
+                            arrayData[parts[1]][index] = new KeyValuePair<byte[], string[]>(value, remaining);
                             continue;
                         }
                     }

@@ -7,27 +7,39 @@ namespace MeowDB.Tests
     [TestFixture]
     public class BinaryCodecTests
     {
-        [TestCase(null, new byte[] { 0x00 })]
-        [TestCase(true, new byte[] { 0x01, 0x01 })]
-        [TestCase(false, new byte[] { 0x01, 0x00 })]
-        public void Encode_Primitive_ReturnsCorrectBytes(object value, byte[] expected)
+        [Test]
+        public void Encode_Null_ReturnsNullTag()
         {
-            var result = BinaryCodec.Encode(value);
-            Assert.AreEqual(expected, result);
+            var result = BinaryCodec.Encode(null);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x00 }));
+        }
+
+        [Test]
+        public void Encode_True_ReturnsBoolTrueTag()
+        {
+            var result = BinaryCodec.Encode(true);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x01, 0x01 }));
+        }
+
+        [Test]
+        public void Encode_False_ReturnsBoolFalseTag()
+        {
+            var result = BinaryCodec.Encode(false);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x01, 0x00 }));
         }
 
         [Test]
         public void Encode_Int32_ReturnsTagPlus4BytesLE()
         {
             var result = BinaryCodec.Encode(42);
-            Assert.AreEqual(new byte[] { 0x06, 42, 0, 0, 0 }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x06, 42, 0, 0, 0 }));
         }
 
         [Test]
         public void Encode_String_ReturnsTagPlusUtf8Bytes()
         {
             var result = BinaryCodec.Encode("Hello");
-            Assert.AreEqual(new byte[] { 0x0C, (byte)'H', (byte)'e', (byte)'l', (byte)'l', (byte)'o' }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x0C, (byte)'H', (byte)'e', (byte)'l', (byte)'l', (byte)'o' }));
         }
 
         [Test]
@@ -35,14 +47,14 @@ namespace MeowDB.Tests
         {
             string value = null;
             var result = BinaryCodec.Encode(value);
-            Assert.AreEqual(new byte[] { 0x00 }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x00 }));
         }
 
         [Test]
         public void Encode_Byte_ReturnsTagPlusSingleByte()
         {
             var result = BinaryCodec.Encode((byte)0xAB);
-            Assert.AreEqual(new byte[] { 0x02, 0xAB }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x02, 0xAB }));
         }
 
         [Test]
@@ -51,7 +63,7 @@ namespace MeowDB.Tests
             var result = BinaryCodec.Encode(123456789L);
             var expected = new List<byte> { 0x08 };
             expected.AddRange(BitConverter.GetBytes(123456789L));
-            Assert.AreEqual(expected.ToArray(), result);
+            Assert.That(result, Is.EqualTo(expected.ToArray()));
         }
 
         [Test]
@@ -60,7 +72,7 @@ namespace MeowDB.Tests
             var result = BinaryCodec.Encode(3.14f);
             var expected = new List<byte> { 0x0A };
             expected.AddRange(BitConverter.GetBytes(3.14f));
-            Assert.AreEqual(expected.ToArray(), result);
+            Assert.That(result, Is.EqualTo(expected.ToArray()));
         }
 
         [Test]
@@ -69,7 +81,7 @@ namespace MeowDB.Tests
             var result = BinaryCodec.Encode(2.718281828);
             var expected = new List<byte> { 0x0B };
             expected.AddRange(BitConverter.GetBytes(2.718281828));
-            Assert.AreEqual(expected.ToArray(), result);
+            Assert.That(result, Is.EqualTo(expected.ToArray()));
         }
 
         [Test]
@@ -77,7 +89,7 @@ namespace MeowDB.Tests
         {
             var input = new byte[] { 1, 2, 3, 4 };
             var result = BinaryCodec.Encode(input);
-            Assert.AreEqual(new byte[] { 0x0D, 4, 0, 0, 0, 1, 2, 3, 4 }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x0D, 4, 0, 0, 0, 1, 2, 3, 4 }));
         }
 
         [Test]
@@ -85,29 +97,29 @@ namespace MeowDB.Tests
         {
             var guid = Guid.NewGuid();
             var result = BinaryCodec.Encode(guid);
-            Assert.AreEqual(17, result.Length);
-            Assert.AreEqual(0x0F, result[0]);
+            Assert.That(result.Length, Is.EqualTo(17));
+            Assert.That(result[0], Is.EqualTo(0x0F));
         }
 
         [Test]
         public void Encode_SByte_ReturnsTagPlusSingleByte()
         {
             var result = BinaryCodec.Encode((sbyte)-42);
-            Assert.AreEqual(new byte[] { 0x03, unchecked((byte)-42) }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x03, unchecked((byte)-42) }));
         }
 
         [Test]
         public void Encode_Int16_ReturnsTagPlus2BytesLE()
         {
             var result = BinaryCodec.Encode((short)1234);
-            Assert.AreEqual(new byte[] { 0x04, 0xD2, 0x04 }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x04, 0xD2, 0x04 }));
         }
 
         [Test]
         public void Encode_UInt16_ReturnsTagPlus2BytesLE()
         {
             var result = BinaryCodec.Encode((ushort)54321);
-            Assert.AreEqual(new byte[] { 0x05, 0x31, 0xD4 }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x05, 0x31, 0xD4 }));
         }
 
         [Test]
@@ -116,7 +128,7 @@ namespace MeowDB.Tests
             var result = BinaryCodec.Encode((uint)3000000000);
             var expected = new List<byte> { 0x07 };
             expected.AddRange(BitConverter.GetBytes((uint)3000000000));
-            Assert.AreEqual(expected.ToArray(), result);
+            Assert.That(result, Is.EqualTo(expected.ToArray()));
         }
 
         [Test]
@@ -125,7 +137,7 @@ namespace MeowDB.Tests
             var result = BinaryCodec.Encode((ulong)7000000000);
             var expected = new List<byte> { 0x09 };
             expected.AddRange(BitConverter.GetBytes((ulong)7000000000));
-            Assert.AreEqual(expected.ToArray(), result);
+            Assert.That(result, Is.EqualTo(expected.ToArray()));
         }
 
         [Test]
@@ -135,21 +147,21 @@ namespace MeowDB.Tests
             var result = BinaryCodec.Encode(dt);
             var expected = new List<byte> { 0x0E };
             expected.AddRange(BitConverter.GetBytes(dt.Ticks));
-            Assert.AreEqual(expected.ToArray(), result);
+            Assert.That(result, Is.EqualTo(expected.ToArray()));
         }
 
         [Test]
         public void Encode_EmptyString_ReturnsTagOnly()
         {
             var result = BinaryCodec.Encode("");
-            Assert.AreEqual(new byte[] { 0x0C }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x0C }));
         }
 
         [Test]
         public void Encode_EmptyByteArray_ReturnsTagPlusZeroLength()
         {
             var result = BinaryCodec.Encode(new byte[0]);
-            Assert.AreEqual(new byte[] { 0x0D, 0, 0, 0, 0 }, result);
+            Assert.That(result, Is.EqualTo(new byte[] { 0x0D, 0, 0, 0, 0 }));
         }
 
         [TestCase(int.MinValue)]
@@ -159,7 +171,7 @@ namespace MeowDB.Tests
             var result = BinaryCodec.Encode(value);
             var expected = new List<byte> { 0x06 };
             expected.AddRange(BitConverter.GetBytes(value));
-            Assert.AreEqual(expected.ToArray(), result);
+            Assert.That(result, Is.EqualTo(expected.ToArray()));
         }
 
         [Test]
@@ -168,35 +180,35 @@ namespace MeowDB.Tests
             var result = BinaryCodec.Encode(double.NaN);
             var expected = new List<byte> { 0x0B };
             expected.AddRange(BitConverter.GetBytes(double.NaN));
-            Assert.AreEqual(expected.ToArray(), result);
+            Assert.That(result, Is.EqualTo(expected.ToArray()));
         }
 
         [Test]
         public void Decode_NullTag_ReturnsNull()
         {
             var result = BinaryCodec.Decode(new byte[] { 0x00 });
-            Assert.IsNull(result);
+            Assert.That(result, Is.Null);
         }
 
         [Test]
         public void Decode_BoolTrue_ReturnsTrue()
         {
             var result = BinaryCodec.Decode(new byte[] { 0x01, 0x01 });
-            Assert.AreEqual(true, result);
+            Assert.That(result, Is.EqualTo(true));
         }
 
         [Test]
         public void Decode_Int32_ReturnsCorrectValue()
         {
             var result = BinaryCodec.Decode(new byte[] { 0x06, 42, 0, 0, 0 });
-            Assert.AreEqual(42, result);
+            Assert.That(result, Is.EqualTo(42));
         }
 
         [Test]
         public void Decode_String_ReturnsUtf8String()
         {
             var result = BinaryCodec.Decode(new byte[] { 0x0C, (byte)'H', (byte)'i' });
-            Assert.AreEqual("Hi", result);
+            Assert.That(result, Is.EqualTo("Hi"));
         }
 
         [Test]
@@ -214,7 +226,7 @@ namespace MeowDB.Tests
                 for (int i = 0; i < 8; i++) bytes[1 + i] = raw[7 - i];
             }
             var result = BinaryCodec.Decode(bytes);
-            Assert.AreEqual(123456789L, result);
+            Assert.That(result, Is.EqualTo(123456789L));
         }
 
         [Test]
@@ -223,8 +235,8 @@ namespace MeowDB.Tests
             var original = new byte[] { 10, 20, 30 };
             var encoded = BinaryCodec.Encode(original);
             var decoded = BinaryCodec.Decode(encoded);
-            Assert.IsInstanceOf<byte[]>(decoded);
-            Assert.AreEqual(original, (byte[])decoded);
+            Assert.That(decoded, Is.InstanceOf<byte[]>());
+            Assert.That(decoded, Is.EqualTo(original));
         }
 
         [Test]
@@ -233,7 +245,7 @@ namespace MeowDB.Tests
             var original = Guid.NewGuid();
             var encoded = BinaryCodec.Encode(original);
             var decoded = BinaryCodec.Decode(encoded);
-            Assert.AreEqual(original, decoded);
+            Assert.That(decoded, Is.EqualTo(original));
         }
 
         [Test]

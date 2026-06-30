@@ -46,16 +46,16 @@ namespace MeowDB.Tests
             var person = new Person { Name = "Alice", Age = 25 };
             var pairs = MeowSerializer.Serialize("Person", person);
 
-            Assert.AreEqual(3, pairs.Count);
+            Assert.That(pairs.Count, Is.EqualTo(3));
 
             var containerKey = KeyEncoder.DecodeParts(pairs[0].Key);
-            Assert.AreEqual("Person", containerKey[0]);
+            Assert.That(containerKey[0], Is.EqualTo("Person"));
 
             var nameKey = KeyEncoder.DecodeParts(pairs[1].Key);
-            Assert.AreEqual(new[] { "Person", "Name" }, nameKey);
+            Assert.That(nameKey, Is.EqualTo(new[] { "Person", "Name" }));
 
             var ageKey = KeyEncoder.DecodeParts(pairs[2].Key);
-            Assert.AreEqual(new[] { "Person", "Age" }, ageKey);
+            Assert.That(ageKey, Is.EqualTo(new[] { "Person", "Age" }));
         }
 
         [Test]
@@ -69,7 +69,7 @@ namespace MeowDB.Tests
             };
             var pairs = MeowSerializer.Serialize("Person", person);
 
-            Assert.AreEqual(6, pairs.Count);
+            Assert.That(pairs.Count, Is.EqualTo(6));
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace MeowDB.Tests
             var person = new PersonWithIgnore { Name = "Alice", Secret = "hidden" };
             var pairs = MeowSerializer.Serialize("Person", person);
 
-            Assert.AreEqual(2, pairs.Count);
+            Assert.That(pairs.Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -88,7 +88,7 @@ namespace MeowDB.Tests
             var pairs = MeowSerializer.Serialize("Person", person);
 
             var nameKey = KeyEncoder.DecodeParts(pairs[1].Key);
-            Assert.AreEqual("person_name", nameKey[1]);
+            Assert.That(nameKey[1], Is.EqualTo("person_name"));
         }
 
         [Test]
@@ -97,8 +97,8 @@ namespace MeowDB.Tests
             var result = MeowSerializer.Deserialize<Person>(
                 "Person",
                 new List<KeyValuePair<byte[], byte[]>>());
-            Assert.IsNotNull(result);
-            Assert.AreEqual("", result.Name);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Name, Is.EqualTo(""));
         }
 
         [Test]
@@ -111,9 +111,9 @@ namespace MeowDB.Tests
             };
 
             var result = MeowSerializer.Deserialize<Person>("Person", pairs);
-            Assert.IsNotNull(result);
-            Assert.AreEqual("Alice", result.Name);
-            Assert.AreEqual(25, result.Age);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Name, Is.EqualTo("Alice"));
+            Assert.That(result.Age, Is.EqualTo(25));
         }
 
         [Test]
@@ -128,10 +128,10 @@ namespace MeowDB.Tests
             };
 
             var result = MeowSerializer.Deserialize<Person>("Person", pairs);
-            Assert.IsNotNull(result);
-            Assert.IsNotNull(result.Address);
-            Assert.AreEqual("NYC", result.Address.City);
-            Assert.AreEqual("10001", result.Address.Zip);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Address, Is.Not.Null);
+            Assert.That(result.Address.City, Is.EqualTo("NYC"));
+            Assert.That(result.Address.Zip, Is.EqualTo("10001"));
         }
 
         [Test]
@@ -147,12 +147,12 @@ namespace MeowDB.Tests
             var pairs = MeowSerializer.Serialize("Person", original);
             var restored = MeowSerializer.Deserialize<Person>("Person", pairs);
 
-            Assert.IsNotNull(restored);
-            Assert.AreEqual(original.Name, restored.Name);
-            Assert.AreEqual(original.Age, restored.Age);
-            Assert.IsNotNull(restored.Address);
-            Assert.AreEqual(original.Address.City, restored.Address.City);
-            Assert.AreEqual(original.Address.Zip, restored.Address.Zip);
+            Assert.That(restored, Is.Not.Null);
+            Assert.That(restored.Name, Is.EqualTo(original.Name));
+            Assert.That(restored.Age, Is.EqualTo(original.Age));
+            Assert.That(restored.Address, Is.Not.Null);
+            Assert.That(restored.Address.City, Is.EqualTo(original.Address.City));
+            Assert.That(restored.Address.Zip, Is.EqualTo(original.Address.Zip));
         }
 
         public class Level10 { public string DeepValue { get; set; } = ""; }
@@ -201,8 +201,8 @@ namespace MeowDB.Tests
             var pairs = MeowSerializer.Serialize("Root", original);
             var restored = MeowSerializer.Deserialize<Level1>("Root", pairs);
 
-            Assert.IsNotNull(restored);
-            Assert.AreEqual("found it", restored.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue);
+            Assert.That(restored, Is.Not.Null);
+            Assert.That(restored.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue, Is.EqualTo("found it"));
         }
 
         [Test]
@@ -218,14 +218,14 @@ namespace MeowDB.Tests
             var pairs = MeowSerializer.Serialize("Person", original);
             var restored = MeowSerializer.Deserialize<PersonWithArrays>("Person", pairs);
 
-            Assert.IsNotNull(restored);
-            Assert.AreEqual("Bob", restored.Name);
-            Assert.AreEqual(3, restored.Hobbies.Length);
-            Assert.AreEqual("reading", restored.Hobbies[0]);
-            Assert.AreEqual("gaming", restored.Hobbies[1]);
-            Assert.AreEqual("hiking", restored.Hobbies[2]);
-            Assert.AreEqual(4, restored.Scores.Length);
-            Assert.AreEqual(new[] { 95, 87, 100, 72 }, restored.Scores);
+            Assert.That(restored, Is.Not.Null);
+            Assert.That(restored.Name, Is.EqualTo("Bob"));
+            Assert.That(restored.Hobbies.Length, Is.EqualTo(3));
+            Assert.That(restored.Hobbies[0], Is.EqualTo("reading"));
+            Assert.That(restored.Hobbies[1], Is.EqualTo("gaming"));
+            Assert.That(restored.Hobbies[2], Is.EqualTo("hiking"));
+            Assert.That(restored.Scores.Length, Is.EqualTo(4));
+            Assert.That(restored.Scores, Is.EqualTo(new[] { 95, 87, 100, 72 }));
         }
     }
 }

@@ -10,26 +10,26 @@ namespace MeowDB.Tests
         public void Encode_SinglePart_ReturnsLengthPrefixedBytes()
         {
             var result = KeyEncoder.Encode("Alice");
-            Assert.AreEqual(6, result.Length);
-            Assert.AreEqual(5, result[0]);
-            Assert.AreEqual((byte)'A', result[1]);
+            Assert.That(result.Length, Is.EqualTo(6));
+            Assert.That(result[0], Is.EqualTo(5));
+            Assert.That(result[1], Is.EqualTo((byte)'A'));
         }
 
         [Test]
         public void Encode_MultipleParts_ReturnsConcatenatedLengthPrefixed()
         {
             var result = KeyEncoder.Encode("Alice", "Smith");
-            Assert.AreEqual(12, result.Length);
-            Assert.AreEqual(5, result[0]);
-            Assert.AreEqual(5, result[6]);
+            Assert.That(result.Length, Is.EqualTo(12));
+            Assert.That(result[0], Is.EqualTo(5));
+            Assert.That(result[6], Is.EqualTo(5));
         }
 
         [Test]
         public void Encode_EmptyString_ReturnsZeroLengthPrefix()
         {
             var result = KeyEncoder.Encode("");
-            Assert.AreEqual(1, result.Length);
-            Assert.AreEqual(0, result[0]);
+            Assert.That(result.Length, Is.EqualTo(1));
+            Assert.That(result[0], Is.EqualTo(0));
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace MeowDB.Tests
         {
             var encoded = KeyEncoder.Encode("Alice");
             var result = KeyEncoder.DecodeSingle(encoded);
-            Assert.AreEqual("Alice", result);
+            Assert.That(result, Is.EqualTo("Alice"));
         }
 
         [Test]
@@ -45,7 +45,7 @@ namespace MeowDB.Tests
         {
             var encoded = KeyEncoder.Encode("Alice", "Smith");
             var result = KeyEncoder.DecodeParts(encoded);
-            Assert.AreEqual(new[] { "Alice", "Smith" }, result);
+            Assert.That(result, Is.EqualTo(new[] { "Alice", "Smith" }));
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace MeowDB.Tests
             var parts = new[] { "users", "alice", "address", "city" };
             var encoded = KeyEncoder.Encode(parts);
             var decoded = KeyEncoder.DecodeParts(encoded);
-            Assert.AreEqual(parts, decoded);
+            Assert.That(decoded, Is.EqualTo(parts));
         }
 
         [Test]
@@ -67,14 +67,14 @@ namespace MeowDB.Tests
         public void Encode_NoParts_ReturnsEmptyArray()
         {
             var result = KeyEncoder.Encode();
-            Assert.AreEqual(0, result.Length);
+            Assert.That(result.Length, Is.EqualTo(0));
         }
 
         [Test]
         public void DecodeParts_EmptyArray_ReturnsEmptyList()
         {
             var result = KeyEncoder.DecodeParts(new byte[0]);
-            Assert.AreEqual(0, result.Length);
+            Assert.That(result.Length, Is.EqualTo(0));
         }
     }
 }
