@@ -172,4 +172,67 @@ public class BinaryCodecTests
         expected.AddRange(BitConverter.GetBytes(double.NaN));
         Assert.Equal(expected.ToArray(), result);
     }
+
+    [Fact]
+    public void Decode_NullTag_ReturnsNull()
+    {
+        var result = BinaryCodec.Decode(new byte[] { 0x00 });
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void Decode_BoolTrue_ReturnsTrue()
+    {
+        var result = BinaryCodec.Decode(new byte[] { 0x01, 0x01 });
+        Assert.Equal(true, result);
+    }
+
+    [Fact]
+    public void Decode_Int32_ReturnsCorrectValue()
+    {
+        var result = BinaryCodec.Decode(new byte[] { 0x06, 42, 0, 0, 0 });
+        Assert.Equal(42, result);
+    }
+
+    [Fact]
+    public void Decode_String_ReturnsUtf8String()
+    {
+        var result = BinaryCodec.Decode(new byte[] { 0x0C, (byte)'H', (byte)'i' });
+        Assert.Equal("Hi", result);
+    }
+
+    [Fact]
+    public void Decode_Int64_ReturnsCorrectValue()
+    {
+        var bytes = new byte[9];
+        bytes[0] = 0x08;
+        System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(1), 123456789L);
+        var result = BinaryCodec.Decode(bytes);
+        Assert.Equal(123456789L, result);
+    }
+
+    [Fact]
+    public void Decode_ByteArray_RoundTrips()
+    {
+        var original = new byte[] { 10, 20, 30 };
+        var encoded = BinaryCodec.Encode(original);
+        var decoded = BinaryCodec.Decode(encoded);
+        Assert.IsType<byte[]>(decoded);
+        Assert.Equal(original, (byte[])decoded!);
+    }
+
+    [Fact]
+    public void Decode_Guid_RoundTrips()
+    {
+        var original = Guid.NewGuid();
+        var encoded = BinaryCodec.Encode(original);
+        var decoded = BinaryCodec.Decode(encoded);
+        Assert.Equal(original, decoded);
+    }
+
+    [Fact]
+    public void Decode_UnknownTag_ThrowsNotSupportedException()
+    {
+        Assert.Throws<NotSupportedException>(() => BinaryCodec.Decode(new byte[] { 0xFF }));
+    }
 }

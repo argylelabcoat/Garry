@@ -143,4 +143,47 @@ public static class BinaryCodec
         Array.Reverse(buf, 1, 16);
         return buf;
     }
+
+    public static object? Decode(byte[] data)
+    {
+        if (data is null || data.Length == 0)
+            throw new ArgumentException("Data cannot be null or empty.", nameof(data));
+
+        byte tag = data[0];
+        ReadOnlySpan<byte> payload = data.AsSpan(1);
+
+        return tag switch
+        {
+            TAG_NULL => null,
+            TAG_BOOL => payload[0] != 0,
+            TAG_BYTE => payload[0],
+            TAG_SBYTE => (sbyte)payload[0],
+            TAG_INT16 => BinaryPrimitives.ReadInt16LittleEndian(payload),
+            TAG_UINT16 => BinaryPrimitives.ReadUInt16LittleEndian(payload),
+            TAG_INT32 => BinaryPrimitives.ReadInt32LittleEndian(payload),
+            TAG_UINT32 => BinaryPrimitives.ReadUInt32LittleEndian(payload),
+            TAG_INT64 => BinaryPrimitives.ReadInt64LittleEndian(payload),
+            TAG_UINT64 => BinaryPrimitives.ReadUInt64LittleEndian(payload),
+            TAG_SINGLE => BinaryPrimitives.ReadSingleLittleEndian(payload),
+            TAG_DOUBLE => BinaryPrimitives.ReadDoubleLittleEndian(payload),
+            TAG_STRING => Encoding.UTF8.GetString(payload),
+            TAG_BYTES => DecodeByteArray(payload),
+            TAG_DATETIME => new DateTime(BinaryPrimitives.ReadInt64LittleEndian(payload), DateTimeKind.Utc),
+            TAG_GUID => DecodeGuid(payload),
+            _ => throw new NotSupportedException($"Tag 0x{tag:X2} is not supported by BinaryCodec.")
+        };
+    }
+
+    private static byte[] DecodeByteArray(ReadOnlySpan<byte> payload)
+    {
+        int length = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        return payload.Slice(4, length).ToArray();
+    }
+
+    private static Guid DecodeGuid(ReadOnlySpan<byte> payload)
+    {
+        var buf = payload.Slice(0, 16).ToArray();
+        Array.Reverse(buf);
+        return new Guid(buf);
+    }
 }
