@@ -89,4 +89,53 @@ public class BinaryCodecTests
         Assert.Equal(17, result.Length); // 1 tag + 16 bytes
         Assert.Equal(0x0F, result[0]);
     }
+
+    [Fact]
+    public void Encode_SByte_ReturnsTagPlusSingleByte()
+    {
+        var result = BinaryCodec.Encode((sbyte)-42);
+        Assert.Equal(new byte[] { 0x03, unchecked((byte)-42) }, result);
+    }
+
+    [Fact]
+    public void Encode_Int16_ReturnsTagPlus2BytesLE()
+    {
+        var result = BinaryCodec.Encode((short)1234);
+        Assert.Equal(new byte[] { 0x04, 0xD2, 0x04 }, result);
+    }
+
+    [Fact]
+    public void Encode_UInt16_ReturnsTagPlus2BytesLE()
+    {
+        var result = BinaryCodec.Encode((ushort)54321);
+        Assert.Equal(new byte[] { 0x05, 0x31, 0xD4 }, result);
+    }
+
+    [Fact]
+    public void Encode_UInt32_ReturnsTagPlus4BytesLE()
+    {
+        var result = BinaryCodec.Encode((uint)3000000000);
+        var expected = new List<byte> { 0x07 };
+        expected.AddRange(BitConverter.GetBytes((uint)3000000000));
+        Assert.Equal(expected.ToArray(), result);
+    }
+
+    [Fact]
+    public void Encode_UInt64_ReturnsTagPlus8BytesLE()
+    {
+        var result = BinaryCodec.Encode((ulong)7000000000);
+        var expected = new List<byte> { 0x09 };
+        expected.AddRange(BitConverter.GetBytes((ulong)7000000000));
+        Assert.Equal(expected.ToArray(), result);
+    }
+
+    [Fact]
+    public void Encode_DateTime_ReturnsTagPlus8BytesTicks()
+    {
+        var dt = new DateTime(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
+        var result = BinaryCodec.Encode(dt);
+        var expected = new List<byte> { 0x0E };
+        expected.AddRange(BitConverter.GetBytes(dt.Ticks));
+        Assert.Equal(expected.ToArray(), result);
+    }
 }
