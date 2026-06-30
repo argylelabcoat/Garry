@@ -138,4 +138,38 @@ public class BinaryCodecTests
         expected.AddRange(BitConverter.GetBytes(dt.Ticks));
         Assert.Equal(expected.ToArray(), result);
     }
+
+    [Fact]
+    public void Encode_EmptyString_ReturnsTagOnly()
+    {
+        var result = BinaryCodec.Encode("");
+        Assert.Equal(new byte[] { 0x0C }, result);
+    }
+
+    [Fact]
+    public void Encode_EmptyByteArray_ReturnsTagPlusZeroLength()
+    {
+        var result = BinaryCodec.Encode(Array.Empty<byte>());
+        Assert.Equal(new byte[] { 0x0D, 0, 0, 0, 0 }, result);
+    }
+
+    [Theory]
+    [InlineData(int.MinValue)]
+    [InlineData(int.MaxValue)]
+    public void Encode_Int32_BoundaryValues(int value)
+    {
+        var result = BinaryCodec.Encode(value);
+        var expected = new List<byte> { 0x06 };
+        expected.AddRange(BitConverter.GetBytes(value));
+        Assert.Equal(expected.ToArray(), result);
+    }
+
+    [Fact]
+    public void Encode_Double_NaN_ReturnsTagPlusNaNBytes()
+    {
+        var result = BinaryCodec.Encode(double.NaN);
+        var expected = new List<byte> { 0x0B };
+        expected.AddRange(BitConverter.GetBytes(double.NaN));
+        Assert.Equal(expected.ToArray(), result);
+    }
 }

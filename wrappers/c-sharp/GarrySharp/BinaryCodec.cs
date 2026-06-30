@@ -140,6 +140,7 @@ public static class BinaryCodec
         var buf = new byte[17];
         buf[0] = tag;
         value.TryWriteBytes(buf.AsSpan(1));
+        Array.Reverse(buf, 1, 16);
         return buf;
     }
 }
