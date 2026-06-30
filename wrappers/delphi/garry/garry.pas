@@ -891,7 +891,8 @@ end;
 
 function TGarryCursor.Next(var Key, Value: TBytes): Boolean;
 var
-  K, V: array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
+  K: array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
+  V: array[0..GARRY_MAX_RECORD_SIZE - 1] of Byte;
   KLen, VLen: Integer;
 begin
   KLen := GARRY_MAX_KEY_SIZE;

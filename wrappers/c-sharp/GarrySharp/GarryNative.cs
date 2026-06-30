@@ -108,7 +108,7 @@ internal static class GarryNative
     public static extern int garry_set_str(
         IntPtr db, int txn,
         [MarshalAs(UnmanagedType.LPStr)] string key,
-        byte[] value, int vlen);
+        [MarshalAs(UnmanagedType.LPStr)] string value);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     public static extern int garry_get_str(
