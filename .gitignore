@@ -18,3 +18,7 @@ bin/
 obj/
 *.user
 *.suo
+wrappers/rust/GArY/target/
+wrappers/godot/garry/project/.godot/
+wrappers/godot/garry/build/
+build/
