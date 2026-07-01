@@ -107,26 +107,26 @@ type
     constructor Create(const Path: string; CreateNew: Boolean = False);
     destructor Destroy; override;
 
-    function Get(const Key: string): TBytes;
-    function Get(const Key: TBytes): TBytes;
-    procedure SetKeyValue(const Key: string; const Value: TBytes); overload;
-    procedure SetKeyValue(const Key: TBytes; const Value: TBytes); overload;
-    function Delete(const Key: string): Boolean;
-    function Delete(const Key: TBytes): Boolean;
-    function Exists(const Key: string): Boolean;
-    function Exists(const Key: TBytes): Boolean;
+    function Get(const Key: string): TGarryBytes; overload;
+    function Get(const Key: TGarryBytes): TGarryBytes; overload;
+    procedure SetKeyValue(const Key: string; const Value: TGarryBytes); overload;
+    procedure SetKeyValue(const Key: TGarryBytes; const Value: TGarryBytes); overload;
+    function Delete(const Key: string): Boolean; overload;
+    function Delete(const Key: TGarryBytes): Boolean; overload;
+    function Exists(const Key: string): Boolean; overload;
+    function Exists(const Key: TGarryBytes): Boolean; overload;
 
     function Count: Integer;
-    function First: TBytes;
-    function Last: TBytes;
-    function NextKey(const After: TBytes): TBytes;
-    function PrevKey(const Before: TBytes): TBytes;
+    function First: TGarryBytes;
+    function Last: TGarryBytes;
+    function NextKey(const After: TGarryBytes): TGarryBytes;
+    function PrevKey(const Before: TGarryBytes): TGarryBytes;
 
     function BeginTxn: Integer;
     procedure Commit(Txn: Integer);
     procedure Rollback(Txn: Integer);
 
-    function OpenCursor(const Prefix: TBytes): TGarryCursor;
+    function OpenCursor(const Prefix: TGarryBytes): TGarryCursor;
     function OpenCursorAll: TGarryCursor;
 
     property Handle: PGarryDatabaseHandle read FHandle;
@@ -140,14 +140,14 @@ type
     constructor Create(AHandle: PGarryCursorHandle; ADB: TGarryDatabase);
     destructor Destroy; override;
 
-    function Next(var Key, Value: TBytes): Boolean;
-    function NextKey(var Key: TBytes): Boolean;
+    function Next(var Key, Value: TGarryBytes): Boolean;
+    function NextKey(var Key: TGarryBytes): Boolean;
 
     property Handle: PGarryCursorHandle read FHandle;
   end;
 
-function EncodeKey(const Parts: array of AnsiString): TBytes;
-function DecodeKey(const Key: TBytes): TArray<AnsiString>;
+function EncodeKey(const Parts: array of AnsiString): TGarryBytes;
+function DecodeKey(const Key: TGarryBytes): TArray<AnsiString>;
 
 implementation
 
@@ -620,15 +620,15 @@ begin
   Result := garry_txn_begin(FHandle);
 end;
 
-function TGarryDatabase.Get(const Key: string): TBytes;
+function TGarryDatabase.Get(const Key: string): TGarryBytes;
 var
-  K: TBytes;
+  K: TGarryBytes;
 begin
   K := EncodeKey([AnsiString(Key)]);
   Result := Get(K);
 end;
 
-function TGarryDatabase.Get(const Key: TBytes): TBytes;
+function TGarryDatabase.Get(const Key: TGarryBytes): TGarryBytes;
 var
   Txn: Integer;
   VLen: Integer;
@@ -650,15 +650,15 @@ begin
   end;
 end;
 
-procedure TGarryDatabase.SetKeyValue(const Key: string; const Value: TBytes);
+procedure TGarryDatabase.SetKeyValue(const Key: string; const Value: TGarryBytes);
 var
-  K: TBytes;
+  K: TGarryBytes;
 begin
   K := EncodeKey([AnsiString(Key)]);
   SetKeyValue(K, Value);
 end;
 
-procedure TGarryDatabase.SetKeyValue(const Key: TBytes; const Value: TBytes);
+procedure TGarryDatabase.SetKeyValue(const Key: TGarryBytes; const Value: TGarryBytes);
 var
   Txn: Integer;
   St: TGarryStatus;
@@ -680,13 +680,13 @@ end;
 
 function TGarryDatabase.Delete(const Key: string): Boolean;
 var
-  K: TBytes;
+  K: TGarryBytes;
 begin
   K := EncodeKey([AnsiString(Key)]);
   Result := Delete(K);
 end;
 
-function TGarryDatabase.Delete(const Key: TBytes): Boolean;
+function TGarryDatabase.Delete(const Key: TGarryBytes): Boolean;
 var
   Txn: Integer;
   St: TGarryStatus;
@@ -704,13 +704,13 @@ end;
 
 function TGarryDatabase.Exists(const Key: string): Boolean;
 var
-  K: TBytes;
+  K: TGarryBytes;
 begin
   K := EncodeKey([AnsiString(Key)]);
   Result := Exists(K);
 end;
 
-function TGarryDatabase.Exists(const Key: TBytes): Boolean;
+function TGarryDatabase.Exists(const Key: TGarryBytes): Boolean;
 var
   Txn: Integer;
 begin
@@ -738,7 +738,7 @@ begin
   end;
 end;
 
-function TGarryDatabase.First: TBytes;
+function TGarryDatabase.First: TGarryBytes;
 var
   Txn: Integer;
   K: array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
@@ -761,7 +761,7 @@ begin
   end;
 end;
 
-function TGarryDatabase.Last: TBytes;
+function TGarryDatabase.Last: TGarryBytes;
 var
   Txn: Integer;
   K: array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
@@ -784,7 +784,7 @@ begin
   end;
 end;
 
-function TGarryDatabase.NextKey(const After: TBytes): TBytes;
+function TGarryDatabase.NextKey(const After: TGarryBytes): TGarryBytes;
 var
   Txn: Integer;
   K: array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
@@ -807,7 +807,7 @@ begin
   end;
 end;
 
-function TGarryDatabase.PrevKey(const Before: TBytes): TBytes;
+function TGarryDatabase.PrevKey(const Before: TGarryBytes): TGarryBytes;
 var
   Txn: Integer;
   K: array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
@@ -845,7 +845,7 @@ begin
   garry_txn_rollback(FHandle, Txn);
 end;
 
-function TGarryDatabase.OpenCursor(const Prefix: TBytes): TGarryCursor;
+function TGarryDatabase.OpenCursor(const Prefix: TGarryBytes): TGarryCursor;
 var
   Cur: PGarryCursorHandle;
   Txn: Integer;
@@ -891,7 +891,7 @@ begin
   inherited;
 end;
 
-function TGarryCursor.Next(var Key, Value: TBytes): Boolean;
+function TGarryCursor.Next(var Key, Value: TGarryBytes): Boolean;
 var
   K: array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
   V: array[0..GARRY_MAX_RECORD_SIZE - 1] of Byte;
@@ -909,7 +909,7 @@ begin
   end;
 end;
 
-function TGarryCursor.NextKey(var Key: TBytes): Boolean;
+function TGarryCursor.NextKey(var Key: TGarryBytes): Boolean;
 var
   K: array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
   KLen: Integer;
@@ -925,7 +925,7 @@ end;
 
 { Key encoding helpers }
 
-function EncodeKey(const Parts: array of AnsiString): TBytes;
+function EncodeKey(const Parts: array of AnsiString): TGarryBytes;
 var
   I, Offset, Len: Integer;
 begin
@@ -941,7 +941,7 @@ begin
   end;
 end;
 
-function DecodeKey(const Key: TBytes): TArray<AnsiString>;
+function DecodeKey(const Key: TGarryBytes): TArray<AnsiString>;
 var
   Count, Offset, Len: Integer;
 begin

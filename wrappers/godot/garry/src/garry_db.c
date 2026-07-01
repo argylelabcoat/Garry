@@ -86,6 +86,35 @@ static void extract_string_arg(const GDExtensionConstVariantPtr *args, int idx,
 
 /* --- open(path: String) -> bool --- */
 
+/**
+ * @brief Convert Godot virtual paths to actual file system paths.
+ *
+ * Note: This is a simplified implementation. For full Godot path support,
+ * users should call ProjectSettings.globalize_path() before passing to open().
+ *
+ * @param godot_path Input path from Godot
+ * @param out Output buffer for converted path
+ * @param out_size Size of output buffer
+ */
+static void convert_godot_path(const char *godot_path, char *out, int out_size) {
+    /* Check for user:// prefix */
+    if (strncmp(godot_path, "user://", 7) == 0) {
+        /* user:// maps to ~/.local/share/godot/app_userdata/<project_name>/ on Linux */
+        /* For now, just use the path as-is and let the user handle it */
+        snprintf(out, out_size, "%s", godot_path);
+    }
+    /* Check for res:// prefix */
+    else if (strncmp(godot_path, "res://", 6) == 0) {
+        /* res:// maps to the project directory */
+        /* For now, just use the path as-is and let the user handle it */
+        snprintf(out, out_size, "%s", godot_path);
+    }
+    else {
+        /* Already an absolute or relative path */
+        snprintf(out, out_size, "%s", godot_path);
+    }
+}
+
 static void db_open_call(
         void *method_userdata,
         GDExtensionClassInstancePtr instance,
@@ -109,15 +138,19 @@ static void db_open_call(
     }
 
     char path[1024] = {0};
+    char converted_path[1024] = {0};
     extract_string_arg(args, 0, path, (int)sizeof(path) - 1);
+    
+    /* Convert Godot virtual paths to actual file system paths */
+    convert_godot_path(path, converted_path, (int)sizeof(converted_path) - 1);
 
-    d->db = garry_database_open(path);
+    d->db = garry_database_open(converted_path);
     if (!d->db) {
-        d->db = garry_database_create(path);
+        d->db = garry_database_create(converted_path);
     }
 
     if (d->db) {
-        snprintf(d->path, sizeof(d->path), "%s", path);
+        snprintf(d->path, sizeof(d->path), "%s", converted_path);
     }
 
     garry_var_from_bool((uint8_t *)r_return, d->db ? 1 : 0);
@@ -145,15 +178,19 @@ static void db_open_ptrcall(
     }
 
     char path[1024] = {0};
+    char converted_path[1024] = {0};
     garry_str_to_c((const uint8_t *)args[0], path, (int)sizeof(path) - 1);
+    
+    /* Convert Godot virtual paths to actual file system paths */
+    convert_godot_path(path, converted_path, (int)sizeof(converted_path) - 1);
 
-    d->db = garry_database_open(path);
+    d->db = garry_database_open(converted_path);
     if (!d->db) {
-        d->db = garry_database_create(path);
+        d->db = garry_database_create(converted_path);
     }
 
     if (d->db) {
-        snprintf(d->path, sizeof(d->path), "%s", path);
+        snprintf(d->path, sizeof(d->path), "%s", converted_path);
     }
 
     *(GDExtensionBool *)r_return = d->db ? 1 : 0;

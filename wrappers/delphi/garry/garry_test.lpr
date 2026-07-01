@@ -5,15 +5,25 @@ program garry_test;
 uses
   SysUtils, garry, garry_types, garry_codec;
 
+
+function BytesOf(const Vals: array of Byte): TGarryBytes;
+var
+  I: Integer;
+begin
+  SetLength(Result, Length(Vals));
+  for I := 0 to High(Vals) do
+    Result[I] := Vals[I];
+end;
+
 var
   DB: TGarryDatabase;
-  Value: TBytes;
-  Encoded: TBytes;
-  Parts: TArray<AnsiString>;
+  Value: TGarryBytes;
+  Encoded: TGarryBytes;
+  Parts: array of AnsiString;
   Success: Boolean;
   Txn: Integer;
   Cursor: TGarryCursor;
-  Key, Val: TBytes;
+  Key, Val: TGarryBytes;
   Count: Integer;
 begin
   try
@@ -22,7 +32,7 @@ begin
     WriteLn('  OK');
 
     WriteLn('Test 2: Set and get...');
-    DB.SetKeyValue('hello', TBytes($48, $65, $6C, $6C, $6F));
+    DB.SetKeyValue('hello', BytesOf([$48, $65, $6C, $6C, $6F]));
     Value := DB.Get('hello');
     Assert(Length(Value) = 5, 'Expected 5 bytes');
     Assert(Value[0] = $48, 'Expected H');
@@ -36,31 +46,31 @@ begin
     WriteLn('  OK');
 
     WriteLn('Test 4: Exists...');
-    DB.SetKeyValue('test_key', TBytes($01, $02, $03));
+    DB.SetKeyValue('test_key', BytesOf([$01, $02, $03]));
     Assert(DB.Exists('test_key'), 'Key should exist');
     DB.Delete('test_key');
     Assert(not DB.Exists('test_key'), 'Key should not exist');
     WriteLn('  OK');
 
     WriteLn('Test 5: Count...');
-    DB.SetKeyValue('a', TBytes($01));
-    DB.SetKeyValue('b', TBytes($02));
-    DB.SetKeyValue('c', TBytes($03));
+    DB.SetKeyValue('a', BytesOf([$01]));
+    DB.SetKeyValue('b', BytesOf([$02]));
+    DB.SetKeyValue('c', BytesOf([$03]));
     Count := DB.Count;
     Assert(Count = 3, 'Expected 3 keys');
     WriteLn('  OK');
 
     WriteLn('Test 6: Transaction rollback...');
     Txn := DB.BeginTxn;
-    DB.SetKeyValue('txn_test', TBytes($AA, $BB));
+    DB.SetKeyValue('txn_test', BytesOf([$AA, $BB]));
     DB.Rollback(Txn);
     Assert(not DB.Exists('txn_test'), 'Key should not exist after rollback');
     WriteLn('  OK');
 
     WriteLn('Test 7: Cursor iteration...');
-    DB.SetKeyValue('prefix/a', TBytes($01));
-    DB.SetKeyValue('prefix/b', TBytes($02));
-    DB.SetKeyValue('prefix/c', TBytes($03));
+    DB.SetKeyValue('prefix/a', BytesOf([$01]));
+    DB.SetKeyValue('prefix/b', BytesOf([$02]));
+    DB.SetKeyValue('prefix/c', BytesOf([$03]));
     Cursor := DB.OpenCursor(EncodeKey(['prefix']));
     Count := 0;
     while Cursor.Next(Key, Val) do
@@ -90,7 +100,7 @@ begin
     WriteLn('  OK');
 
     WriteLn('Test 10: First/Last...');
-    DB.SetKeyValue('z_last', TBytes($FF));
+    DB.SetKeyValue('z_last', BytesOf([$FF]));
     Value := DB.First;
     Assert(Length(Value) > 0, 'First should return a key');
     Value := DB.Last;

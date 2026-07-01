@@ -7,7 +7,7 @@ unit garry_codec;
 interface
 
 uses
-  SysUtils;
+  SysUtils, garry_types;
 
 const
   TAG_NULL    = $00;
@@ -43,55 +43,52 @@ type
       10: (VDouble: Double);
   end;
 
-function EncodeValueNull: TBytes;
-function EncodeValueBool(Value: Boolean): TBytes;
-function EncodeValueByte(Value: Byte): TBytes;
-function EncodeValueInt16(Value: SmallInt): TBytes;
-function EncodeValueUInt16(Value: Word): TBytes;
-function EncodeValueInt32(Value: Integer): TBytes;
-function EncodeValueUInt32(Value: Cardinal): TBytes;
-function EncodeValueInt64(Value: Int64): TBytes;
-function EncodeValueUInt64(Value: UInt64): TBytes;
-function EncodeValueSingle(Value: Single): TBytes;
-function EncodeValueDouble(Value: Double): TBytes;
-function EncodeValueString(const Value: string): TBytes;
-function EncodeValueBytes(const Value: TBytes): TBytes;
+function EncodeValueNull: TGarryBytes;
+function EncodeValueBool(Value: Boolean): TGarryBytes;
+function EncodeValueByte(Value: Byte): TGarryBytes;
+function EncodeValueInt16(Value: SmallInt): TGarryBytes;
+function EncodeValueUInt16(Value: Word): TGarryBytes;
+function EncodeValueInt32(Value: Integer): TGarryBytes;
+function EncodeValueUInt32(Value: Cardinal): TGarryBytes;
+function EncodeValueInt64(Value: Int64): TGarryBytes;
+function EncodeValueUInt64(Value: UInt64): TGarryBytes;
+function EncodeValueSingle(Value: Single): TGarryBytes;
+function EncodeValueDouble(Value: Double): TGarryBytes;
+function EncodeValueString(const Value: string): TGarryBytes;
+function EncodeValueBytes(const Value: TGarryBytes): TGarryBytes;
 
-function DecodeTag(const Data: TBytes): Byte;
-function DecodeBool(const Data: TBytes): Boolean;
-function DecodeByte(const Data: TBytes): Byte;
-function DecodeInt16(const Data: TBytes): SmallInt;
-function DecodeUInt16(const Data: TBytes): Word;
-function DecodeInt32(const Data: TBytes): Integer;
-function DecodeUInt32(const Data: TBytes): Cardinal;
-function DecodeInt64(const Data: TBytes): Int64;
-function DecodeUInt64(const Data: TBytes): UInt64;
-function DecodeSingle(const Data: TBytes): Single;
-function DecodeDouble(const Data: TBytes): Double;
-function DecodeString(const Data: TBytes): string;
-function DecodeBytes(const Data: TBytes): TBytes;
+function DecodeTag(const Data: TGarryBytes): Byte;
+function DecodeBool(const Data: TGarryBytes): Boolean;
+function DecodeByte(const Data: TGarryBytes): Byte;
+function DecodeInt16(const Data: TGarryBytes): SmallInt;
+function DecodeUInt16(const Data: TGarryBytes): Word;
+function DecodeInt32(const Data: TGarryBytes): Integer;
+function DecodeUInt32(const Data: TGarryBytes): Cardinal;
+function DecodeInt64(const Data: TGarryBytes): Int64;
+function DecodeUInt64(const Data: TGarryBytes): UInt64;
+function DecodeSingle(const Data: TGarryBytes): Single;
+function DecodeDouble(const Data: TGarryBytes): Double;
+function DecodeString(const Data: TGarryBytes): string;
+function DecodeBytes(const Data: TGarryBytes): TGarryBytes;
 
 implementation
 
 uses
-  {$IFDEF FPC}
-  FPConvert,
-  {$ENDIF}
   Math;
 
-procedure WriteInt16LE(var Buf: TBytes; Offset: Integer; Value: SmallInt);
+procedure WriteInt16LE(var Buf: TGarryBytes; Offset: Integer; Value: SmallInt);
 begin
   Buf[Offset] := Byte(Value and $FF);
   Buf[Offset + 1] := Byte((Value shr 8) and $FF);
 end;
 
-procedure WriteUInt16LE(var Buf: TBytes; Offset: Integer; Value: Word);
+procedure WriteUInt16LE(var Buf: TGarryBytes; Offset: Integer; Value: Word);
 begin
   Buf[Offset] := Byte(Value and $FF);
   Buf[Offset + 1] := Byte((Value shr 8) and $FF);
 end;
 
-procedure WriteInt32LE(var Buf: TBytes; Offset: Integer; Value: Integer);
+procedure WriteInt32LE(var Buf: TGarryBytes; Offset: Integer; Value: Integer);
 var
   I: Integer;
 begin
@@ -99,7 +96,7 @@ begin
     Buf[Offset + I] := Byte((Value shr (I * 8)) and $FF);
 end;
 
-procedure WriteUInt32LE(var Buf: TBytes; Offset: Integer; Value: Cardinal);
+procedure WriteUInt32LE(var Buf: TGarryBytes; Offset: Integer; Value: Cardinal);
 var
   I: Integer;
 begin
@@ -107,7 +104,7 @@ begin
     Buf[Offset + I] := Byte((Value shr (I * 8)) and $FF);
 end;
 
-procedure WriteInt64LE(var Buf: TBytes; Offset: Integer; Value: Int64);
+procedure WriteInt64LE(var Buf: TGarryBytes; Offset: Integer; Value: Int64);
 var
   I: Integer;
 begin
@@ -115,7 +112,7 @@ begin
     Buf[Offset + I] := Byte((Value shr (I * 8)) and $FF);
 end;
 
-procedure WriteUInt64LE(var Buf: TBytes; Offset: Integer; Value: UInt64);
+procedure WriteUInt64LE(var Buf: TGarryBytes; Offset: Integer; Value: UInt64);
 var
   I: Integer;
 begin
@@ -123,7 +120,7 @@ begin
     Buf[Offset + I] := Byte((Value shr (I * 8)) and $FF);
 end;
 
-procedure WriteSingleLE(var Buf: TBytes; Offset: Integer; Value: Single);
+procedure WriteSingleLE(var Buf: TGarryBytes; Offset: Integer; Value: Single);
 var
   V: Cardinal;
 begin
@@ -131,7 +128,7 @@ begin
   WriteUInt32LE(Buf, Offset, V);
 end;
 
-procedure WriteDoubleLE(var Buf: TBytes; Offset: Integer; Value: Double);
+procedure WriteDoubleLE(var Buf: TGarryBytes; Offset: Integer; Value: Double);
 var
   V: UInt64;
 begin
@@ -139,17 +136,17 @@ begin
   WriteInt64LE(Buf, Offset, V);
 end;
 
-function ReadInt16LE(const Buf: TBytes; Offset: Integer): SmallInt;
+function ReadInt16LE(const Buf: TGarryBytes; Offset: Integer): SmallInt;
 begin
   Result := SmallInt(Buf[Offset] or (Buf[Offset + 1] shl 8));
 end;
 
-function ReadUInt16LE(const Buf: TBytes; Offset: Integer): Word;
+function ReadUInt16LE(const Buf: TGarryBytes; Offset: Integer): Word;
 begin
   Result := Buf[Offset] or (Buf[Offset + 1] shl 8);
 end;
 
-function ReadInt32LE(const Buf: TBytes; Offset: Integer): Integer;
+function ReadInt32LE(const Buf: TGarryBytes; Offset: Integer): Integer;
 var
   I: Integer;
 begin
@@ -158,7 +155,7 @@ begin
     Result := Result or (Integer(Buf[Offset + I]) shl (I * 8));
 end;
 
-function ReadUInt32LE(const Buf: TBytes; Offset: Integer): Cardinal;
+function ReadUInt32LE(const Buf: TGarryBytes; Offset: Integer): Cardinal;
 var
   I: Integer;
 begin
@@ -167,7 +164,7 @@ begin
     Result := Result or (Cardinal(Buf[Offset + I]) shl (I * 8));
 end;
 
-function ReadInt64LE(const Buf: TBytes; Offset: Integer): Int64;
+function ReadInt64LE(const Buf: TGarryBytes; Offset: Integer): Int64;
 var
   I: Integer;
 begin
@@ -176,7 +173,7 @@ begin
     Result := Result or (Int64(Buf[Offset + I]) shl (I * 8));
 end;
 
-function ReadUInt64LE(const Buf: TBytes; Offset: Integer): UInt64;
+function ReadUInt64LE(const Buf: TGarryBytes; Offset: Integer): UInt64;
 var
   I: Integer;
 begin
@@ -185,7 +182,7 @@ begin
     Result := Result or (UInt64(Buf[Offset + I]) shl (I * 8));
 end;
 
-function ReadSingleLE(const Buf: TBytes; Offset: Integer): Single;
+function ReadSingleLE(const Buf: TGarryBytes; Offset: Integer): Single;
 var
   V: Cardinal;
 begin
@@ -193,7 +190,7 @@ begin
   Move(V, Result, SizeOf(Result));
 end;
 
-function ReadDoubleLE(const Buf: TBytes; Offset: Integer): Double;
+function ReadDoubleLE(const Buf: TGarryBytes; Offset: Integer): Double;
 var
   V: UInt64;
 begin
@@ -201,13 +198,13 @@ begin
   Move(V, Result, SizeOf(Result));
 end;
 
-function EncodeValueNull: TBytes;
+function EncodeValueNull: TGarryBytes;
 begin
   SetLength(Result, 1);
   Result[0] := TAG_NULL;
 end;
 
-function EncodeValueBool(Value: Boolean): TBytes;
+function EncodeValueBool(Value: Boolean): TGarryBytes;
 begin
   SetLength(Result, 2);
   Result[0] := TAG_BOOL;
@@ -217,80 +214,85 @@ begin
     Result[1] := 0;
 end;
 
-function EncodeValueByte(Value: Byte): TBytes;
+function EncodeValueByte(Value: Byte): TGarryBytes;
 begin
   SetLength(Result, 2);
   Result[0] := TAG_BYTE;
   Result[1] := Value;
 end;
 
-function EncodeValueInt16(Value: SmallInt): TBytes;
+function EncodeValueInt16(Value: SmallInt): TGarryBytes;
 begin
   SetLength(Result, 3);
   Result[0] := TAG_INT16;
   WriteInt16LE(Result, 1, Value);
 end;
 
-function EncodeValueUInt16(Value: Word): TBytes;
+function EncodeValueUInt16(Value: Word): TGarryBytes;
 begin
   SetLength(Result, 3);
   Result[0] := TAG_UINT16;
   WriteUInt16LE(Result, 1, Value);
 end;
 
-function EncodeValueInt32(Value: Integer): TBytes;
+function EncodeValueInt32(Value: Integer): TGarryBytes;
 begin
   SetLength(Result, 5);
   Result[0] := TAG_INT32;
   WriteInt32LE(Result, 1, Value);
 end;
 
-function EncodeValueUInt32(Value: Cardinal): TBytes;
+function EncodeValueUInt32(Value: Cardinal): TGarryBytes;
 begin
   SetLength(Result, 5);
   Result[0] := TAG_UINT32;
   WriteUInt32LE(Result, 1, Value);
 end;
 
-function EncodeValueInt64(Value: Int64): TBytes;
+function EncodeValueInt64(Value: Int64): TGarryBytes;
 begin
   SetLength(Result, 9);
   Result[0] := TAG_INT64;
   WriteInt64LE(Result, 1, Value);
 end;
 
-function EncodeValueUInt64(Value: UInt64): TBytes;
+function EncodeValueUInt64(Value: UInt64): TGarryBytes;
 begin
   SetLength(Result, 9);
   Result[0] := TAG_UINT64;
   WriteUInt64LE(Result, 1, Value);
 end;
 
-function EncodeValueSingle(Value: Single): TBytes;
+function EncodeValueSingle(Value: Single): TGarryBytes;
 begin
   SetLength(Result, 5);
   Result[0] := TAG_SINGLE;
   WriteSingleLE(Result, 1, Value);
 end;
 
-function EncodeValueDouble(Value: Double): TBytes;
+function EncodeValueDouble(Value: Double): TGarryBytes;
 begin
   SetLength(Result, 9);
   Result[0] := TAG_DOUBLE;
   WriteDoubleLE(Result, 1, Value);
 end;
 
-function EncodeValueString(const Value: string): TBytes;
+function EncodeValueString(const Value: string): TGarryBytes;
 var
-  Bytes: TBytes;
+  S: RawByteString;
+  Bytes: TGarryBytes;
 begin
-  Bytes := UTF8Encode(Value);
+  S := UTF8Encode(Value);
+  SetLength(Bytes, Length(S));
+  if Length(S) > 0 then
+    Move(S[1], Bytes[0], Length(S));
   SetLength(Result, 1 + Length(Bytes));
   Result[0] := TAG_STRING;
-  Move(Bytes[0], Result[1], Length(Bytes));
+  if Length(Bytes) > 0 then
+    Move(Bytes[0], Result[1], Length(Bytes));
 end;
 
-function EncodeValueBytes(const Value: TBytes): TBytes;
+function EncodeValueBytes(const Value: TGarryBytes): TGarryBytes;
 begin
   SetLength(Result, 5 + Length(Value));
   Result[0] := TAG_BYTES;
@@ -299,7 +301,7 @@ begin
     Move(Value[0], Result[5], Length(Value));
 end;
 
-function DecodeTag(const Data: TBytes): Byte;
+function DecodeTag(const Data: TGarryBytes): Byte;
 begin
   if Length(Data) = 0 then
     Result := TAG_NULL
@@ -307,12 +309,12 @@ begin
     Result := Data[0];
 end;
 
-function DecodeBool(const Data: TBytes): Boolean;
+function DecodeBool(const Data: TGarryBytes): Boolean;
 begin
   Result := (Length(Data) > 1) and (Data[1] <> 0);
 end;
 
-function DecodeByte(const Data: TBytes): Byte;
+function DecodeByte(const Data: TGarryBytes): Byte;
 begin
   if Length(Data) > 1 then
     Result := Data[1]
@@ -320,7 +322,7 @@ begin
     Result := 0;
 end;
 
-function DecodeInt16(const Data: TBytes): SmallInt;
+function DecodeInt16(const Data: TGarryBytes): SmallInt;
 begin
   if Length(Data) >= 3 then
     Result := ReadInt16LE(Data, 1)
@@ -328,7 +330,7 @@ begin
     Result := 0;
 end;
 
-function DecodeUInt16(const Data: TBytes): Word;
+function DecodeUInt16(const Data: TGarryBytes): Word;
 begin
   if Length(Data) >= 3 then
     Result := ReadUInt16LE(Data, 1)
@@ -336,7 +338,7 @@ begin
     Result := 0;
 end;
 
-function DecodeInt32(const Data: TBytes): Integer;
+function DecodeInt32(const Data: TGarryBytes): Integer;
 begin
   if Length(Data) >= 5 then
     Result := ReadInt32LE(Data, 1)
@@ -344,7 +346,7 @@ begin
     Result := 0;
 end;
 
-function DecodeUInt32(const Data: TBytes): Cardinal;
+function DecodeUInt32(const Data: TGarryBytes): Cardinal;
 begin
   if Length(Data) >= 5 then
     Result := ReadUInt32LE(Data, 1)
@@ -352,7 +354,7 @@ begin
     Result := 0;
 end;
 
-function DecodeInt64(const Data: TBytes): Int64;
+function DecodeInt64(const Data: TGarryBytes): Int64;
 begin
   if Length(Data) >= 9 then
     Result := ReadInt64LE(Data, 1)
@@ -360,7 +362,7 @@ begin
     Result := 0;
 end;
 
-function DecodeUInt64(const Data: TBytes): UInt64;
+function DecodeUInt64(const Data: TGarryBytes): UInt64;
 begin
   if Length(Data) >= 9 then
     Result := ReadUInt64LE(Data, 1)
@@ -368,7 +370,7 @@ begin
     Result := 0;
 end;
 
-function DecodeSingle(const Data: TBytes): Single;
+function DecodeSingle(const Data: TGarryBytes): Single;
 begin
   if Length(Data) >= 5 then
     Result := ReadSingleLE(Data, 1)
@@ -376,7 +378,7 @@ begin
     Result := 0.0;
 end;
 
-function DecodeDouble(const Data: TBytes): Double;
+function DecodeDouble(const Data: TGarryBytes): Double;
 begin
   if Length(Data) >= 9 then
     Result := ReadDoubleLE(Data, 1)
@@ -384,15 +386,24 @@ begin
     Result := 0.0;
 end;
 
-function DecodeString(const Data: TBytes): string;
+function DecodeString(const Data: TGarryBytes): string;
+var
+  Sub: TGarryBytes;
+  S: RawByteString;
 begin
   if Length(Data) > 1 then
-    Result := UTF8ToString(Copy(Data, 1, Length(Data) - 1))
+  begin
+    Sub := Copy(Data, 1, Length(Data) - 1);
+    SetLength(S, Length(Sub));
+    if Length(Sub) > 0 then
+      Move(Sub[0], S[1], Length(Sub));
+    Result := UTF8ToString(S);
+  end
   else
     Result := '';
 end;
 
-function DecodeBytes(const Data: TBytes): TBytes;
+function DecodeBytes(const Data: TGarryBytes): TGarryBytes;
 var
   Len: Integer;
 begin

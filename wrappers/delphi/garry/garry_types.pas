@@ -15,7 +15,7 @@ type
   PGarryByte = ^Byte;
   PPAnsiChar = ^PAnsiChar;
   TGarryByteArray = array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
-  TBytes = array of Byte;
+  TGarryBytes = array of Byte;
 
   PGarryDatabaseHandle = ^TGarryDatabaseHandle;
   TGarryDatabaseHandle = record
