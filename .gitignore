@@ -22,3 +22,5 @@ wrappers/rust/GArY/target/
 wrappers/godot/garry/project/.godot/
 wrappers/godot/garry/build/
 build/
+*.ppu
+*.o

@@ -97,6 +97,8 @@ function garry_get_str(DB: PGarryDatabaseHandle; Txn: Integer;
 function garry_strerror(Status: TGarryStatus): PAnsiChar; cdecl;
 
 type
+  TGarryCursor = class;  // Forward declaration
+
   TGarryDatabase = class
   private
     FHandle: PGarryDatabaseHandle;

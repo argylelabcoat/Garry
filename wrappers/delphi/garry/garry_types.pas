@@ -15,6 +15,7 @@ type
   PGarryByte = ^Byte;
   PPAnsiChar = ^PAnsiChar;
   TGarryByteArray = array[0..GARRY_MAX_KEY_SIZE - 1] of Byte;
+  TBytes = array of Byte;
 
   PGarryDatabaseHandle = ^TGarryDatabaseHandle;
   TGarryDatabaseHandle = record
@@ -52,6 +53,8 @@ type
     Counts: array[0..GARRY_MAX_SUBSCRIPTS - 1] of Integer;
     Count: Integer;
   end;
+
+  PGarryKeyTuple = ^TGarryKeyTuple;
 
   TGarryVisitor = procedure(const Key: PByte; KeyLen: Integer;
     const Value: PByte; ValueLen: Integer; UserData: Pointer); cdecl;
