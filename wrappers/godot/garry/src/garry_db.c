@@ -673,8 +673,7 @@ static void db_query_call(
     extract_string_arg(args, 0, prefix, (int)sizeof(prefix) - 1);
 
     garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
-    
-    /* Open cursor */
+
     garry_cursor *cur = garry_cursor_open(d->db, txn, (const garry_u8 *)prefix, (garry_i32)strlen(prefix));
     if (!cur) {
         if (!d->txn_active) garry_txn_commit(d->db, txn);
@@ -682,39 +681,50 @@ static void db_query_call(
         return;
     }
 
-    /* Collect results into a string for now */
-    /* TODO: Return proper Array type */
-    char result_buf[4096] = {0};
-    int pos = 0;
+    /* Build a Godot Array of PackedByteArray entries (key in each) */
+    garry_ensure_ctors();
+    GDExtensionVariantFromTypeConstructorFunc array_ctor =
+        ggi.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_ARRAY);
+
+    GarryVar packed_array_var;
+    memset(packed_array_var, 0, GARRT_VAR_SIZE);
+
+    int64_t dummy = 0;
+    array_ctor((GDExtensionVariantPtr)packed_array_var, &dummy);
+
     garry_u8 key[256];
     garry_u8 value[16384];
     garry_i32 klen, vlen;
-    int count = 0;
 
     while (garry_cursor_next(cur, key, &klen, value, &vlen)) {
-        /* Convert key to string */
-        char key_str[256] = {0};
-        int key_str_len = klen < (int)sizeof(key_str) - 1 ? klen : (int)sizeof(key_str) - 1;
-        memcpy(key_str, key, (size_t)key_str_len);
-        
-        /* Add to result (simplified - just key strings for now) */
-        if (pos < (int)sizeof(result_buf) - 256) {
-            if (count > 0) {
-                result_buf[pos++] = ',';
-            }
-            int remaining = (int)sizeof(result_buf) - pos;
-            int copy_len = key_str_len < remaining ? key_str_len : remaining;
-            memcpy(result_buf + pos, key_str, (size_t)copy_len);
-            pos += copy_len;
-            count++;
-        }
+        /* Pack key+vlen into one PackedByteArray: [klen:4 bytes][key:klen bytes] */
+        if (klen > (garry_i32)sizeof(key)) klen = (garry_i32)sizeof(key);
+        garry_u8 entry_buf[260];
+        memcpy(entry_buf, &klen, 4);
+        memcpy(entry_buf + 4, key, (size_t)klen);
+
+        GarryVar entry_var;
+        garry_var_from_packed_bytes(entry_var, entry_buf, 4 + klen);
+
+        GarrySN push_method;
+        garry_sn_new(push_method, "push_back");
+        GDExtensionCallError push_err;
+        ggi.variant_call(
+            (GDExtensionVariantPtr)packed_array_var,
+            (GDExtensionConstStringNamePtr)push_method,
+            (const GDExtensionConstVariantPtr *)&entry_var,
+            1,
+            NULL,
+            &push_err
+        );
+        garry_sn_free(push_method);
+        garry_var_free(entry_var);
     }
 
     garry_cursor_close(cur);
     if (!d->txn_active) garry_txn_commit(d->db, txn);
 
-    /* Return as string for now */
-    garry_var_from_cstr((uint8_t *)r_return, result_buf);
+    memcpy(r_return, packed_array_var, GARRT_VAR_SIZE);
 }
 
 static void db_query_ptrcall(
@@ -722,8 +732,66 @@ static void db_query_ptrcall(
         GDExtensionClassInstancePtr instance,
         const GDExtensionConstTypePtr *args,
         GDExtensionTypePtr r_return) {
-    (void)method_userdata; (void)args; (void)r_return;
-    /* TODO: Implement ptrcall version */
+    (void)method_userdata;
+    MeowDBData *d = (MeowDBData *)instance;
+    if (!d || !d->db || !args || !args[0]) {
+        memset(r_return, 0, GARRT_VAR_SIZE);
+        return;
+    }
+
+    char prefix[256] = {0};
+    garry_str_to_c((const uint8_t *)args[0], prefix, (int)sizeof(prefix) - 1);
+
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
+
+    garry_cursor *cur = garry_cursor_open(d->db, txn, (const garry_u8 *)prefix, (garry_i32)strlen(prefix));
+    if (!cur) {
+        if (!d->txn_active) garry_txn_commit(d->db, txn);
+        memset(r_return, 0, GARRT_VAR_SIZE);
+        return;
+    }
+
+    garry_ensure_ctors();
+    GDExtensionVariantFromTypeConstructorFunc array_ctor =
+        ggi.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_ARRAY);
+
+    GarryVar packed_array_var;
+    memset(packed_array_var, 0, GARRT_VAR_SIZE);
+    int64_t dummy = 0;
+    array_ctor((GDExtensionVariantPtr)packed_array_var, &dummy);
+
+    garry_u8 key[256];
+    garry_u8 value[16384];
+    garry_i32 klen, vlen;
+
+    while (garry_cursor_next(cur, key, &klen, value, &vlen)) {
+        if (klen > (garry_i32)sizeof(key)) klen = (garry_i32)sizeof(key);
+        garry_u8 entry_buf[260];
+        memcpy(entry_buf, &klen, 4);
+        memcpy(entry_buf + 4, key, (size_t)klen);
+
+        GarryVar entry_var;
+        garry_var_from_packed_bytes(entry_var, entry_buf, 4 + klen);
+
+        GarrySN push_method;
+        garry_sn_new(push_method, "push_back");
+        GDExtensionCallError push_err;
+        ggi.variant_call(
+            (GDExtensionVariantPtr)packed_array_var,
+            (GDExtensionConstStringNamePtr)push_method,
+            (const GDExtensionConstVariantPtr *)&entry_var,
+            1,
+            NULL,
+            &push_err
+        );
+        garry_sn_free(push_method);
+        garry_var_free(entry_var);
+    }
+
+    garry_cursor_close(cur);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
+
+    memcpy(r_return, packed_array_var, GARRT_VAR_SIZE);
 }
 
 /* =========================================================================
@@ -969,12 +1037,35 @@ void garry_db_register(void) {
         db_rollback_call, db_rollback_ptrcall,
         0, NULL, NULL);
 
-    /* query(prefix: String) -> String */
+    /* set(key: String, value: PackedByteArray) -> bool */
+    {
+        const char *arg_names[] = {"key", "value"};
+        GDExtensionVariantType arg_types[] = {
+            GDEXTENSION_VARIANT_TYPE_STRING,
+            GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY
+        };
+        register_method_ret("set",
+            GDEXTENSION_VARIANT_TYPE_BOOL,
+            db_set_call, db_set_ptrcall,
+            2, arg_names, arg_types);
+    }
+
+    /* get(key: String) -> PackedByteArray */
+    {
+        const char *arg_names[] = {"key"};
+        GDExtensionVariantType arg_types[] = {GDEXTENSION_VARIANT_TYPE_STRING};
+        register_method_ret("get",
+            GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY,
+            db_get_call, db_get_ptrcall,
+            1, arg_names, arg_types);
+    }
+
+    /* query(prefix: String) -> Array */
     {
         const char *arg_names[] = {"prefix"};
         GDExtensionVariantType arg_types[] = {GDEXTENSION_VARIANT_TYPE_STRING};
         register_method_ret("query",
-            GDEXTENSION_VARIANT_TYPE_STRING,
+            GDEXTENSION_VARIANT_TYPE_ARRAY,
             db_query_call, db_query_ptrcall,
             1, arg_names, arg_types);
     }
