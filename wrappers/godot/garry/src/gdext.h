@@ -58,6 +58,8 @@ typedef struct GarryGdextInterface {
 
     GDExtensionInterfaceCallableCustomCreate2       callable_custom_create;
 
+    GDExtensionInterfaceGlobalGetSingleton         global_get_singleton;
+
     GDExtensionInterfacePrintError   print_error;
 } GarryGdextInterface;
 
@@ -103,6 +105,19 @@ void garry_vcall_int(GDExtensionObjectPtr obj, const char *method, int64_t arg);
 void garry_vcall_bool(GDExtensionObjectPtr obj, const char *method, int arg);
 
 int garry_var_to_str(const GarryVar var, char *buf, int max_len);
+
+/**
+ * @brief Convert a Godot virtual path to an actual file system path.
+ *
+ * Calls ProjectSettings.globalize_path() to convert user:// and res://
+ * paths to absolute file system paths.
+ *
+ * @param godot_path Input path from Godot (e.g., "user://game.db")
+ * @param out Output buffer for converted path
+ * @param out_size Size of output buffer
+ * @return 1 on success, 0 on failure
+ */
+int garry_globalize_path(const char *godot_path, char *out, int out_size);
 
 void garry_log(const char *msg);
 void garry_err(const char *msg);

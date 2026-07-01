@@ -5,6 +5,50 @@ program garry_test;
 uses
   SysUtils, garry, garry_types, garry_codec;
 
+type
+  TLevel10 = record
+    DeepValue: AnsiString;
+  end;
+
+  TLevel9 = record
+    Child: TLevel10;
+  end;
+
+  TLevel8 = record
+    Child: TLevel9;
+  end;
+
+  TLevel7 = record
+    Child: TLevel8;
+  end;
+
+  TLevel6 = record
+    Child: TLevel7;
+  end;
+
+  TLevel5 = record
+    Child: TLevel6;
+  end;
+
+  TLevel4 = record
+    Child: TLevel5;
+  end;
+
+  TLevel3 = record
+    Child: TLevel4;
+  end;
+
+  TLevel2 = record
+    Child: TLevel3;
+  end;
+
+  TLevel1 = record
+    Child: TLevel2;
+  end;
+
+  TDeepRoot = record
+    Child: TLevel1;
+  end;
 
 function BytesOf(const Vals: array of Byte): TGarryBytes;
 var
@@ -13,6 +57,125 @@ begin
   SetLength(Result, Length(Vals));
   for I := 0 to High(Vals) do
     Result[I] := Vals[I];
+end;
+
+function EncodeDeepString(const S: AnsiString): TGarryBytes;
+var
+  UB: TGarryBytes;
+  I: Integer;
+begin
+  SetLength(UB, Length(S));
+  for I := 1 to Length(S) do
+    UB[I - 1] := Byte(S[I]);
+  Result := EncodeValueBytes(UB);
+end;
+
+function DecodeDeepString(const Data: TGarryBytes): AnsiString;
+var
+  UB: TGarryBytes;
+  I: Integer;
+begin
+  UB := DecodeBytes(Data);
+  SetLength(Result, Length(UB));
+  for I := 0 to Length(UB) - 1 do
+    Result[I + 1] := AnsiChar(UB[I]);
+end;
+
+function SerializeDeepRoot(const Root: TDeepRoot): TGarryBytes;
+var
+  L10, L9, L8, L7, L6, L5, L4, L3, L2, L1, RootEnc: TGarryBytes;
+begin
+  L10 := EncodeDeepString(Root.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue);
+  L9 := EncodeValueBytes(L10);
+  L8 := EncodeValueBytes(L9);
+  L7 := EncodeValueBytes(L8);
+  L6 := EncodeValueBytes(L7);
+  L5 := EncodeValueBytes(L6);
+  L4 := EncodeValueBytes(L5);
+  L3 := EncodeValueBytes(L4);
+  L2 := EncodeValueBytes(L3);
+  L1 := EncodeValueBytes(L2);
+  RootEnc := EncodeValueBytes(L1);
+  Result := RootEnc;
+end;
+
+function DeserializeDeepRoot(const Data: TGarryBytes): TDeepRoot;
+var
+  L1, L2, L3, L4, L5, L6, L7, L8, L9, L10: TGarryBytes;
+begin
+  L1 := DecodeBytes(Data);
+  L2 := DecodeBytes(L1);
+  L3 := DecodeBytes(L2);
+  L4 := DecodeBytes(L3);
+  L5 := DecodeBytes(L4);
+  L6 := DecodeBytes(L5);
+  L7 := DecodeBytes(L6);
+  L8 := DecodeBytes(L7);
+  L9 := DecodeBytes(L8);
+  L10 := DecodeBytes(L9);
+  Result.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue := DecodeDeepString(L10);
+end;
+
+procedure TestDeepNesting(DB: TGarryDatabase);
+var
+  Root, Recovered: TDeepRoot;
+  Encoded, Value: TGarryBytes;
+  I: Integer;
+begin
+  WriteLn('Test 12: Deep nesting (10 levels)...');
+  FillChar(Root, SizeOf(Root), 0);
+  Root.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue := 'found it';
+  Encoded := SerializeDeepRoot(Root);
+  Recovered := DeserializeDeepRoot(Encoded);
+  Assert(Recovered.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue = 'found it',
+    'Deep value mismatch');
+  WriteLn('  OK');
+
+  WriteLn('Test 13: Deep nesting with varied values...');
+  for I := 1 to 5 do
+  begin
+    FillChar(Root, SizeOf(Root), 0);
+    Root.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue :=
+      AnsiString('level_10_value_' + IntToStr(I));
+    Encoded := SerializeDeepRoot(Root);
+    Recovered := DeserializeDeepRoot(Encoded);
+    Assert(Recovered.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue =
+      AnsiString('level_10_value_' + IntToStr(I)),
+      'Deep value mismatch at iteration ' + IntToStr(I));
+  end;
+  WriteLn('  OK');
+
+  WriteLn('Test 14: Deep nesting round-trip via database...');
+  FillChar(Root, SizeOf(Root), 0);
+  Root.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue := 'persist_me';
+  Encoded := SerializeDeepRoot(Root);
+  DB.SetKeyValue('deep/nesting/test', Encoded);
+  Value := DB.Get('deep/nesting/test');
+  Recovered := DeserializeDeepRoot(Value);
+  Assert(Recovered.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue = 'persist_me',
+    'Deep value round-trip mismatch');
+  DB.Delete('deep/nesting/test');
+  WriteLn('  OK');
+
+  WriteLn('Test 15: Deep nesting empty string...');
+  FillChar(Root, SizeOf(Root), 0);
+  Root.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue := '';
+  Encoded := SerializeDeepRoot(Root);
+  Recovered := DeserializeDeepRoot(Encoded);
+  Assert(Recovered.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue = '',
+    'Empty deep value mismatch');
+  WriteLn('  OK');
+
+  WriteLn('Test 16: Deep nesting long string...');
+  FillChar(Root, SizeOf(Root), 0);
+  Root.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue :=
+    'AAAAAAAAAA_BBBBBBBBBB_CCCCCCCCCC_DDDDDDDDDD_EEEEEEEEEE';
+  Encoded := SerializeDeepRoot(Root);
+  Recovered := DeserializeDeepRoot(Encoded);
+  Assert(Recovered.Child.Child.Child.Child.Child.Child.Child.Child.Child.Child.DeepValue =
+    'AAAAAAAAAA_BBBBBBBBBB_CCCCCCCCCC_DDDDDDDDDD_EEEEEEEEEE',
+    'Long deep value mismatch');
+  WriteLn('  OK');
 end;
 
 var
@@ -107,9 +270,11 @@ begin
     Assert(Length(Value) > 0, 'Last should return a key');
     WriteLn('  OK');
 
+    TestDeepNesting(DB);
+
     DB.Free;
 
-    WriteLn('Test 11: Reopen database...');
+    WriteLn('Test 17: Reopen database...');
     DB := TGarryDatabase.Create('test_fpc.db', False);
     Value := DB.Get('a');
     Assert(Length(Value) = 1, 'Expected 1 byte');

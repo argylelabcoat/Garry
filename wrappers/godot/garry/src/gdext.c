@@ -48,6 +48,8 @@ void garry_gdext_init(GDExtensionInterfaceGetProcAddress get_proc) {
 
     ggi.callable_custom_create      = (GDExtensionInterfaceCallableCustomCreate2)get_proc("callable_custom_create2");
 
+    ggi.global_get_singleton = (GDExtensionInterfaceGlobalGetSingleton)get_proc("global_get_singleton");
+
     ggi.print_error   = (GDExtensionInterfacePrintError)get_proc("print_error");
 
     if (!ggi.mem_alloc)                        fprintf(stderr, "[garry] missing: mem_alloc\n");
@@ -211,6 +213,46 @@ int garry_var_to_str(const GarryVar var, char *buf, int max_len) {
     int len = garry_str_to_c(s, buf, max_len);
     garry_str_free(s);
     return len;
+}
+
+int garry_globalize_path(const char *godot_path, char *out, int out_size) {
+    if (!ggi.global_get_singleton) {
+        /* Fallback: just copy the path */
+        snprintf(out, out_size, "%s", godot_path);
+        return 0;
+    }
+
+    /* Get ProjectSettings singleton */
+    GarrySN ps_name;
+    garry_sn_new(ps_name, "ProjectSettings");
+    GDExtensionObjectPtr ps = ggi.global_get_singleton((GDExtensionConstStringNamePtr)ps_name);
+    garry_sn_free(ps_name);
+
+    if (!ps) {
+        /* Fallback: just copy the path */
+        snprintf(out, out_size, "%s", godot_path);
+        return 0;
+    }
+
+    /* Create variant from path string */
+    GarryVar ps_var, path_var, result_var;
+    garry_var_from_object(ps_var, ps);
+    garry_var_from_cstr(path_var, godot_path);
+
+    /* Call globalize_path(path) */
+    GarryVar args[1];
+    memcpy(args[0], path_var, GARRT_VAR_SIZE);
+    garry_vcall(ps_var, "globalize_path", args, 1, result_var);
+
+    /* Extract result string */
+    int len = garry_var_to_str(result_var, out, out_size);
+
+    /* Cleanup */
+    garry_var_free(result_var);
+    garry_var_free(path_var);
+    garry_var_free(ps_var);
+
+    return (len > 0) ? 1 : 0;
 }
 
 void garry_log(const char *msg) {

@@ -414,9 +414,165 @@ static void test_overwrite_large_values(void)
     free(result);
 }
 
+/**
+ * @brief Test storing a value at 9KB.
+ */
+static void test_value_at_9kb(void)
+{
+    garry_database *db;
+    garry_txn txn;
+    garry_u8 key[64];
+    garry_u8 *value, *result;
+    garry_i32 vlen;
+    garry_status_t ok;
+    garry_i32 val_size = 9000;
+    garry_i32 i;
+
+    printf("test_value_at_9kb\n");
+    cleanup();
+
+    value = (garry_u8 *)malloc(val_size);
+    result = (garry_u8 *)malloc(val_size);
+    GARRY_CHECK(value != NULL);
+    GARRY_CHECK(result != NULL);
+
+    db = garry_database_create(TEST_DB);
+    GARRY_CHECK(db != NULL);
+    txn = garry_txn_begin(db);
+
+    memset(key, 0, sizeof(key));
+    key[0] = '9';
+    key[1] = 'k';
+    for (i = 0; i < val_size; i++)
+        value[i] = (garry_u8)('A' + (i % 26));
+
+    ok = garry_set(db, txn, key, 2, value, val_size);
+    GARRY_CHECK(ok == GARRY_OK);
+
+    memset(result, 0, val_size);
+    vlen = 0;
+    ok = garry_get(db, txn, key, 2, result, &vlen);
+    GARRY_CHECK(ok == GARRY_OK);
+    GARRY_CHECK(vlen == val_size);
+    GARRY_CHECK(result[0] == 'A');
+    GARRY_CHECK(result[val_size - 1] == (garry_u8)('A' + ((val_size - 1) % 26)));
+
+    garry_txn_commit(db, txn);
+    garry_database_close(db);
+    free(value);
+    free(result);
+}
+
+/**
+ * @brief Test storing a value at 17KB.
+ */
+static void test_value_at_17kb(void)
+{
+    garry_database *db;
+    garry_txn txn;
+    garry_u8 key[64];
+    garry_u8 *value, *result;
+    garry_i32 vlen;
+    garry_status_t ok;
+    garry_i32 val_size = 17000;
+    garry_i32 i;
+
+    printf("test_value_at_17kb\n");
+    cleanup();
+
+    value = (garry_u8 *)malloc(val_size);
+    result = (garry_u8 *)malloc(val_size);
+    GARRY_CHECK(value != NULL);
+    GARRY_CHECK(result != NULL);
+
+    db = garry_database_create(TEST_DB);
+    GARRY_CHECK(db != NULL);
+    txn = garry_txn_begin(db);
+
+    memset(key, 0, sizeof(key));
+    key[0] = '1';
+    key[1] = '7';
+    key[2] = 'k';
+    for (i = 0; i < val_size; i++)
+        value[i] = (garry_u8)('A' + (i % 26));
+
+    ok = garry_set(db, txn, key, 3, value, val_size);
+    GARRY_CHECK(ok == GARRY_OK);
+
+    memset(result, 0, val_size);
+    vlen = 0;
+    ok = garry_get(db, txn, key, 3, result, &vlen);
+    GARRY_CHECK(ok == GARRY_OK);
+    GARRY_CHECK(vlen == val_size);
+    GARRY_CHECK(result[0] == 'A');
+    GARRY_CHECK(result[val_size - 1] == (garry_u8)('A' + ((val_size - 1) % 26)));
+
+    garry_txn_commit(db, txn);
+    garry_database_close(db);
+    free(value);
+    free(result);
+}
+
+/**
+ * @brief Test storing a value at 33KB.
+ */
+static void test_value_at_33kb(void)
+{
+    garry_database *db;
+    garry_txn txn;
+    garry_u8 key[64];
+    garry_u8 *value, *result;
+    garry_i32 vlen;
+    garry_status_t ok;
+    garry_i32 val_size = 33000;
+    garry_i32 i;
+
+    printf("test_value_at_33kb\n");
+    cleanup();
+
+    value = (garry_u8 *)malloc(val_size);
+    result = (garry_u8 *)malloc(val_size);
+    GARRY_CHECK(value != NULL);
+    GARRY_CHECK(result != NULL);
+
+    db = garry_database_create(TEST_DB);
+    GARRY_CHECK(db != NULL);
+    txn = garry_txn_begin(db);
+
+    memset(key, 0, sizeof(key));
+    key[0] = '3';
+    key[1] = '3';
+    key[2] = 'k';
+    for (i = 0; i < val_size; i++)
+        value[i] = (garry_u8)('A' + (i % 26));
+
+    ok = garry_set(db, txn, key, 3, value, val_size);
+    GARRY_CHECK(ok == GARRY_OK);
+
+    memset(result, 0, val_size);
+    vlen = 0;
+    ok = garry_get(db, txn, key, 3, result, &vlen);
+    GARRY_CHECK(ok == GARRY_OK);
+    GARRY_CHECK(vlen == val_size);
+    GARRY_CHECK(result[0] == 'A');
+    GARRY_CHECK(result[val_size - 1] == (garry_u8)('A' + ((val_size - 1) % 26)));
+
+    garry_txn_commit(db, txn);
+    garry_database_close(db);
+    free(value);
+    free(result);
+}
+
 int main(void)
 {
     test_value_at_256_bytes();
+    test_value_at_257_bytes();
+    test_value_at_1kb();
+    test_value_at_4kb();
+    test_value_at_9kb();
+    test_value_at_17kb();
+    test_value_at_33kb();
+    test_value_at_max_size();
     test_multiple_large_values();
     test_overwrite_large_values();
     if (garry_test_failures == 0)

@@ -89,30 +89,15 @@ static void extract_string_arg(const GDExtensionConstVariantPtr *args, int idx,
 /**
  * @brief Convert Godot virtual paths to actual file system paths.
  *
- * Note: This is a simplified implementation. For full Godot path support,
- * users should call ProjectSettings.globalize_path() before passing to open().
+ * Calls ProjectSettings.globalize_path() to convert user:// and res://
+ * paths to absolute file system paths.
  *
  * @param godot_path Input path from Godot
  * @param out Output buffer for converted path
  * @param out_size Size of output buffer
  */
 static void convert_godot_path(const char *godot_path, char *out, int out_size) {
-    /* Check for user:// prefix */
-    if (strncmp(godot_path, "user://", 7) == 0) {
-        /* user:// maps to ~/.local/share/godot/app_userdata/<project_name>/ on Linux */
-        /* For now, just use the path as-is and let the user handle it */
-        snprintf(out, out_size, "%s", godot_path);
-    }
-    /* Check for res:// prefix */
-    else if (strncmp(godot_path, "res://", 6) == 0) {
-        /* res:// maps to the project directory */
-        /* For now, just use the path as-is and let the user handle it */
-        snprintf(out, out_size, "%s", godot_path);
-    }
-    else {
-        /* Already an absolute or relative path */
-        snprintf(out, out_size, "%s", godot_path);
-    }
+    garry_globalize_path(godot_path, out, out_size);
 }
 
 static void db_open_call(

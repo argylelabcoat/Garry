@@ -99,7 +99,7 @@
 /// Size of a stack-allocated descriptor encode/decode buffer.
 #define GARRY_DESC_BUF_SIZE 64
 /// Size of a version-chain entry stack buffer.
-#define GARRY_CHAIN_ENTRY_BUF_SIZE 512
+#define GARRY_CHAIN_ENTRY_BUF_SIZE GARRY_MAX_RECORD_SIZE
 /// Sentinel value for "no slot found" in buffer pool.
 #define GARRY_INVALID_SLOT ((garry_u32) - 1)
 
