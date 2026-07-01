@@ -6,7 +6,7 @@
   "scripts": {
     "test": "DYLD_LIBRARY_PATH=../../../build:$DYLD_LIBRARY_PATH node --test test/*.test.js",
     "build": "node-gyp rebuild",
-    "install": "node-gyp rebuild",
+    "install": "node-gyp rebuild && node scripts/copy-native.js",
     "prepublishOnly": "npm run build"
   },
   "keywords": ["storage", "database", "key-value", "btree"],
@@ -20,6 +20,7 @@
   "files": [
     "lib/",
     "src/",
+    "scripts/",
     "binding.gyp",
     "README.md"
   ],
