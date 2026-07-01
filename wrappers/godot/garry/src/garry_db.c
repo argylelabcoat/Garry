@@ -836,29 +836,6 @@ void garry_db_register(void) {
         db_close_call, db_close_ptrcall,
         0, NULL, NULL);
 
-    /* get(key: String) -> PackedByteArray */
-    {
-        const char *arg_names[] = {"key"};
-        GDExtensionVariantType arg_types[] = {GDEXTENSION_VARIANT_TYPE_STRING};
-        register_method_ret("get",
-            GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY,
-            db_get_call, db_get_ptrcall,
-            1, arg_names, arg_types);
-    }
-
-    /* set(key: String, value: PackedByteArray) -> bool */
-    {
-        const char *arg_names[] = {"key", "value"};
-        GDExtensionVariantType arg_types[] = {
-            GDEXTENSION_VARIANT_TYPE_STRING,
-            GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY
-        };
-        register_method_ret("set",
-            GDEXTENSION_VARIANT_TYPE_BOOL,
-            db_set_call, db_set_ptrcall,
-            2, arg_names, arg_types);
-    }
-
     /* delete(key: String) -> bool */
     {
         const char *arg_names[] = {"key"};
