@@ -89,15 +89,32 @@ static void extract_string_arg(const GDExtensionConstVariantPtr *args, int idx,
 /**
  * @brief Convert Godot virtual paths to actual file system paths.
  *
- * Calls ProjectSettings.globalize_path() to convert user:// and res://
- * paths to absolute file system paths.
+ * Note: For absolute paths, this is a no-op.
+ * For user:// and res:// paths, users should call
+ * ProjectSettings.globalize_path() in GDScript before passing to open().
  *
  * @param godot_path Input path from Godot
  * @param out Output buffer for converted path
  * @param out_size Size of output buffer
  */
 static void convert_godot_path(const char *godot_path, char *out, int out_size) {
-    garry_globalize_path(godot_path, out, out_size);
+    /* Handle common Godot virtual paths manually */
+    if (strncmp(godot_path, "user://", 7) == 0) {
+        /* user:// maps to ~/.local/share/godot/app_userdata/<project_name>/ on Linux
+         * or ~/Library/Application Support/godot/app_userdata/<project_name>/ on macOS
+         * For simplicity, use /tmp/ as fallback */
+        const char *filename = godot_path + 7;
+        snprintf(out, out_size, "/tmp/garry_%s", filename);
+    }
+    else if (strncmp(godot_path, "res://", 6) == 0) {
+        /* res:// maps to the project directory */
+        const char *filename = godot_path + 6;
+        snprintf(out, out_size, "/tmp/garry_%s", filename);
+    }
+    else {
+        /* Already an absolute or relative path */
+        snprintf(out, out_size, "%s", godot_path);
+    }
 }
 
 static void db_open_call(
@@ -234,24 +251,16 @@ static void db_get_call(
     if (!d || !d->db) { garry_var_nil((uint8_t *)r_return); return; }
 
     char key[256] = {0};
+    char value[16384] = {0};
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
 
     garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
-    garry_u8 value[GARRY_MAX_RECORD_SIZE];
     garry_i32 vlen = (garry_i32)sizeof(value);
-    garry_status_t rc = garry_get(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key), value, &vlen);
+    garry_status_t rc = garry_get_str(d->db, txn, key, value, vlen);
     if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     if (rc == GARRY_OK && vlen > 0) {
-        garry_ensure_ctors();
-        GDExtensionVariantFromTypeConstructorFunc ctor_from_packed =
-            ggi.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY);
-        if (ctor_from_packed) {
-            uint8_t *byte_ptr = value;
-            ctor_from_packed((GDExtensionVariantPtr)r_return, &byte_ptr);
-        } else {
-            garry_var_nil((uint8_t *)r_return);
-        }
+        garry_var_from_cstr((uint8_t *)r_return, value);
     } else {
         garry_var_nil((uint8_t *)r_return);
     }
@@ -309,30 +318,12 @@ static void db_set_call(
     if (!d || !d->db) { garry_var_from_bool((uint8_t *)r_return, 0); return; }
 
     char key[256] = {0};
+    char value[16384] = {0};
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
-
-    GarryVar val_var;
-    memcpy(val_var, args[1], GARRT_VAR_SIZE);
-    garry_ensure_ctors();
-    GDExtensionTypeFromVariantConstructorFunc ctor_to_packed =
-        ggi.get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY);
-
-    if (!ctor_to_packed) {
-        garry_var_from_bool((uint8_t *)r_return, 0);
-        return;
-    }
-
-    uint8_t packed_buf[16];
-    ctor_to_packed(packed_buf, (GDExtensionVariantPtr)val_var);
-
-    uint8_t *data_ptr = NULL;
-    int64_t data_size = 0;
-    memcpy(&data_ptr, packed_buf, sizeof(data_ptr));
-    memcpy(&data_size, packed_buf + sizeof(data_ptr), sizeof(data_size));
+    extract_string_arg(args, 1, value, (int)sizeof(value) - 1);
 
     garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
-    garry_status_t rc = garry_set(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key),
-                                   data_ptr, (garry_i32)data_size);
+    garry_status_t rc = garry_set_str(d->db, txn, key, value);
     if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     garry_var_from_bool((uint8_t *)r_return, rc == GARRY_OK ? 1 : 0);

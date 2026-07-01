@@ -238,11 +238,12 @@ int garry_globalize_path(const char *godot_path, char *out, int out_size) {
     GarryVar ps_var, path_var, result_var;
     garry_var_from_object(ps_var, ps);
     garry_var_from_cstr(path_var, godot_path);
+    memset(result_var, 0, GARRT_VAR_SIZE);
 
     /* Call globalize_path(path) */
     GarryVar args[1];
     memcpy(args[0], path_var, GARRT_VAR_SIZE);
-    garry_vcall(ps_var, "globalize_path", args, 1, result_var);
+    garry_vcall(ps_var, "globalize_path", args, 1, &result_var);
 
     /* Extract result string */
     int len = garry_var_to_str(result_var, out, out_size);
