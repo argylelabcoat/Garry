@@ -14,7 +14,7 @@ type KeyValuePair struct {
 func Serialize(rootKey string, obj interface{}) []KeyValuePair {
 	var pairs []KeyValuePair
 	rootParts := []string{rootKey}
-	pairs = append(pairs, KeyValuePair{Key: EncodeKey(rootParts...), Value: []byte{}})
+	pairs = append(pairs, KeyValuePair{Key: EncodeKey(rootParts...), Value: []byte{0}}) // TAG_NULL as container marker
 	serializeObject(rootParts, reflect.ValueOf(obj), &pairs)
 	return pairs
 }
@@ -58,13 +58,13 @@ func serializeObject(prefix []string, v reflect.Value, pairs *[]KeyValuePair) {
 		} else if fv.Kind() == reflect.Slice {
 			*pairs = append(*pairs, KeyValuePair{
 				Key:   EncodeKey(keyParts...),
-				Value: []byte{},
+				Value: []byte{0},
 			})
 			serializeArray(keyParts, fv, pairs)
 		} else if fv.Kind() == reflect.Struct || (fv.Kind() == reflect.Ptr && fv.Elem().Kind() == reflect.Struct) {
 			*pairs = append(*pairs, KeyValuePair{
 				Key:   EncodeKey(keyParts...),
-				Value: []byte{},
+				Value: []byte{0},
 			})
 			serializeObject(keyParts, fv, pairs)
 		}
@@ -90,13 +90,13 @@ func serializeArray(prefix []string, v reflect.Value, pairs *[]KeyValuePair) {
 		} else if elem.Kind() == reflect.Slice {
 			*pairs = append(*pairs, KeyValuePair{
 				Key:   EncodeKey(keyParts...),
-				Value: []byte{},
+				Value: []byte{0},
 			})
 			serializeArray(keyParts, elem, pairs)
 		} else if elem.Kind() == reflect.Struct || (elem.Kind() == reflect.Ptr && elem.Elem().Kind() == reflect.Struct) {
 			*pairs = append(*pairs, KeyValuePair{
 				Key:   EncodeKey(keyParts...),
-				Value: []byte{},
+				Value: []byte{0},
 			})
 			serializeObject(keyParts, elem, pairs)
 		}
@@ -109,8 +109,8 @@ func Deserialize(rootKey string, pairs []KeyValuePair, target interface{}) error
 		return errors.New("garry: target must be a pointer to struct")
 	}
 	for _, p := range pairs {
-		if len(p.Value) == 0 {
-			continue
+		if len(p.Value) == 0 || (len(p.Value) == 1 && p.Value[0] == 0) {
+			continue // Skip container markers (empty or TAG_NULL)
 		}
 		parts := DecodeKey(p.Key)
 		if len(parts) < 2 || parts[0] != rootKey {
@@ -174,7 +174,10 @@ func setNested(v reflect.Value, parts []string, value []byte) {
 	}
 
 	if fv.Kind() == reflect.Slice {
-		idx, err := strconv.Atoi(parts[0])
+		if len(parts) < 2 {
+			return
+		}
+		idx, err := strconv.Atoi(parts[1])
 		if err != nil {
 			return
 		}
@@ -184,19 +187,19 @@ func setNested(v reflect.Value, parts []string, value []byte) {
 			fv.Set(newSlice)
 		}
 		elem := fv.Index(idx)
-		if len(parts) == 1 {
+		if len(parts) == 2 {
 			decoded, err := DecodeValue(value)
 			if err == nil {
 				setReflectValue(elem, decoded)
 			}
 		} else {
 			if elem.Kind() == reflect.Struct {
-				setNested(elem, parts[1:], value)
+				setNested(elem, parts[2:], value)
 			} else if elem.Kind() == reflect.Ptr {
 				if elem.IsNil() {
 					elem.Set(reflect.New(ft.Type.Elem().Elem()))
 				}
-				setNested(elem.Elem(), parts[1:], value)
+				setNested(elem.Elem(), parts[2:], value)
 			}
 		}
 	}

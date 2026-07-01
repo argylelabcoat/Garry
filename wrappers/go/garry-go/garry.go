@@ -162,15 +162,17 @@ func (d *Database) Get(txn Txn, key []byte) ([]byte, error) {
 	}
 	var vlen C.garry_i32
 	ckey := (*C.garry_u8)(unsafe.Pointer(&key[0]))
-	ret := C.garry_get(d.db, txn.handle, ckey, C.garry_i32(len(key)), nil, &vlen)
+	buf := make([]byte, 256)
+	vlen = C.garry_i32(len(buf))
+	ret := C.garry_get(d.db, txn.handle, ckey, C.garry_i32(len(key)), (*C.garry_u8)(unsafe.Pointer(&buf[0])), &vlen)
 	if Status(ret) == ErrNotFound {
 		return nil, ErrNotFound
 	}
-	if Status(ret) != OK {
-		return nil, Status(ret)
+	if Status(ret) == ErrBufferTooSmall {
+		buf = make([]byte, int(vlen))
+		vlen = C.garry_i32(len(buf))
+		ret = C.garry_get(d.db, txn.handle, ckey, C.garry_i32(len(key)), (*C.garry_u8)(unsafe.Pointer(&buf[0])), &vlen)
 	}
-	buf := make([]byte, int(vlen))
-	ret = C.garry_get(d.db, txn.handle, ckey, C.garry_i32(len(key)), (*C.garry_u8)(unsafe.Pointer(&buf[0])), &vlen)
 	if Status(ret) != OK {
 		return nil, Status(ret)
 	}
@@ -187,6 +189,9 @@ func (d *Database) Set(txn Txn, key, value []byte) error {
 		cval = (*C.garry_u8)(unsafe.Pointer(&value[0]))
 	}
 	ret := C.garry_set(d.db, txn.handle, ckey, C.garry_i32(len(key)), cval, C.garry_i32(len(value)))
+	if Status(ret) == OK {
+		return nil
+	}
 	return Status(ret)
 }
 
@@ -196,6 +201,9 @@ func (d *Database) Delete(txn Txn, key []byte) error {
 	}
 	ckey := (*C.garry_u8)(unsafe.Pointer(&key[0]))
 	ret := C.garry_delete(d.db, txn.handle, ckey, C.garry_i32(len(key)))
+	if Status(ret) == OK {
+		return nil
+	}
 	return Status(ret)
 }
 
@@ -235,6 +243,9 @@ func (d *Database) SetStr(txn Txn, key, value string) error {
 	cval := C.CString(value)
 	defer C.free(unsafe.Pointer(cval))
 	ret := C.garry_set_str(d.db, txn.handle, ckey, cval)
+	if Status(ret) == OK {
+		return nil
+	}
 	return Status(ret)
 }
 

@@ -1,0 +1,11 @@
+[configuration]
+entry_symbol = "gdextension_library_init"
+compatibility_minimum = 4.3
+
+[libraries]
+macos.debug = "res://addons/garry/bin/libgarry.dylib"
+macos.release = "res://addons/garry/bin/libgarry.dylib"
+windows.debug.x86_64 = "res://addons/garry/bin/garry.dll"
+windows.release.x86_64 = "res://addons/garry/bin/garry.dll"
+linux.debug.x86_64 = "res://addons/garry/bin/libgarry.so"
+linux.release.x86_64 = "res://addons/garry/bin/libgarry.so"

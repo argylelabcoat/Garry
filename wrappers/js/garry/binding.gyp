@@ -15,7 +15,7 @@
         "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
         "CLANG_CXX_LIBRARY": "libc++",
         "MACOSX_DEPLOYMENT_TARGET": "10.15",
-        "OTHER_LDFLAGS": ["-Wl,-rpath,@loader_path/../../../build"]
+        "OTHER_LDFLAGS": ["-Wl,-rpath,@loader_path/../../../../build"]
       },
       "msvs_settings": {
         "VCCLCompilerTool": { "ExceptionHandling": 1 }
