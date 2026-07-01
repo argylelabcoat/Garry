@@ -95,6 +95,7 @@ void garry_var_from_string_name(GarryVar out, const GarrySN sn);
 void garry_var_from_cstr(GarryVar out, const char *cstr);
 void garry_var_from_int(GarryVar out, int64_t v);
 void garry_var_from_bool(GarryVar out, int v);
+void garry_var_from_packed_bytes(GarryVar out, const uint8_t *data, int64_t len);
 void garry_var_nil(GarryVar out);
 
 void garry_vcall(GarryVar obj_var, const char *method,
@@ -105,6 +106,7 @@ void garry_vcall_int(GDExtensionObjectPtr obj, const char *method, int64_t arg);
 void garry_vcall_bool(GDExtensionObjectPtr obj, const char *method, int arg);
 
 int garry_var_to_str(const GarryVar var, char *buf, int max_len);
+int garry_var_to_packed_bytes(const GarryVar var, uint8_t *out, int max_len);
 
 /**
  * @brief Convert a Godot virtual path to an actual file system path.

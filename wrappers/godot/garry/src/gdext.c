@@ -69,9 +69,11 @@ static GDExtensionVariantFromTypeConstructorFunc ctor_from_string = NULL;
 static GDExtensionVariantFromTypeConstructorFunc ctor_from_string_name = NULL;
 static GDExtensionVariantFromTypeConstructorFunc ctor_from_int    = NULL;
 static GDExtensionVariantFromTypeConstructorFunc ctor_from_bool   = NULL;
+static GDExtensionVariantFromTypeConstructorFunc ctor_from_packed_byte_array = NULL;
 
 static GDExtensionTypeFromVariantConstructorFunc ctor_to_string = NULL;
 static GDExtensionTypeFromVariantConstructorFunc ctor_to_int    = NULL;
+static GDExtensionTypeFromVariantConstructorFunc ctor_to_packed_byte_array = NULL;
 
 void garry_ensure_ctors(void) {
     if (!ctor_from_object) {
@@ -80,8 +82,10 @@ void garry_ensure_ctors(void) {
         ctor_from_string_name = ggi.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
         ctor_from_int    = ggi.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
         ctor_from_bool   = ggi.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL);
+        ctor_from_packed_byte_array = ggi.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY);
         ctor_to_string   = ggi.get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING);
         ctor_to_int      = ggi.get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
+        ctor_to_packed_byte_array = ggi.get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY);
     }
 }
 
@@ -116,6 +120,27 @@ void garry_var_from_bool(GarryVar out, int v) {
     garry_ensure_ctors();
     GDExtensionBool b = (GDExtensionBool)v;
     ctor_from_bool((GDExtensionVariantPtr)out, &b);
+}
+
+void garry_var_from_packed_bytes(GarryVar out, const uint8_t *data, int64_t len) {
+    garry_ensure_ctors();
+    /* PackedByteArray internal format: pointer + size */
+    struct { uint8_t *ptr; int64_t size; } packed;
+    packed.ptr = (uint8_t *)data;
+    packed.size = len;
+    ctor_from_packed_byte_array((GDExtensionVariantPtr)out, &packed);
+}
+
+int garry_var_to_packed_bytes(const GarryVar var, uint8_t *out, int max_len) {
+    garry_ensure_ctors();
+    struct { uint8_t *ptr; int64_t size; } packed;
+    ctor_to_packed_byte_array((void *)&packed, (GDExtensionVariantPtr)var);
+    int len = (int)packed.size;
+    if (len > max_len) len = max_len;
+    if (len > 0 && packed.ptr) {
+        memcpy(out, packed.ptr, (size_t)len);
+    }
+    return len;
 }
 
 void garry_var_nil(GarryVar out) {

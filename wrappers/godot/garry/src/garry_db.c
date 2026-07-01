@@ -251,16 +251,16 @@ static void db_get_call(
     if (!d || !d->db) { garry_var_nil((uint8_t *)r_return); return; }
 
     char key[256] = {0};
-    char value[16384] = {0};
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
 
     garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
+    garry_u8 value[GARRY_MAX_RECORD_SIZE];
     garry_i32 vlen = (garry_i32)sizeof(value);
-    garry_status_t rc = garry_get_str(d->db, txn, key, value, vlen);
+    garry_status_t rc = garry_get(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key), value, &vlen);
     if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     if (rc == GARRY_OK && vlen > 0) {
-        garry_var_from_cstr((uint8_t *)r_return, value);
+        garry_var_from_packed_bytes((uint8_t *)r_return, value, vlen);
     } else {
         garry_var_nil((uint8_t *)r_return);
     }
@@ -318,12 +318,15 @@ static void db_set_call(
     if (!d || !d->db) { garry_var_from_bool((uint8_t *)r_return, 0); return; }
 
     char key[256] = {0};
-    char value[16384] = {0};
     extract_string_arg(args, 0, key, (int)sizeof(key) - 1);
-    extract_string_arg(args, 1, value, (int)sizeof(value) - 1);
+
+    /* Extract binary data from PackedByteArray */
+    uint8_t data_buf[GARRY_MAX_RECORD_SIZE];
+    int data_len = garry_var_to_packed_bytes(args[1], data_buf, (int)sizeof(data_buf));
 
     garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
-    garry_status_t rc = garry_set_str(d->db, txn, key, value);
+    garry_status_t rc = garry_set(d->db, txn, (const garry_u8 *)key, (garry_i32)strlen(key),
+                                   data_buf, (garry_i32)data_len);
     if (!d->txn_active) garry_txn_commit(d->db, txn);
 
     garry_var_from_bool((uint8_t *)r_return, rc == GARRY_OK ? 1 : 0);
@@ -651,6 +654,78 @@ static void db_rollback_ptrcall(
     d->txn_active = 0;
 }
 
+/* --- query(prefix: String) -> Array --- */
+
+static void db_query_call(
+        void *method_userdata,
+        GDExtensionClassInstancePtr instance,
+        const GDExtensionConstVariantPtr *args,
+        GDExtensionInt argc,
+        GDExtensionVariantPtr r_return,
+        GDExtensionCallError *r_error) {
+    (void)method_userdata;
+    r_error->error = GDEXTENSION_CALL_OK;
+    if (argc < 1) { r_error->error = GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS; return; }
+    MeowDBData *d = (MeowDBData *)instance;
+    if (!d || !d->db) { garry_var_nil((uint8_t *)r_return); return; }
+
+    char prefix[256] = {0};
+    extract_string_arg(args, 0, prefix, (int)sizeof(prefix) - 1);
+
+    garry_txn txn = d->txn_active ? d->txn_handle : garry_txn_begin(d->db);
+    
+    /* Open cursor */
+    garry_cursor *cur = garry_cursor_open(d->db, txn, (const garry_u8 *)prefix, (garry_i32)strlen(prefix));
+    if (!cur) {
+        if (!d->txn_active) garry_txn_commit(d->db, txn);
+        garry_var_nil((uint8_t *)r_return);
+        return;
+    }
+
+    /* Collect results into a string for now */
+    /* TODO: Return proper Array type */
+    char result_buf[4096] = {0};
+    int pos = 0;
+    garry_u8 key[256];
+    garry_u8 value[16384];
+    garry_i32 klen, vlen;
+    int count = 0;
+
+    while (garry_cursor_next(cur, key, &klen, value, &vlen)) {
+        /* Convert key to string */
+        char key_str[256] = {0};
+        int key_str_len = klen < (int)sizeof(key_str) - 1 ? klen : (int)sizeof(key_str) - 1;
+        memcpy(key_str, key, (size_t)key_str_len);
+        
+        /* Add to result (simplified - just key strings for now) */
+        if (pos < (int)sizeof(result_buf) - 256) {
+            if (count > 0) {
+                result_buf[pos++] = ',';
+            }
+            int remaining = (int)sizeof(result_buf) - pos;
+            int copy_len = key_str_len < remaining ? key_str_len : remaining;
+            memcpy(result_buf + pos, key_str, (size_t)copy_len);
+            pos += copy_len;
+            count++;
+        }
+    }
+
+    garry_cursor_close(cur);
+    if (!d->txn_active) garry_txn_commit(d->db, txn);
+
+    /* Return as string for now */
+    garry_var_from_cstr((uint8_t *)r_return, result_buf);
+}
+
+static void db_query_ptrcall(
+        void *method_userdata,
+        GDExtensionClassInstancePtr instance,
+        const GDExtensionConstTypePtr *args,
+        GDExtensionTypePtr r_return) {
+    (void)method_userdata; (void)args; (void)r_return;
+    /* TODO: Implement ptrcall version */
+}
+
 /* =========================================================================
  * Method registration helpers (matching reference pattern)
  * ========================================================================= */
@@ -893,6 +968,16 @@ void garry_db_register(void) {
     register_method_no_ret("rollback",
         db_rollback_call, db_rollback_ptrcall,
         0, NULL, NULL);
+
+    /* query(prefix: String) -> String */
+    {
+        const char *arg_names[] = {"prefix"};
+        GDExtensionVariantType arg_types[] = {GDEXTENSION_VARIANT_TYPE_STRING};
+        register_method_ret("query",
+            GDEXTENSION_VARIANT_TYPE_STRING,
+            db_query_call, db_query_ptrcall,
+            1, arg_names, arg_types);
+    }
 }
 
 void garry_db_unregister(void) {
