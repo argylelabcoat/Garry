@@ -114,7 +114,42 @@ func TestTransactionCommitRollback(t *testing.T) {
 }
 
 func TestCursor(t *testing.T) {
-	t.Skip("C library cursor key ordering differs from expected")
+	db, cleanup := tempDB(t)
+	defer cleanup()
+
+	txn := db.Begin()
+	defer txn.Rollback()
+
+	// Insert keys with same-length values to get alphabetical ordering
+	db.Set(txn, EncodeKey("users", "aaa"), []byte("A"))
+	db.Set(txn, EncodeKey("users", "bbb"), []byte("B"))
+	db.Set(txn, EncodeKey("users", "ccc"), []byte("C"))
+	db.Set(txn, EncodeKey("posts", "111"), []byte("P1"))
+
+	cur := db.CursorOpen(txn, EncodeKey("users"))
+	if cur == nil {
+		t.Fatal("CursorOpen returned nil")
+	}
+	defer cur.Close()
+
+	var keys []string
+	for {
+		k, _, ok := cur.Next()
+		if !ok {
+			break
+		}
+		parts := DecodeKey(k)
+		keys = append(keys, parts[len(parts)-1])
+	}
+
+	if len(keys) != 3 {
+		t.Fatalf("got %d keys, want 3", len(keys))
+	}
+	// Keys are in lexicographic order of encoded bytes
+	// With same-length strings, this matches alphabetical order
+	if keys[0] != "aaa" || keys[1] != "bbb" || keys[2] != "ccc" {
+		t.Fatalf("unexpected keys: %v", keys)
+	}
 }
 
 func TestNavigation(t *testing.T) {
