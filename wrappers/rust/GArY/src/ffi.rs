@@ -196,3 +196,29 @@ pub struct GarryKeyTupleFfi {
     pub counts: [i32; GARRY_MAX_SUBSCRIPTS],
     pub count: i32,
 }
+
+#[repr(C)]
+pub struct garry_version_iter {
+    _private: [u8; 0],
+}
+
+pub type garry_txn_id_t = i32;
+
+extern "C" {
+    pub fn garry_version_iter_open(
+        db: *mut garry_database,
+        txn: garry_txn,
+        key: *const u8,
+        klen: i32,
+    ) -> *mut garry_version_iter;
+
+    pub fn garry_version_iter_next(
+        iter: *mut garry_version_iter,
+        txid: *mut garry_txn_id_t,
+        value: *mut *const u8,
+        vlen: *mut i32,
+        is_tombstone: *mut GarryBool,
+    ) -> GarryBool;
+
+    pub fn garry_version_iter_close(iter: *mut garry_version_iter);
+}

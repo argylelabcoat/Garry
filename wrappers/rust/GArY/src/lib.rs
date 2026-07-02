@@ -447,6 +447,72 @@ impl DatabaseConfig {
 
 pub use serializer::{decode_key, encode_key};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Version {
+    pub txid: i32,
+    pub value: Vec<u8>,
+    pub is_tombstone: bool,
+}
+
+impl Database {
+    pub fn get_versions(&self, key: &str) -> Result<Vec<Version>, GarryError> {
+        let c_key = CString::new(key)?;
+        let txn = unsafe { ffi::garry_txn_begin(self.handle) };
+        if txn < 0 {
+            return Err(GarryError::Other(txn));
+        }
+
+        let iter = unsafe {
+            ffi::garry_version_iter_open(self.handle, txn, c_key.as_ptr() as *const u8, key.len() as i32)
+        };
+        if iter.is_null() {
+            unsafe {
+                ffi::garry_txn_rollback(self.handle, txn);
+            }
+            return Ok(Vec::new());
+        }
+
+        let mut versions = Vec::new();
+        loop {
+            let mut txid: i32 = 0;
+            let mut value_ptr: *const u8 = std::ptr::null();
+            let mut vlen: i32 = 0;
+            let mut tomb: ffi::GarryBool = 0;
+
+            let more = unsafe {
+                ffi::garry_version_iter_next(iter, &mut txid, &mut value_ptr, &mut vlen, &mut tomb)
+            };
+
+            if more == ffi::GARRY_FALSE {
+                break;
+            }
+
+            let value = if vlen > 0 && !value_ptr.is_null() {
+                unsafe { std::slice::from_raw_parts(value_ptr, vlen as usize).to_vec() }
+            } else {
+                Vec::new()
+            };
+            if !value_ptr.is_null() {
+                unsafe {
+                    libc::free(value_ptr as *mut _);
+                }
+            }
+
+            versions.push(Version {
+                txid,
+                value,
+                is_tombstone: tomb != ffi::GARRY_FALSE,
+            });
+        }
+
+        unsafe {
+            ffi::garry_version_iter_close(iter);
+            ffi::garry_txn_commit(self.handle, txn);
+        }
+        Ok(versions)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

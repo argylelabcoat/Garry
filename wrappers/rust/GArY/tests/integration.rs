@@ -617,3 +617,56 @@ fn test_deep_nesting_different_values() {
     assert_eq!(l.deep_value, "unique_marker_42");
     assert_ne!(l.deep_value, "found it");
 }
+
+#[test]
+fn test_database_get_versions_returns_all_puts() {
+    use std::ffi::CString;
+
+    let db_path = std::env::temp_dir().join("garry_iter_versions_test.db");
+    let _ = std::fs::remove_file(&db_path);
+    let _ = std::fs::remove_file(format!("{}{}", db_path.display(), "-wal"));
+
+    let c_path = CString::new(db_path.to_str().unwrap()).unwrap();
+    let db = unsafe { garry::ffi::garry_database_create(c_path.as_ptr()) };
+    if db.is_null() {
+        eprintln!("skipping: cannot create db (libgarry not built)");
+        return;
+    }
+
+    let txn = unsafe { garry::ffi::garry_txn_begin(db) };
+    let key = b"k";
+    let value0 = b"v0";
+    let value1 = b"v1";
+    let value2 = b"v2";
+
+    unsafe {
+        garry::ffi::garry_set(db, txn, key.as_ptr(), key.len() as i32,
+                              value0.as_ptr(), value0.len() as i32);
+        garry::ffi::garry_txn_commit(db, txn);
+
+        let txn2 = garry::ffi::garry_txn_begin(db);
+        garry::ffi::garry_set(db, txn2, key.as_ptr(), key.len() as i32,
+                              value1.as_ptr(), value1.len() as i32);
+        garry::ffi::garry_txn_commit(db, txn2);
+
+        let txn3 = garry::ffi::garry_txn_begin(db);
+        garry::ffi::garry_set(db, txn3, key.as_ptr(), key.len() as i32,
+                              value2.as_ptr(), value2.len() as i32);
+        garry::ffi::garry_txn_commit(db, txn3);
+    }
+
+    unsafe { garry::ffi::garry_database_close(db); }
+
+    let database = garry::Database::open(db_path.to_str().unwrap()).expect("open ok");
+    let versions = database.get_versions("k").expect("get_versions ok");
+    assert_eq!(versions.len(), 3, "expected 3 versions");
+    assert_eq!(versions[0].value, b"v2");
+    assert_eq!(versions[1].value, b"v1");
+    assert_eq!(versions[2].value, b"v0");
+    for v in &versions {
+        assert!(!v.is_tombstone);
+    }
+
+    let _ = std::fs::remove_file(&db_path);
+    let _ = std::fs::remove_file(format!("{}{}", db_path.display(), "-wal"));
+}

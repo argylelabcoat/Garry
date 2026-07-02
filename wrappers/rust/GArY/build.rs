@@ -7,6 +7,8 @@ fn main() {
         .unwrap()
         .parent()
         .unwrap()
+        .parent()
+        .unwrap()
         .to_path_buf();
 
     let build_dir = project_root.join("build");
