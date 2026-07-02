@@ -17,6 +17,7 @@
 #include "storage_ops.h"
 #include "btree_search.h"
 #include "version_chain.h"
+#include "lz4.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -126,8 +127,26 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
             }
             if (value && vlen)
             {
-                memcpy(value, val, (size_t)mv_len);
-                *vlen = mv_len;
+                if (cur->eng->compression == GARRY_COMPRESS_LZ4)
+                {
+                    size_t dec_len = 0;
+                    char *dec = lz4_decompress(val, (size_t)mv_len,
+                                               (size_t)GARRY_MAX_RECORD_SIZE, &dec_len);
+                    free(val);
+                    if (!dec)
+                        continue;
+                    if (dec_len <= (size_t)GARRY_MAX_RECORD_SIZE)
+                    {
+                        memcpy(value, dec, dec_len);
+                        *vlen = (garry_i32)dec_len;
+                    }
+                    lz4_free(dec);
+                }
+                else
+                {
+                    memcpy(value, val, (size_t)mv_len);
+                    *vlen = mv_len;
+                }
             }
             else if (value && !vlen)
             {
@@ -138,8 +157,12 @@ garry_bool garry_storage_cursor_next(garry_storage_cursor *cur, garry_byte *key,
             else if (vlen)
             {
                 *vlen = 0;
+                free(val);
             }
-            free(val);
+            else
+            {
+                free(val);
+            }
             garry_rwlock_rdunlock(&cur->eng->root_lock);
             return 1;
         }

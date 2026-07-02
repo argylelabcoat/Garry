@@ -121,13 +121,19 @@ garry_bool garry_storage_get(garry_engine_handle *eng, garry_txn_id txn, const g
             garry_rwlock_rdunlock(&eng->root_lock);
             return 0;
         }
-        memcpy(result, decompressed, decompressed_len);
+        if (result)
+        {
+            memcpy(result, decompressed, decompressed_len);
+        }
         lz4_free(decompressed);
         *result_len = (garry_i32)decompressed_len;
     }
     else
     {
-        memcpy(result, val, (size_t)vlen);
+        if (result)
+        {
+            memcpy(result, val, (size_t)vlen);
+        }
         free(val);
         *result_len = vlen;
     }

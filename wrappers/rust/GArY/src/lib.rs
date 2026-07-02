@@ -455,6 +455,125 @@ pub struct Version {
 }
 
 impl Database {
+    pub fn get_versions_for_key(&self, key_bytes: &[u8]) -> Result<Vec<Version>, GarryError> {
+        let txn = unsafe { ffi::garry_txn_begin(self.handle) };
+        if txn < 0 {
+            return Err(GarryError::Other(txn));
+        }
+        let iter = unsafe {
+            ffi::garry_version_iter_open(
+                self.handle,
+                txn,
+                key_bytes.as_ptr(),
+                key_bytes.len() as i32,
+            )
+        };
+        if iter.is_null() {
+            unsafe {
+                ffi::garry_txn_rollback(self.handle, txn);
+            }
+            return Ok(Vec::new());
+        }
+        let mut out = Vec::new();
+        loop {
+            let mut txid: i32 = 0;
+            let mut value_ptr: *const u8 = std::ptr::null();
+            let mut vlen: i32 = 0;
+            let mut tomb: ffi::GarryBool = 0;
+            let more = unsafe {
+                ffi::garry_version_iter_next(iter, &mut txid, &mut value_ptr, &mut vlen, &mut tomb)
+            };
+            if more == ffi::GARRY_FALSE {
+                break;
+            }
+            let value = if vlen > 0 && !value_ptr.is_null() {
+                unsafe { std::slice::from_raw_parts(value_ptr, vlen as usize).to_vec() }
+            } else {
+                Vec::new()
+            };
+            if !value_ptr.is_null() {
+                unsafe { libc::free(value_ptr as *mut _) };
+            }
+            out.push(Version {
+                txid,
+                value,
+                is_tombstone: tomb != ffi::GARRY_FALSE,
+            });
+        }
+        unsafe {
+            ffi::garry_version_iter_close(iter);
+            ffi::garry_txn_commit(self.handle, txn);
+        }
+        Ok(out)
+    }
+
+    pub fn get_bytes(&self, key: &[u8]) -> Result<Option<Vec<u8>>, GarryError> {
+        let txn = unsafe { ffi::garry_txn_begin(self.handle) };
+        if txn < 0 {
+            return Err(GarryError::Other(txn));
+        }
+        let mut len: i32 = 0;
+        let status = unsafe {
+            ffi::garry_get(
+                self.handle,
+                txn,
+                key.as_ptr(),
+                key.len() as i32,
+                std::ptr::null_mut(),
+                &mut len,
+            )
+        };
+        if status == ffi::GARRY_ERR_NOT_FOUND {
+            unsafe { ffi::garry_txn_rollback(self.handle, txn); }
+            return Ok(None);
+        }
+        if status != ffi::GARRY_OK {
+            unsafe { ffi::garry_txn_rollback(self.handle, txn); }
+            return Err(status_to_result(status).unwrap_err());
+        }
+        let mut buf = vec![0u8; len as usize];
+        let status = unsafe {
+            ffi::garry_get(
+                self.handle,
+                txn,
+                key.as_ptr(),
+                key.len() as i32,
+                buf.as_mut_ptr(),
+                &mut len,
+            )
+        };
+        unsafe { ffi::garry_txn_commit(self.handle, txn); }
+        if status != ffi::GARRY_OK {
+            return Err(status_to_result(status).unwrap_err());
+        }
+        buf.truncate(len as usize);
+        Ok(Some(buf))
+    }
+
+    pub fn set_bytes(&self, key: &[u8], value: &[u8]) -> Result<(), GarryError> {
+        let txn = unsafe { ffi::garry_txn_begin(self.handle) };
+        if txn < 0 {
+            return Err(GarryError::Other(txn));
+        }
+        let status = unsafe {
+            ffi::garry_set(
+                self.handle,
+                txn,
+                key.as_ptr(),
+                key.len() as i32,
+                value.as_ptr(),
+                value.len() as i32,
+            )
+        };
+        if status == ffi::GARRY_OK {
+            unsafe { ffi::garry_txn_commit(self.handle, txn); }
+            Ok(())
+        } else {
+            unsafe { ffi::garry_txn_rollback(self.handle, txn); }
+            status_to_result(status)
+        }
+    }
+
     pub fn get_versions(&self, key: &str) -> Result<Vec<Version>, GarryError> {
         let c_key = CString::new(key)?;
         let txn = unsafe { ffi::garry_txn_begin(self.handle) };
@@ -521,5 +640,58 @@ mod tests {
     fn test_error_display() {
         assert_eq!(GarryError::NotFound.to_string(), "key not found");
         assert_eq!(GarryError::Io.to_string(), "I/O error");
+    }
+
+    #[ignore]
+    #[test]
+    fn test_database_set_get_roundtrip() {
+        let dir = std::env::temp_dir().join("garry_inline_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("test.db");
+        let path_str = path.to_string_lossy().to_string();
+        eprintln!("test path: {}", path_str);
+
+        let cfg = DatabaseConfig::default();
+        eprintln!("creating db...");
+        let db = Database::create_with_config(&path_str, &cfg).unwrap();
+        eprintln!("db created");
+        eprintln!("handle: {:?}", db.handle);
+        eprintln!("about to call set...");
+        let r = db.set("hello", b"world");
+        eprintln!("set result: {:?}", r);
+        r.unwrap();
+        eprintln!("set OK");
+        eprintln!("about to call get...");
+        let val = db.get("hello").unwrap().unwrap();
+        eprintln!("get OK: {:?}", std::str::from_utf8(&val));
+        assert_eq!(val, b"world");
+
+        std::fs::remove_dir_all(&dir).unwrap_or(());
+    }
+
+    #[test]
+    fn test_set_bytes_and_get_versions_for_key() {
+        let dir = std::env::temp_dir().join("garry_inline_test2");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("test.db");
+        let path_str = path.to_string_lossy().to_string();
+        eprintln!("test2 path: {}", path_str);
+
+        let cfg = DatabaseConfig::default();
+        let db = Database::create_with_config(&path_str, &cfg).unwrap();
+        eprintln!("db2 created");
+
+        let bin_key = vec![0u8, 0, 0, 4, b't', b'e', b's', b't', 0, 0, 0, 3, b'k', b'e', b'y'];
+        let bin_val = vec![1u8, 2, 3];
+        eprintln!("about to call set_bytes...");
+        db.set_bytes(&bin_key, &bin_val).unwrap();
+        eprintln!("set_bytes OK");
+
+        let versions = db.get_versions_for_key(&bin_key).unwrap();
+        eprintln!("versions count: {}", versions.len());
+        assert_eq!(versions.len(), 1);
+        assert_eq!(versions[0].value, bin_val);
+
+        std::fs::remove_dir_all(&dir).unwrap_or(());
     }
 }
