@@ -112,7 +112,7 @@ garry_i32 count = garry_count(db, txn);
 
 ```c
 garry_config cfg = garry_config_default();
-cfg.pool_size = 4;
+cfg.pool_size = 256;
 cfg.compression = GARRY_COMPRESS_LZ4;
 garry_database *db = garry_database_create_with_config("my.db", cfg);
 ```
@@ -140,7 +140,7 @@ cmake --build build-win32
 ## Architecture
 
 - **B-tree** with 3 keys per leaf, prefix-compressed keys
-- **Buffer pool** with 8-slot LRU eviction, dirty page flushing
+- **Buffer pool** with 256-slot LRU eviction, dirty page flushing
 - **MVCC** via version chains on slotted pages with overflow support
 - **WAL** for crash recovery with two-phase redo
 - **LZ4** compression for large values
