@@ -26,6 +26,7 @@
 #include "garry/cursor.h"
 #include "garry/navigation.h"
 #include "garry/garry_string.h"
+#include "garry/version.h"
 #include "garry/iterator.h"
 
 #endif /* GARRY_API_H */

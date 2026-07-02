@@ -52,5 +52,6 @@ garry_add_test(test_concurrency)
 garry_add_test(test_overflow_pages)
 garry_add_test(test_multi_txn)
 garry_add_test(test_btree_merge)
+garry_add_test(test_version_iter)
 
 add_subdirectory(readme)

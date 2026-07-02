@@ -28,6 +28,10 @@
 #include "db_header.h"
 #include "buffer_pool.h"
 #include "util_endian.h"
+#include "garry/version.h"
+#include "garry_internal.h"
+#include "storage_ops.h"
+#include "btree_search.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -838,4 +842,168 @@ garry_bool garry_chain_page_has_version(garry_page_buffer buf, garry_u32 page_si
         }
     }
     return GARRY_FALSE;
+}
+
+struct garry_version_iter
+{
+    garry_byte *page_buf;
+    garry_i32 page_size;
+    garry_i32 record_count;
+    garry_i32 next_slot;
+    garry_buffer_pool *pool;
+};
+
+GARRY_API garry_version_iter *garry_version_iter_open(
+    garry_database *db, garry_txn txn,
+    const garry_u8 *key, garry_i32 klen)
+{
+    garry_engine_handle *eng;
+    garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
+    garry_i32 lookup_len;
+    garry_i32 cid;
+    garry_page_buffer *chain_buf;
+    garry_version_iter *it;
+    (void)txn;
+
+    if (!db || !key || klen <= 0)
+        return NULL;
+
+    eng = db->eng;
+    if (!eng)
+        return NULL;
+
+    garry_rwlock_rdlock(&eng->root_lock);
+    lookup_len = 0;
+    memset(lookup, 0, sizeof(lookup));
+    if (!garry_leaf_find_search(eng->pool, eng->btree_root, key, klen, lookup, &lookup_len))
+    {
+        garry_rwlock_rdunlock(&eng->root_lock);
+        return NULL;
+    }
+
+    cid = garry_decode_cid_from_descriptor(lookup);
+    garry_rwlock_rdunlock(&eng->root_lock);
+
+    if (cid < 0)
+        return NULL;
+
+    chain_buf = garry_pool_pin_page(eng->pool, cid);
+    if (!chain_buf)
+        return NULL;
+
+    it = (garry_version_iter *)malloc(sizeof(garry_version_iter));
+    if (!it)
+    {
+        garry_pool_release_page(eng->pool, cid);
+        return NULL;
+    }
+
+    it->page_buf = (garry_byte *)malloc(eng->pool->page_size);
+    if (!it->page_buf)
+    {
+        free(it);
+        garry_pool_release_page(eng->pool, cid);
+        return NULL;
+    }
+
+    memcpy(it->page_buf, *chain_buf, eng->pool->page_size);
+    it->page_size = (garry_i32)eng->pool->page_size;
+    garry_pool_release_page(eng->pool, cid);
+
+    {
+        garry_page_buffer *local = (garry_page_buffer *)it->page_buf;
+        it->record_count = garry_page_record_count(local);
+    }
+    it->next_slot = it->record_count - 1;
+    it->pool = eng->pool;
+
+    return it;
+}
+
+GARRY_API garry_bool garry_version_iter_next(
+    garry_version_iter *it, garry_i32 *txid,
+    garry_u8 **value, garry_i32 *vlen,
+    garry_bool *is_tombstone)
+{
+    garry_byte rec_data[GARRY_CHAIN_ENTRY_BUF_SIZE];
+    garry_i32 rlen;
+    garry_i32 pos;
+    garry_i32 value_len;
+    garry_i32 fb;
+    garry_i32 is_overflow;
+    garry_i32 is_tomb;
+    garry_page_buffer *local;
+
+    if (!it || it->next_slot < 0)
+        return GARRY_FALSE;
+
+    local = (garry_page_buffer *)it->page_buf;
+    rlen = garry_page_get(local, it->next_slot, rec_data, it->page_size);
+    if (rlen < GARRY_CHAIN_ENTRY_HEADER_SIZE)
+        return GARRY_FALSE;
+
+    pos = 0;
+    *txid = garry_read_le32(rec_data, pos);
+    pos += 4;
+    /* skip txid_deleted */
+    pos += 4;
+    value_len = garry_read_le32(rec_data, pos);
+    pos += 4;
+    is_tomb = rec_data[pos] != 0 ? 1 : 0;
+    pos++;
+    fb = (garry_i32)rec_data[pos];
+    if (fb < 0) fb += 256;
+    pos++;
+    is_overflow = (fb & GARRY_CHAIN_FLAG_OVERFLOW) ? 1 : 0;
+
+    *is_tombstone = is_tomb ? GARRY_TRUE : GARRY_FALSE;
+
+    if (is_tomb)
+    {
+        *value = NULL;
+        *vlen = 0;
+    }
+    else if (is_overflow)
+    {
+        garry_i32 head_id;
+        garry_bool read_ok;
+
+        head_id = garry_read_le32(rec_data, pos);
+        *value = (garry_u8 *)malloc((size_t)value_len);
+        if (!*value)
+            return GARRY_FALSE;
+
+        read_ok = garry_overflow_read(it->pool, head_id, value_len, (char *)*value);
+        if (!read_ok)
+        {
+            free(*value);
+            *value = NULL;
+            return GARRY_FALSE;
+        }
+        *vlen = value_len;
+    }
+    else
+    {
+        garry_i32 j;
+        *value = (garry_u8 *)malloc((size_t)value_len);
+        if (!*value)
+            return GARRY_FALSE;
+
+        for (j = 0; j < value_len; j++)
+        {
+            (*value)[j] = rec_data[pos + j];
+        }
+        *vlen = value_len;
+    }
+
+    it->next_slot--;
+    return GARRY_TRUE;
+}
+
+GARRY_API void garry_version_iter_close(garry_version_iter *it)
+{
+    if (!it)
+        return;
+    free(it->page_buf);
+    free(it);
 }

@@ -9,6 +9,7 @@
 
 #include "garry/export.h"
 #include "garry/types.h"
+#include "garry/transaction.h"
 
 #ifndef GARRY_DATABASE_FWD_DEFINED
 #define GARRY_DATABASE_FWD_DEFINED
