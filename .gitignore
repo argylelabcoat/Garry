@@ -24,3 +24,7 @@ wrappers/godot/garry/build/
 build/
 *.ppu
 *.o
+
+# Session artifacts
+docs/superpowers/
+session-*.md
