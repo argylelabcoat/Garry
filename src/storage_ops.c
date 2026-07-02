@@ -154,9 +154,11 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn, const g
     garry_bool ok;
     garry_bool new_key;
 
-    if (!eng || !key || klen <= 0 || !value || vlen <= 0)
+    if (!eng || !key || klen <= 0)
         return 0;
     if (klen > GARRY_MAX_KEY_SIZE)
+        return 0;
+    if (vlen < 0 || (vlen > 0 && !value))
         return 0;
     if (!garry_txn_is_active(txn, eng))
         return 0;

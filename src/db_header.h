@@ -19,9 +19,9 @@
 #define GARRY_DB_MAGIC           0x52435350
 #define GARRY_DB_VERSION         2
 #define GARRY_HEADER_PAGE        0
-#define GARRY_HEADER_FIELD_COUNT 13
-#define GARRY_HEADER_SIZE        52
-#define GARRY_CHECKSUM_OFFSET    48
+#define GARRY_HEADER_FIELD_COUNT 14
+#define GARRY_HEADER_SIZE        56
+#define GARRY_CHECKSUM_OFFSET    52
 
 typedef struct
 {
@@ -37,6 +37,7 @@ typedef struct
     garry_i32 max_key_size;
     garry_i32 max_subscripts;
     garry_i32 btree_flags;
+    garry_i32 next_txid;
     garry_i32 checksum;
 } garry_db_header;
 

@@ -70,6 +70,7 @@ garry_db_header garry_create_db_header(garry_engine_settings *settings)
         hdr.max_key_size = settings->max_key_size;
         hdr.max_subscripts = settings->max_subscripts;
         hdr.btree_flags = 0;
+        hdr.next_txid = 1;
         hdr.checksum = 0;
     }
     else
@@ -115,6 +116,7 @@ void garry_write_db_header(garry_byte *buf, garry_db_header *hdr)
     garry_write_int32(buf, GARRY_HDR_OFF_MAX_KEY_SIZE, hdr->max_key_size);
     garry_write_int32(buf, GARRY_HDR_OFF_MAX_SUBSCRIPTS, hdr->max_subscripts);
     garry_write_int32(buf, GARRY_HDR_OFF_BTREE_FLAGS, hdr->btree_flags);
+    garry_write_int32(buf, GARRY_HDR_OFF_NEXT_TXID, hdr->next_txid);
     cs = garry_compute_header_checksum(buf);
     garry_write_int32(buf, GARRY_HDR_OFF_CHECKSUM, cs);
 }
@@ -145,6 +147,7 @@ garry_db_header garry_read_db_header(garry_byte *buf)
     hdr.max_key_size = garry_read_int32(buf, GARRY_HDR_OFF_MAX_KEY_SIZE);
     hdr.max_subscripts = garry_read_int32(buf, GARRY_HDR_OFF_MAX_SUBSCRIPTS);
     hdr.btree_flags = garry_read_int32(buf, GARRY_HDR_OFF_BTREE_FLAGS);
+    hdr.next_txid = garry_read_int32(buf, GARRY_HDR_OFF_NEXT_TXID);
     hdr.checksum = garry_read_int32(buf, GARRY_HDR_OFF_CHECKSUM);
     stored_cs = hdr.checksum;
     computed_cs = garry_compute_header_checksum(buf);

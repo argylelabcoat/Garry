@@ -21,7 +21,7 @@
 /* ---- Pool / slot limits ---- */
 
 /// Maximum number of pages in the in-memory pool.
-#define GARRY_MAX_POOL_SIZE 8
+#define GARRY_MAX_POOL_SIZE 256
 /// Maximum keys a single B-tree node may hold before splitting.
 #define GARRY_MAX_KEYS_PER_NODE 3
 /// Minimum keys a B-tree node may hold (underflow threshold).
@@ -80,7 +80,7 @@
 /* ---- Engine defaults ---- */
 
 /// Default number of pages in the in-memory pool.
-#define GARRY_DEFAULT_POOL_SIZE 8
+#define GARRY_DEFAULT_POOL_SIZE 256
 /// Default maximum concurrent transactions.
 #define GARRY_DEFAULT_MAX_TXNS 4
 /// Default maximum version-chain depth per key.
@@ -160,10 +160,12 @@
 #define GARRY_HDR_OFF_MAX_SUBSCRIPTS 40
 /// Byte offset of the btree_flags field.
 #define GARRY_HDR_OFF_BTREE_FLAGS 44
+/// Byte offset of the next_txid field.
+#define GARRY_HDR_OFF_NEXT_TXID 48
 /// Byte offset of the checksum field.
-#define GARRY_HDR_OFF_CHECKSUM 48
+#define GARRY_HDR_OFF_CHECKSUM 52
 /// Number of bytes covered by the header checksum.
-#define GARRY_HEADER_CHECKSUM_LEN 48
+#define GARRY_HEADER_CHECKSUM_LEN 52
 
 /* ---- FNV-1a hash constants ---- */
 

@@ -63,6 +63,7 @@ void garry_storage_close(garry_engine_handle *eng)
 
     eng->header.root_page = eng->btree_root;
     eng->header.total_pages = eng->pool->next_page;
+    eng->header.next_txid = eng->next_txid;
 
     hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
     if (hdr_buf)

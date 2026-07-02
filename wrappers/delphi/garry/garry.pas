@@ -670,7 +670,8 @@ begin
     else
       St := garry_set(FHandle, Txn, @Key[0], Length(Key), nil, 0);
     if St <> GarryOK then
-      raise Exception.Create('garry_set failed');
+      raise Exception.CreateFmt('garry_set failed: %s', [GarryStatusToStr(St)]);
+    garry_txn_commit(FHandle, Txn);
     garry_txn_commit(FHandle, Txn);
   except
     garry_txn_rollback(FHandle, Txn);

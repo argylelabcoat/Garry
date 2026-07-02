@@ -589,6 +589,67 @@ char *garry_chain_page_find_visible(garry_buffer_pool *pool, garry_page_buffer b
     return result;
 }
 
+garry_bool garry_chain_page_has_visible(garry_buffer_pool *pool, garry_page_buffer buf,
+                                        garry_u32 page_size, garry_txn_id snap_txid,
+                                        garry_txn_id_ptr active, garry_i32 active_count)
+{
+    garry_page_buffer *local;
+    garry_byte rec_data[GARRY_CHAIN_ENTRY_BUF_SIZE];
+    garry_i32 rec_count, i, rlen, pos;
+    garry_i32 txid_created, txid_deleted, value_len;
+    garry_i32 is_tombstone, visible, k;
+
+    local = (garry_page_buffer *)malloc(sizeof(garry_page_buffer));
+    if (local == NULL)
+        return GARRY_FALSE;
+    memcpy(*local, buf, (size_t)page_size);
+
+    rec_count = garry_page_record_count(local);
+    i = rec_count - 1;
+    while (i >= 0)
+    {
+        rlen = garry_page_get(local, i, rec_data, (garry_i32)page_size);
+        if (rlen >= GARRY_CHAIN_ENTRY_HEADER_SIZE)
+        {
+            pos = 0;
+            txid_created = garry_read_le32(rec_data, pos); pos += 4;
+            txid_deleted = garry_read_le32(rec_data, pos); pos += 4;
+            value_len = garry_read_le32(rec_data, pos); pos += 4;
+            is_tombstone = (rec_data[pos] != 0) ? 1 : 0;
+
+            visible = 1;
+            if (txid_created > snap_txid)
+                visible = 0;
+            if (visible && txid_deleted != 0 && txid_deleted <= snap_txid)
+                visible = 0;
+            if (visible)
+            {
+                for (k = 0; k < active_count; k++)
+                {
+                    if (active[k] == txid_created && active[k] != snap_txid)
+                    {
+                        visible = 0;
+                        break;
+                    }
+                }
+            }
+            if (visible && !is_tombstone)
+            {
+                free(local);
+                return GARRY_TRUE;
+            }
+            if (visible && is_tombstone)
+            {
+                free(local);
+                return GARRY_FALSE;
+            }
+        }
+        i--;
+    }
+    free(local);
+    return GARRY_FALSE;
+}
+
 /**
  * @brief Free all pages in an overflow chain.
  *

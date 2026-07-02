@@ -131,19 +131,12 @@ func TestTransactionCommitRollback(t *testing.T) {
 	db.Set(txn3, []byte("key2"), []byte("val2"))
 	txn3.Rollback()
 
-	// NOTE: C library MVCC makes rolled-back data visible to subsequent
-	// transactions because the transaction is no longer in the active list.
-	// This is correct behavior for snapshot isolation - the data was written
-	// but the transaction was rolled back, so it's visible as committed data.
+	// Rolled-back writes should be invisible to subsequent transactions.
 	txn4 := db.Begin()
 	defer txn4.Rollback()
-	val2, err := db.Get(txn4, []byte("key2"))
-	if err != nil {
-		t.Fatalf("Get after rollback: %v", err)
-	}
-	// The rolled-back data is visible because the transaction is no longer active
-	if string(val2) != "val2" {
-		t.Fatalf("got %q, want %q (rolled-back data visible in MVCC)", val2, "val2")
+	_, err2 := db.Get(txn4, []byte("key2"))
+	if err2 == nil {
+		t.Fatalf("Get after rollback should fail, but got key2")
 	}
 }
 

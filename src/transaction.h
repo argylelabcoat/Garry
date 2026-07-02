@@ -179,6 +179,14 @@ char *garry_mvcc_get(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain
                      garry_i32 *vlen);
 
 /**
+ * Lightweight existence check — does a visible non-tombstone entry exist?
+ *
+ * Like garry_mvcc_get but does not allocate or copy the value.
+ */
+garry_bool garry_mvcc_exists(garry_engine_handle *eng, garry_txn_id txn,
+                             garry_i32 chain_page_id);
+
+/**
  * Append a new version entry to a key's version chain.
  *
  * If the value exceeds the inline capacity, it is written to overflow

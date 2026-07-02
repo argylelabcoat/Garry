@@ -133,8 +133,8 @@ garry_engine_handle *garry_engine_init(const char *path, garry_engine_settings s
     eng->next_txid = 1;
     eng->active_count = 0;
 
-    eng->active_txns = (garry_txn_id *)malloc(sizeof(garry_txn_id) * settings.max_txns);
-    eng->txn_states = (garry_txn_info *)malloc(sizeof(garry_txn_info) * settings.max_txns);
+    eng->active_txns = (garry_txn_id *)malloc(sizeof(garry_txn_id) * settings.max_txns * 64);
+    eng->txn_states = (garry_txn_info *)malloc(sizeof(garry_txn_info) * settings.max_txns * 64);
     if (!eng->active_txns || !eng->txn_states)
     {
         free(eng->active_txns);
@@ -295,7 +295,7 @@ garry_engine_handle *garry_engine_open(const char *path)
     eng->compression = eng->header.compression;
     eng->max_txns = eng->header.max_txns;
     eng->btree_root = eng->header.root_page;
-    eng->next_txid = 1;
+    eng->next_txid = eng->header.next_txid;
     eng->active_count = 0;
 
     eng->settings.page_size = eng->header.page_size;
@@ -306,8 +306,8 @@ garry_engine_handle *garry_engine_open(const char *path)
     eng->settings.max_subscripts = eng->header.max_subscripts;
     eng->settings.btree_flags = eng->header.btree_flags;
 
-    eng->active_txns = (garry_txn_id *)malloc(sizeof(garry_txn_id) * eng->max_txns);
-    eng->txn_states = (garry_txn_info *)malloc(sizeof(garry_txn_info) * eng->max_txns);
+    eng->active_txns = (garry_txn_id *)malloc(sizeof(garry_txn_id) * eng->max_txns * 64);
+    eng->txn_states = (garry_txn_info *)malloc(sizeof(garry_txn_info) * eng->max_txns * 64);
     if (!eng->active_txns || !eng->txn_states)
     {
         free(eng->active_txns);
@@ -368,6 +368,7 @@ void garry_engine_close(garry_engine_handle *eng)
     /* Persist free-list state to the DB header before flushing */
     eng->header.free_list_head = eng->pool->free_list_head;
     eng->header.total_pages = eng->pool->next_page;
+    eng->header.next_txid = eng->next_txid;
     hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
     if (hdr_buf != NULL)
     {
@@ -436,12 +437,26 @@ garry_txn_id garry_mvcc_begin(garry_engine_handle *eng)
 {
     garry_txn_id txn;
     garry_i32 slot;
+    garry_i32 i;
 
     garry_mutex_lock(&eng->txn_slot_mutex);
-    if (eng->active_count >= eng->max_txns)
+
+    /* Count only non-rolled-back active txns toward the limit.
+     * Rolled-back txns stay in the active list (so their writes
+     * remain invisible to new txns) but don't count against the
+     * max_txns limit. */
     {
-        garry_mutex_unlock(&eng->txn_slot_mutex);
-        return -1;
+        garry_i32 active_non_rb = 0;
+        for (i = 0; i < eng->active_count; i++)
+        {
+            if (eng->txn_states[i].state != GARRY_TXN_ROLLED_BACK)
+                active_non_rb++;
+        }
+        if (active_non_rb >= eng->max_txns)
+        {
+            garry_mutex_unlock(&eng->txn_slot_mutex);
+            return -1;
+        }
     }
 
     txn = eng->next_txid;
@@ -513,12 +528,16 @@ void garry_mvcc_commit(garry_engine_handle *eng, garry_txn_id txn)
 void garry_mvcc_rollback(garry_engine_handle *eng, garry_txn_id txn)
 {
     garry_i32 slot;
+
     garry_mutex_lock(&eng->txn_slot_mutex);
     slot = find_txn_slot(eng, txn);
     if (slot >= 0)
     {
+        /* Keep the txn in the active list so its writes remain invisible
+         * to new transactions (garry_chain_page_find_visible hides entries
+         * from active txns that are not the snapshot txn). */
         eng->txn_states[slot].state = GARRY_TXN_ROLLED_BACK;
-        remove_active_txn(eng, txn);
+        eng->txn_states[slot].modified_count = 0;
     }
     garry_mutex_unlock(&eng->txn_slot_mutex);
 
@@ -535,8 +554,15 @@ void garry_mvcc_rollback(garry_engine_handle *eng, garry_txn_id txn)
 garry_bool garry_txn_is_active(garry_txn_id txn, garry_engine_handle *eng)
 {
     garry_bool result;
+    garry_i32 slot;
     garry_mutex_lock(&eng->txn_slot_mutex);
-    result = find_txn_slot(eng, txn) >= 0 ? GARRY_TRUE : GARRY_FALSE;
+    slot = find_txn_slot(eng, txn);
+    /* Rolled-back txns stay in the active list (to hide their writes
+     * from new txns) but are not considered active for operations. */
+    if (slot >= 0 && eng->txn_states[slot].state == GARRY_TXN_ROLLED_BACK)
+        result = GARRY_FALSE;
+    else
+        result = slot >= 0 ? GARRY_TRUE : GARRY_FALSE;
     garry_mutex_unlock(&eng->txn_slot_mutex);
     return result;
 }
@@ -563,6 +589,25 @@ char *garry_mvcc_get(garry_engine_handle *eng, garry_txn_id txn, garry_i32 chain
     garry_mutex_lock(&eng->txn_slot_mutex);
     result = garry_chain_page_find_visible(eng->pool, *buf, (garry_u32)eng->page_size, txn,
                                            eng->active_txns, eng->active_count, vlen);
+    garry_mutex_unlock(&eng->txn_slot_mutex);
+
+    garry_pool_release_page(eng->pool, chain_page_id);
+    return result;
+}
+
+garry_bool garry_mvcc_exists(garry_engine_handle *eng, garry_txn_id txn,
+                             garry_i32 chain_page_id)
+{
+    garry_page_buffer *buf;
+    garry_bool result;
+
+    buf = garry_pool_pin_page(eng->pool, chain_page_id);
+    if (!buf)
+        return GARRY_FALSE;
+
+    garry_mutex_lock(&eng->txn_slot_mutex);
+    result = garry_chain_page_has_visible(eng->pool, *buf, (garry_u32)eng->page_size, txn,
+                                          eng->active_txns, eng->active_count);
     garry_mutex_unlock(&eng->txn_slot_mutex);
 
     garry_pool_release_page(eng->pool, chain_page_id);

@@ -93,7 +93,8 @@ garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn, garry_
         page = node.children[node.entry_count];
     }
 
-    if (node.entry_count > 0)
+    /* Walk rightmost leaf, then prev_page leaves, looking for a visible key. */
+    while (page >= 0)
     {
         garry_byte lookup[GARRY_LOOKUP_BUF_SIZE];
         garry_i32 lookup_len;
@@ -102,29 +103,38 @@ garry_bool garry_storage_last(garry_engine_handle *eng, garry_txn_id txn, garry_
         garry_i32 mv_len;
         garry_i32 idx;
 
-        for (idx = node.entry_count - 1; idx >= 0; idx--)
+        /* node already loaded for the first leaf; reload for subsequent */
+        garry_load_node(eng->pool, page, &node);
+
+        if (node.entry_count > 0)
         {
-            lookup_len = node.value_lens[idx];
-            if (lookup_len > 0 && lookup_len <= GARRY_LOOKUP_BUF_SIZE)
+            for (idx = node.entry_count - 1; idx >= 0; idx--)
             {
-                memcpy(lookup, node.values[idx], (size_t)lookup_len);
-                cid = garry_decode_cid_from_descriptor(lookup);
-                if (cid >= 0)
+                lookup_len = node.value_lens[idx];
+                if (lookup_len > 0 && lookup_len <= GARRY_LOOKUP_BUF_SIZE)
                 {
-                    val = garry_mvcc_get(eng, txn, cid, &mv_len);
-                    if (val)
+                    memcpy(lookup, node.values[idx], (size_t)lookup_len);
+                    cid = garry_decode_cid_from_descriptor(lookup);
+                    if (cid >= 0)
                     {
-                        if (key)
-                            memcpy(key, node.keys[idx], sizeof(garry_byte_array));
-                        if (klen)
-                            *klen = node.key_lens[idx];
-                        free(val);
-                        garry_rwlock_rdunlock(&eng->root_lock);
-                        return 1;
+                        val = garry_mvcc_get(eng, txn, cid, &mv_len);
+                        if (val)
+                        {
+                            if (key)
+                                memcpy(key, node.keys[idx], sizeof(garry_byte_array));
+                            if (klen)
+                                *klen = node.key_lens[idx];
+                            free(val);
+                            garry_rwlock_rdunlock(&eng->root_lock);
+                            return 1;
+                        }
                     }
                 }
             }
         }
+
+        /* All entries in this leaf are invisible — walk to previous leaf. */
+        page = node.prev_page;
     }
 
     garry_rwlock_rdunlock(&eng->root_lock);
@@ -281,9 +291,17 @@ garry_bool garry_storage_exists(garry_engine_handle *eng, garry_txn_id txn, cons
     }
 
     cid = garry_decode_cid_from_descriptor(lookup);
-    garry_rwlock_rdunlock(&eng->root_lock);
+    if (cid < 0)
+    {
+        garry_rwlock_rdunlock(&eng->root_lock);
+        return 0;
+    }
 
-    return (cid >= 0) ? 1 : 0;
+    {
+        garry_bool vis = garry_mvcc_exists(eng, txn, cid);
+        garry_rwlock_rdunlock(&eng->root_lock);
+        return vis;
+    }
 }
 
 /**

@@ -121,6 +121,17 @@ char *garry_chain_page_find_visible(garry_buffer_pool *pool, garry_page_buffer b
                                     garry_u32 page_size, garry_txn_id snap_txid,
                                     garry_txn_id_ptr active, garry_i32 active_count,
                                     garry_i32 *vlen);
+
+/**
+ * Lightweight check for a visible non-tombstone entry.
+ *
+ * Like garry_chain_page_find_visible but does not allocate or copy
+ * the value. Returns GARRY_TRUE if a visible, non-tombstone entry
+ * exists on the chain page.
+ */
+garry_bool garry_chain_page_has_visible(garry_buffer_pool *pool, garry_page_buffer buf,
+                                        garry_u32 page_size, garry_txn_id snap_txid,
+                                        garry_txn_id_ptr active, garry_i32 active_count);
 /**
  * Free all overflow pages in a chain.
  *
