@@ -69,6 +69,22 @@ set_target_properties(garry_shared PROPERTIES
 )
 
 # Install
+include(CMakePackageConfigHelpers)
+
+if(WIN32)
+    set(GARRY_PRIVATE_LIBS "")
+elseif(APPLE)
+    set(GARRY_PRIVATE_LIBS "-framework Security -framework CoreFoundation")
+else()
+    set(GARRY_PRIVATE_LIBS "-lpthread -lm")
+endif()
+configure_file(
+    "${CMAKE_SOURCE_DIR}/garry.pc.in"
+    "${CMAKE_BINARY_DIR}/garry.pc"
+    @ONLY
+)
+install(FILES "${CMAKE_BINARY_DIR}/garry.pc" DESTINATION lib/pkgconfig)
+
 install(DIRECTORY include/garry DESTINATION include)
 install(TARGETS garry garry_shared
     ARCHIVE DESTINATION lib

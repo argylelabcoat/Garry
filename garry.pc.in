@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: garry
+Description: Garry embedded key-value store engine
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -lgarry
+Libs.private: @GARRY_PRIVATE_LIBS@
+Cflags: -I${includedir}
