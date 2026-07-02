@@ -568,3 +568,11 @@ void garry_for_each(garry_database *db, garry_txn txn, const garry_u8 *prefix, g
     free(key);
     free(value);
 }
+
+#include "garry/version.h"
+
+GARRY_API garry_version_iter *garry_get_versions(garry_database *db, garry_txn txn,
+                                                 const garry_u8 *key, garry_i32 klen)
+{
+    return garry_version_iter_open(db, txn, key, klen);
+}

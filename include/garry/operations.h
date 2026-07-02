@@ -108,4 +108,16 @@ GARRY_API garry_status_t garry_get_default(garry_database *db, garry_txn txn, co
 GARRY_API garry_i32 garry_data(garry_database *db, garry_txn txn, const garry_u8 *key,
                                garry_i32 klen);
 
+#include "garry/version.h"
+
+/**
+ * @brief Retrieve every version of a key, newest first.
+ *
+ * Returns a streaming iterator over the per-key version chain. Caller
+ * drains with @ref garry_version_iter_next and releases with
+ * @ref garry_version_iter_close. Returns @c NULL if the key has no chain.
+ */
+GARRY_API garry_version_iter *garry_get_versions(garry_database *db, garry_txn txn,
+                                                  const garry_u8 *key, garry_i32 klen);
+
 #endif /* GARRY_OPERATIONS_H */
