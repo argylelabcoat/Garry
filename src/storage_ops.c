@@ -202,7 +202,7 @@ garry_bool garry_storage_set(garry_engine_handle *eng, garry_txn_id txn, const g
 
     {
         garry_wal_record *rec;
-        rec = garry_make_update_record(txn, key, klen, value, vlen);
+        rec = garry_make_update_record(eng->pool, txn, key, klen, value, vlen);
         if (rec)
         {
             garry_wal_log_append(&eng->wal, rec);

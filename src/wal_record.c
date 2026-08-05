@@ -13,6 +13,7 @@
  */
 
 #include "wal_record.h"
+#include "version_chain.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,7 +31,8 @@
  *
  * @return Pointer to the allocated record, or NULL on allocation failure.
  */
-garry_wal_record *garry_make_update_record(garry_txn_id txn, const garry_byte *key, garry_i32 klen,
+garry_wal_record *garry_make_update_record(garry_buffer_pool *pool, garry_txn_id txn,
+                                           const garry_byte *key, garry_i32 klen,
                                            const garry_byte *new_val, garry_i32 vlen)
 {
     garry_wal_record *rec = (garry_wal_record *)malloc(sizeof(garry_wal_record));
@@ -44,11 +46,25 @@ garry_wal_record *garry_make_update_record(garry_txn_id txn, const garry_byte *k
         memcpy(rec->key, key, (size_t)klen);
     }
     rec->key_len = klen;
+    rec->value_len = vlen;
     if (vlen > 0 && new_val != NULL)
     {
-        memcpy(rec->new_data, new_val, (size_t)vlen);
+        if ((size_t)vlen <= sizeof(garry_byte_array))
+        {
+            memcpy(rec->new_data, new_val, (size_t)vlen);
+        }
+        else
+        {
+            garry_i32 head = garry_overflow_write(pool, (const char *)new_val, vlen);
+            if (head < 0)
+            {
+                free(rec);
+                return NULL;
+            }
+            rec->new_is_overflow = GARRY_TRUE;
+            rec->new_overflow_head = head;
+        }
     }
-    rec->value_len = vlen;
     return rec;
 }
 

@@ -53,5 +53,6 @@ garry_add_test(test_overflow_pages)
 garry_add_test(test_multi_txn)
 garry_add_test(test_btree_merge)
 garry_add_test(test_version_iter)
+garry_add_test(test_btree_overread_regression)
 
 add_subdirectory(readme)

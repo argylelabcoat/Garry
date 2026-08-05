@@ -63,6 +63,7 @@ static garry_bool wal_write_record(garry_wal_log *wal, const garry_wal_record *r
     garry_byte buf[GARRY_WAL_RECORD_SIZE];
     garry_i32 kind = (garry_i32)rec->kind;
     garry_i32 txid = rec->txid;
+    garry_i32 new_is_overflow = rec->new_is_overflow ? 1 : 0;
     garry_i32 n;
 
     memset(buf, 0, sizeof(buf));
@@ -73,6 +74,8 @@ static garry_bool wal_write_record(garry_wal_log *wal, const garry_wal_record *r
     memcpy(buf + WAL_REC_KEY_OFF, rec->key, sizeof(garry_byte_array));
     memcpy(buf + WAL_REC_OLD_OFF, rec->old_data, sizeof(garry_byte_array));
     memcpy(buf + WAL_REC_NEW_OFF, rec->new_data, sizeof(garry_byte_array));
+    memcpy(buf + WAL_REC_NEW_OVERFLOW_FLAG_OFF, &new_is_overflow, sizeof(garry_i32));
+    memcpy(buf + WAL_REC_NEW_OVERFLOW_HEAD_OFF, &rec->new_overflow_head, sizeof(garry_i32));
 
     n = garry_file_write_bytes(&wal->fd, buf, GARRY_WAL_RECORD_SIZE);
     return (n == GARRY_WAL_RECORD_SIZE) ? GARRY_TRUE : GARRY_FALSE;

@@ -14,6 +14,7 @@
 
 #include "garry/types.h"
 #include "storage_types.h"
+#include "buffer_pool.h"
 
 typedef enum
 {
@@ -32,14 +33,25 @@ typedef struct
     garry_i32 value_len;
     garry_byte_array old_data;
     garry_byte_array new_data;
+    /* When new_is_overflow is set, the real value (longer than a single
+     * garry_byte_array) was written to an overflow page chain via
+     * garry_overflow_write(); new_data is unused and new_overflow_head
+     * is the chain's head page ID. Recovery must reassemble the value
+     * via garry_overflow_read() before applying it. */
+    garry_bool new_is_overflow;
+    garry_i32 new_overflow_head;
 } garry_wal_record;
 
 /**
  * @brief Create an update WAL record.
  *
  * Heap-allocates a WAL record of kind GARRY_WAL_UPDATE, copying the
- * key and new value into the record's internal buffers.
+ * key and new value into the record's internal buffers. Values larger
+ * than a single garry_byte_array are written to an overflow page chain
+ * (see version_chain.c) instead of being inlined; the record stores a
+ * reference to that chain.
  *
+ * @param pool    Buffer pool to allocate overflow pages from, if needed
  * @param txn     Transaction ID that owns this update
  * @param key     Key bytes for the update
  * @param klen    Key length in bytes
@@ -47,7 +59,8 @@ typedef struct
  * @param vlen    New value length in bytes
  * @return Heap-allocated WAL record, or NULL on allocation failure
  */
-garry_wal_record *garry_make_update_record(garry_txn_id txn, const garry_byte *key, garry_i32 klen,
+garry_wal_record *garry_make_update_record(garry_buffer_pool *pool, garry_txn_id txn,
+                                           const garry_byte *key, garry_i32 klen,
                                            const garry_byte *new_val, garry_i32 vlen);
 
 /**
@@ -91,7 +104,7 @@ garry_wal_record *garry_make_checkpoint_record(garry_txn_id txn);
 void garry_wal_record_free(garry_wal_record *rec);
 
 /* WAL record on-disk format constants. */
-#define GARRY_WAL_RECORD_SIZE 784
+#define GARRY_WAL_RECORD_SIZE 792
 #define WAL_REC_KIND_OFF      0
 #define WAL_REC_TXID_OFF      4
 #define WAL_REC_KLEN_OFF      8
@@ -99,5 +112,7 @@ void garry_wal_record_free(garry_wal_record *rec);
 #define WAL_REC_KEY_OFF       16
 #define WAL_REC_OLD_OFF       272
 #define WAL_REC_NEW_OFF       528
+#define WAL_REC_NEW_OVERFLOW_FLAG_OFF 784
+#define WAL_REC_NEW_OVERFLOW_HEAD_OFF 788
 
 #endif /* GARRY_WAL_RECORD_H */

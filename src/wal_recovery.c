@@ -20,6 +20,7 @@
 #include "record_codec.h"
 #include "storage_ops.h"
 #include "garry_threading.h"
+#include "version_chain.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -55,6 +56,7 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
     garry_i32 commit_cap;
     garry_i32 i;
     garry_bool found;
+    garry_i32 new_is_overflow;
 
     if (!wal->fd.is_open)
         return GARRY_FALSE;
@@ -135,10 +137,21 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
             continue;
         if (WAL_REC_KEY_OFF + klen > GARRY_WAL_RECORD_SIZE)
             continue;
-        if (WAL_REC_NEW_OFF + vlen > GARRY_WAL_RECORD_SIZE)
-            continue;
         memcpy(key, rec + WAL_REC_KEY_OFF, (size_t)klen);
-        memcpy(val, rec + WAL_REC_NEW_OFF, (size_t)vlen);
+
+        new_is_overflow = garry_read_int32(rec, WAL_REC_NEW_OVERFLOW_FLAG_OFF);
+        if (new_is_overflow)
+        {
+            garry_i32 overflow_head = garry_read_int32(rec, WAL_REC_NEW_OVERFLOW_HEAD_OFF);
+            if (!garry_overflow_read(eng->pool, overflow_head, vlen, (char *)val))
+                continue;
+        }
+        else
+        {
+            if (WAL_REC_NEW_OFF + vlen > GARRY_WAL_RECORD_SIZE)
+                continue;
+            memcpy(val, rec + WAL_REC_NEW_OFF, (size_t)vlen);
+        }
 
         garry_rwlock_wrlock(&eng->root_lock);
 

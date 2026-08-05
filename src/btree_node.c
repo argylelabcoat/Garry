@@ -257,9 +257,9 @@ garry_bool garry_leaf_insert(garry_btree_node *node, const garry_byte *key, garr
         node->value_lens[i] = node->value_lens[i - 1];
         i = i - 1;
     }
-    memcpy(node->keys[idx], key, sizeof(garry_byte_array));
+    memcpy(node->keys[idx], key, (size_t)klen);
     node->key_lens[idx] = klen;
-    memcpy(node->values[idx], value, sizeof(garry_byte_array));
+    memcpy(node->values[idx], value, (size_t)vlen);
     node->value_lens[idx] = vlen;
     node->entry_count = node->entry_count + 1;
     return 1;

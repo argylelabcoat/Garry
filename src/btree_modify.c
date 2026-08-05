@@ -163,9 +163,9 @@ static garry_bool btree_insert_rec(garry_buffer_pool *pool, garry_i32 page, cons
         idx = garry_leaf_find(&node, key, klen);
         if (idx >= 0)
         {
-            memcpy(node.keys[idx], key, sizeof(garry_byte_array));
+            memcpy(node.keys[idx], key, (size_t)klen);
             node.key_lens[idx] = klen;
-            memcpy(node.values[idx], value, sizeof(garry_byte_array));
+            memcpy(node.values[idx], value, (size_t)vlen);
             node.value_lens[idx] = vlen;
             garry_store_node(pool, page, &node);
             garry_pool_mark_dirty(pool, page);
@@ -286,9 +286,9 @@ static garry_bool leaf_split(garry_buffer_pool *pool, garry_i32 page, garry_btre
         memcpy(tmp_values[i], node->values[i], sizeof(garry_byte_array));
         tmp_vlens[i] = node->value_lens[i];
     }
-    memcpy(tmp_keys[insert_pos], key, sizeof(garry_byte_array));
+    memcpy(tmp_keys[insert_pos], key, (size_t)klen);
     tmp_lens[insert_pos] = klen;
-    memcpy(tmp_values[insert_pos], value, sizeof(garry_byte_array));
+    memcpy(tmp_values[insert_pos], value, (size_t)vlen);
     tmp_vlens[insert_pos] = vlen;
     for (i = insert_pos; i < node->entry_count; i++)
     {
