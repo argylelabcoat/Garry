@@ -355,6 +355,56 @@ static void test_compress_bound_real_file(void)
     lz4_free(compressed);
 }
 
+/* Regression test for a fixed heap-buffer-overflow read in
+ * lz77_match_find (lz4.c): the match-length comparison loop bounded
+ * itself by the backward distance to the candidate match and by
+ * max_match, but never by how many bytes actually remained forward of
+ * ip to src_len. When a match candidate near the start of the buffer
+ * was rediscovered close to the end of a large input, the comparison
+ * read past the end of src. This reproduces that shape directly:
+ * a distinctive marker near offset 0, unique filler, then the same
+ * marker again a few bytes before src_len -- exactly the "far-back
+ * candidate found near the end" trigger. */
+static void test_match_near_end_of_buffer_does_not_overread(void)
+{
+    size_t src_len = 2000;
+    char *src = (char *)malloc(src_len);
+    size_t compressed_len = 0;
+    char *compressed;
+    size_t i;
+
+    for (i = 0; i < src_len; i++)
+    {
+        /* Unique, non-repeating filler so the only real match candidate
+         * is the deliberate marker pair below. */
+        src[i] = (char)('a' + (int)((i * 37 + 11) % 26));
+    }
+    /* The match-search loop only visits ip < src_len - 12, so the second
+     * marker must land inside that range (not merely "near the end") for
+     * ip to actually reach it while still leaving few real bytes forward
+     * of ip to src_len -- that gap is what the unfixed max_cmp ignored. */
+    memcpy(src, "MATCH", 5);
+    memcpy(src + src_len - 20, "MATCH", 5);
+
+    compressed = lz4_compress(src, src_len, &compressed_len);
+    ASSERT(compressed != NULL, "compress near-end match succeeds");
+    if (compressed)
+    {
+        char *decompressed;
+        size_t decompressed_len = 0;
+        decompressed = lz4_decompress(compressed, compressed_len, src_len * 2, &decompressed_len);
+        ASSERT(decompressed != NULL, "decompress near-end match succeeds");
+        if (decompressed)
+        {
+            ASSERT(decompressed_len == src_len, "near-end match round-trip length matches");
+            ASSERT(memcmp(decompressed, src, src_len) == 0, "near-end match round-trip content matches");
+            lz4_free(decompressed);
+        }
+        lz4_free(compressed);
+    }
+    free(src);
+}
+
 int main(void)
 {
     test_round_trip_basic();
@@ -369,6 +419,7 @@ int main(void)
     test_real_file_round_trip();
     test_multiple_compress_decompress_cycles();
     test_compress_bound_real_file();
+    test_match_near_end_of_buffer_does_not_overread();
 
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return (tests_passed == tests_run) ? 0 : 1;

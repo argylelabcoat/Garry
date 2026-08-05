@@ -104,6 +104,14 @@ static void lz77_match_find(const char *src, size_t src_len, size_t ip, int *has
         size_t max_cmp = ip - s;
         if (max_cmp > limit)
             max_cmp = limit;
+        /* Bound the comparison by how much source data actually remains
+         * forward of ip -- max_cmp was previously only bounded by the
+         * backward distance to the candidate (ip - s) and by max_match,
+         * neither of which accounts for src_len. When a candidate match
+         * is far enough back, that let the comparison loop below read
+         * src[ip + len] past the end of the buffer. */
+        if (max_cmp > src_len - ip)
+            max_cmp = src_len - ip;
 
         while (len < max_cmp && src[s + len] == src[ip + len])
         {
