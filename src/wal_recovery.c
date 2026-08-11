@@ -21,6 +21,7 @@
 #include "storage_ops.h"
 #include "garry_threading.h"
 #include "version_chain.h"
+#include "lz4.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -189,27 +190,103 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
         lookup_len = 0;
         if (garry_leaf_find_search(eng->pool, eng->btree_root, key, klen, lookup_buf, &lookup_len))
         {
+            /* The key is already in the B-tree, meaning some committed
+             * version of it is already durably on disk: chain and
+             * overflow pages are both flushed synchronously at commit
+             * time (see garry_mvcc_commit / garry_overflow_write), not
+             * deferred to close. So a key present here needs no replay
+             * at all -- re-applying it anyway was not just wasted work,
+             * it actively broke recovery for large values: every
+             * redundant re-apply allocates a brand-new overflow chain
+             * (the old one is never freed), so replaying N large-value
+             * commits for an already-current key allocates N times the
+             * pages actually needed, and for a database with many large
+             * fields (e.g. multi-KB text values) this reliably exhausts
+             * the page pool mid-recovery and fails the entire reopen --
+             * even though the on-disk data was already fully correct
+             * before recovery ever started.
+             *
+             * But its chain page's ID must still be accounted for: see
+             * the pool->next_page comment below. Skipping the entry
+             * without also bumping next_page past its chain_id was
+             * exactly the bug -- the allocator had no idea this page
+             * id was taken until it handed the SAME id out again to a
+             * different key later in this same replay pass. */
             garry_i32 chain_id;
             garry_bool has_children;
             garry_decode_descriptor(lookup_buf, lookup_len, &chain_id, &has_children);
-            cid = chain_id;
+            if (chain_id + 1 > eng->pool->next_page)
+                eng->pool->next_page = chain_id + 1;
+            garry_rwlock_wrunlock(&eng->root_lock);
+            continue;
         }
-        else
+
+        /* eng->pool->next_page was seeded from eng->header.total_pages,
+         * which is only ever written at garry_engine_init() (create)
+         * and garry_engine_close() (clean shutdown) -- never during an
+         * ongoing live session. After an unclean shutdown that ran for
+         * any length of time, that starting value is stale and far too
+         * low: hundreds of pages the crashed session actually allocated
+         * (chain pages, overflow pages, B-tree leaf/internal pages from
+         * splits) are invisible to it. garry_chain_allocate() below
+         * calls garry_pool_allocate(), which hands out pool->next_page
+         * and increments it -- with no free-list entries yet, it does
+         * this completely sequentially from that stale low value,
+         * walking straight into page ids that are already legitimately
+         * owned by other keys' committed data (silently aliasing two
+         * keys onto the same chain page, each overwriting the other's
+         * version history). The fix above keeps next_page in sync with
+         * every existing chain_id this pass discovers, but that alone
+         * only covers ids this same key happens to revisit; the newly
+         * allocated id here must also never collide with anything
+         * still to be discovered later in the pass, so bump next_page
+         * past it immediately, the same as a live session would have
+         * (there, pool->next_page is already correctly at high-water
+         * mark from every prior allocation in the same run). */
+        cid = garry_chain_allocate(eng, key, klen);
+        if (cid < 0)
         {
-            cid = garry_chain_allocate(eng, key, klen);
-            if (cid < 0)
+            garry_rwlock_wrunlock(&eng->root_lock);
+            free(committed);
+            return GARRY_FALSE;
+        }
+        desc_len = garry_encode_descriptor(cid, GARRY_FALSE, desc_buf);
+        root = eng->btree_root;
+        garry_btree_insert(eng->pool, &root, key, klen, desc_buf, desc_len);
+        eng->btree_root = root;
+
+        /* The WAL record holds the raw, pre-compression value: garry_
+         * storage_set() logs the WAL entry from the caller's original
+         * bytes and only LZ4-compresses afterward, when writing to the
+         * chain page (see storage_ops.c). garry_storage_get() always
+         * tries to LZ4-decompress a chain entry's value when
+         * eng->compression is enabled, so replaying the WAL's raw bytes
+         * directly (as garry_mvcc_recovery_apply does) stores a value
+         * that isn't actually compressed -- decompression then fails
+         * and every read of it reports not-found, even though recovery
+         * itself reports success for the record. Compress here too,
+         * to match what a live garry_storage_set() would have stored. */
+        if (eng->compression == GARRY_COMPRESS_LZ4)
+        {
+            size_t compressed_len = 0;
+            char *compressed = lz4_compress((const char *)val, (size_t)vlen, &compressed_len);
+            garry_bool applied;
+            if (!compressed)
             {
                 garry_rwlock_wrunlock(&eng->root_lock);
                 free(committed);
                 return GARRY_FALSE;
             }
-            desc_len = garry_encode_descriptor(cid, GARRY_FALSE, desc_buf);
-            root = eng->btree_root;
-            garry_btree_insert(eng->pool, &root, key, klen, desc_buf, desc_len);
-            eng->btree_root = root;
+            applied = garry_mvcc_recovery_apply(eng, cid, txid, compressed, (garry_i32)compressed_len);
+            lz4_free(compressed);
+            if (!applied)
+            {
+                garry_rwlock_wrunlock(&eng->root_lock);
+                free(committed);
+                return GARRY_FALSE;
+            }
         }
-
-        if (!garry_mvcc_recovery_apply(eng, cid, txid, (const char *)val, vlen))
+        else if (!garry_mvcc_recovery_apply(eng, cid, txid, (const char *)val, vlen))
         {
             garry_rwlock_wrunlock(&eng->root_lock);
             free(committed);
