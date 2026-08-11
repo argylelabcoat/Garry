@@ -22,6 +22,7 @@
 #include "db_header.h"
 #include "btree_node.h"
 #include "version_chain.h"
+#include "wal_recovery.h"
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -218,6 +219,37 @@ garry_engine_handle *garry_engine_init(const char *path, garry_engine_settings s
         }
     }
 
+    /* The header written above (at the top of this function) reflects
+     * garry_create_db_header()'s defaults, from BEFORE the root leaf
+     * page existed — its total_pages/free_list_head don't yet account
+     * for that page. Re-sync from the pool's actual post-init state and
+     * rewrite, exactly like garry_engine_close() does, or a later
+     * garry_engine_open() reads a header that thinks only the header
+     * page itself is allocated. That makes the root leaf's page id look
+     * "free": garry_chain_allocate() then hands it out and overwrites
+     * the actual root leaf with chain data, corrupting the tree
+     * (observed as a stack overflow in the recursive B-tree walk when
+     * WAL recovery tries to insert into the now-bogus root). */
+    eng->header.free_list_head = eng->pool->free_list_head;
+    eng->header.total_pages = eng->pool->next_page;
+    hdr_buf = garry_pool_pin_page(eng->pool, GARRY_HEADER_PAGE);
+    if (hdr_buf != NULL)
+    {
+        garry_write_db_header((garry_byte *)*hdr_buf, &eng->header);
+        garry_pool_mark_dirty(eng->pool, GARRY_HEADER_PAGE);
+        garry_pool_release_page(eng->pool, GARRY_HEADER_PAGE);
+    }
+
+    /* Without this, the header and initial root leaf only exist as
+     * dirty pages in the in-memory buffer pool. A process crashing
+     * before garry_engine_close() (the only other place that flushes)
+     * leaves the on-disk header page as whatever garbage/zero bytes
+     * preceded it, so garry_engine_open()'s recovery path parses that
+     * garbage as a real header/root — corrupting or crashing instead of
+     * just finding an empty database. A freshly created database must
+     * be durable immediately, not only after a clean close. */
+    garry_pool_flush_all(eng->pool);
+
     return eng;
 }
 
@@ -347,6 +379,24 @@ garry_engine_handle *garry_engine_open(const char *path)
     eng->lock_mgr = garry_create_lock_manager();
     garry_rwlock_init(&eng->root_lock);
     garry_mutex_init(&eng->txn_slot_mutex);
+
+    /* Replay any committed-but-not-checkpointed mutations from the WAL.
+     * garry_engine_close() only persists root_page/total_pages to the
+     * header on a clean shutdown; without this, any unclean shutdown
+     * (the normal case for a killed/crashed process) silently loses
+     * every write since the last clean close, even though it was
+     * durably written to the WAL at commit time. */
+    if (!garry_wal_recover(&eng->wal, eng))
+    {
+        garry_wal_log_close(&eng->wal);
+        garry_pool_close(eng->pool);
+        garry_rwlock_destroy(&eng->root_lock);
+        garry_mutex_destroy(&eng->txn_slot_mutex);
+        free(eng->active_txns);
+        free(eng->txn_states);
+        free(eng);
+        return NULL;
+    }
 
     return eng;
 }

@@ -21,7 +21,8 @@ typedef enum
     GARRY_WAL_UPDATE = 0,
     GARRY_WAL_COMMIT = 1,
     GARRY_WAL_ABORT = 2,
-    GARRY_WAL_CHECKPOINT = 3
+    GARRY_WAL_CHECKPOINT = 3,
+    GARRY_WAL_DELETE = 4
 } garry_wal_record_kind;
 
 typedef struct
@@ -62,6 +63,25 @@ typedef struct
 garry_wal_record *garry_make_update_record(garry_buffer_pool *pool, garry_txn_id txn,
                                            const garry_byte *key, garry_i32 klen,
                                            const garry_byte *new_val, garry_i32 vlen);
+
+/**
+ * @brief Create a delete WAL record.
+ *
+ * Heap-allocates a WAL record of kind GARRY_WAL_DELETE, copying the
+ * key into the record's internal buffer. garry_storage_delete()
+ * previously applied deletes only to the in-memory/buffer-pool state
+ * with no WAL record at all, so a deleted key silently reappeared on
+ * WAL-recovered crash restart (recovery would replay the older
+ * GARRY_WAL_UPDATE record for that key with no way to know it had
+ * since been deleted).
+ *
+ * @param txn   Transaction ID performing the delete
+ * @param key   Key bytes to delete
+ * @param klen  Key length in bytes
+ * @return Heap-allocated WAL record, or NULL on allocation failure
+ */
+garry_wal_record *garry_make_delete_record(garry_txn_id txn, const garry_byte *key,
+                                           garry_i32 klen);
 
 /**
  * @brief Create a commit WAL record.

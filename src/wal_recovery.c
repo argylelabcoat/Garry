@@ -100,6 +100,12 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
             }
             committed[commit_count] = txid;
             commit_count++;
+
+            /* New transactions started after recovery must not reuse an
+             * ID that a WAL-recovered commit already used, or MVCC
+             * visibility (which orders by txid) breaks. */
+            if (txid + 1 > eng->next_txid)
+                eng->next_txid = txid + 1;
         }
     }
 
@@ -114,7 +120,7 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
         kind = garry_read_int32(rec, WAL_REC_KIND_OFF);
         txid = garry_read_int32(rec, WAL_REC_TXID_OFF);
 
-        if (kind != 0)
+        if (kind != GARRY_WAL_UPDATE && kind != GARRY_WAL_DELETE)
             continue;
 
         found = GARRY_FALSE;
@@ -130,14 +136,39 @@ garry_bool garry_wal_recover(garry_wal_log *wal, garry_engine_handle *eng)
             continue;
 
         klen = garry_read_int32(rec, WAL_REC_KLEN_OFF);
-        vlen = garry_read_int32(rec, WAL_REC_VLEN_OFF);
         if (klen < 0 || klen > GARRY_MAX_RECORD_SIZE)
-            continue;
-        if (vlen < 0 || vlen > GARRY_MAX_RECORD_SIZE)
             continue;
         if (WAL_REC_KEY_OFF + klen > GARRY_WAL_RECORD_SIZE)
             continue;
         memcpy(key, rec + WAL_REC_KEY_OFF, (size_t)klen);
+
+        if (kind == GARRY_WAL_DELETE)
+        {
+            /* Records are replayed in file (chronological) order, so a
+             * delete seen here always postdates any earlier update for
+             * the same key replayed above — this correctly overrides
+             * it, instead of the stale value winning just because
+             * deletes were never logged to the WAL at all before this
+             * fix (garry_storage_delete only mutated the in-memory
+             * chain page, so a deleted-then-crashed key silently
+             * reappeared on recovery). */
+            garry_rwlock_wrlock(&eng->root_lock);
+            lookup_len = 0;
+            if (garry_leaf_find_search(eng->pool, eng->btree_root, key, klen, lookup_buf,
+                                       &lookup_len))
+            {
+                garry_i32 chain_id;
+                garry_bool has_children;
+                garry_decode_descriptor(lookup_buf, lookup_len, &chain_id, &has_children);
+                garry_mvcc_delete(eng, txid, chain_id);
+            }
+            garry_rwlock_wrunlock(&eng->root_lock);
+            continue;
+        }
+
+        vlen = garry_read_int32(rec, WAL_REC_VLEN_OFF);
+        if (vlen < 0 || vlen > GARRY_MAX_RECORD_SIZE)
+            continue;
 
         new_is_overflow = garry_read_int32(rec, WAL_REC_NEW_OVERFLOW_FLAG_OFF);
         if (new_is_overflow)

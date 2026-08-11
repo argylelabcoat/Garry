@@ -287,6 +287,16 @@ garry_bool garry_storage_delete(garry_engine_handle *eng, garry_txn_id txn, cons
         return 0;
     }
 
+    {
+        garry_wal_record *rec;
+        rec = garry_make_delete_record(txn, key, klen);
+        if (rec)
+        {
+            garry_wal_log_append(&eng->wal, rec);
+            garry_wal_record_free(rec);
+        }
+    }
+
     ok = garry_mvcc_delete(eng, txn, cid);
     garry_rwlock_wrunlock(&eng->root_lock);
     return ok;

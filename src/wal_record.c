@@ -69,6 +69,33 @@ garry_wal_record *garry_make_update_record(garry_buffer_pool *pool, garry_txn_id
 }
 
 /**
+ * @brief Create a WAL DELETE record.
+ *
+ * @param txn   Transaction ID performing the delete.
+ * @param key   Pointer to the key bytes.
+ * @param klen  Length of the key in bytes.
+ *
+ * @return Pointer to the allocated record, or NULL on allocation failure.
+ */
+garry_wal_record *garry_make_delete_record(garry_txn_id txn, const garry_byte *key,
+                                           garry_i32 klen)
+{
+    garry_wal_record *rec = (garry_wal_record *)malloc(sizeof(garry_wal_record));
+    if (rec == NULL)
+        return NULL;
+    memset(rec, 0, sizeof(*rec));
+    rec->kind = GARRY_WAL_DELETE;
+    rec->txid = txn;
+    if (klen > 0 && key != NULL)
+    {
+        memcpy(rec->key, key, (size_t)klen);
+    }
+    rec->key_len = klen;
+    rec->value_len = 0;
+    return rec;
+}
+
+/**
  * @brief Create a WAL COMMIT record.
  *
  * @param txn Transaction ID being committed.
