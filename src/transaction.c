@@ -509,6 +509,26 @@ garry_txn_id garry_mvcc_begin(garry_engine_handle *eng)
         }
     }
 
+    /* active_txns/txn_states are sized max_txns * 64 (see garry_engine_
+     * init/open) specifically to give rolled-back txns — which the check
+     * above deliberately excludes and which are never otherwise removed
+     * from the active list — room to accumulate. But nothing previously
+     * enforced that actual capacity: since committed txns are removed via
+     * remove_active_txn() but rolled-back ones never are, a workload with
+     * enough rollbacks (e.g. a get-then-rollback-on-not-found pattern,
+     * done once per nonexistent-key lookup) grows active_count past 64x
+     * max_txns while the check above keeps allowing new transactions —
+     * and the unconditional eng->active_txns[eng->active_count] = txn
+     * write below then goes past the end of the heap-allocated arrays,
+     * corrupting the heap (confirmed via instrumented reproduction: a
+     * write at slot=328 into a 256-slot array, immediately preceding a
+     * crash). Enforce the real capacity as a hard cap too. */
+    if (eng->active_count >= eng->max_txns * 64)
+    {
+        garry_mutex_unlock(&eng->txn_slot_mutex);
+        return -1;
+    }
+
     txn = eng->next_txid;
     eng->next_txid++;
 
