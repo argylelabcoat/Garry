@@ -294,6 +294,19 @@ garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value, garry
                 garry_write_int32((garry_byte *)*ppbuf, GARRY_PAGE_HEADER_SIZE, this_pid);
                 garry_pool_mark_dirty(pool, prev_pid);
                 garry_pool_release_page(pool, prev_pid);
+                /* modified_pages (see garry_mvcc_set) only tracks the
+                 * chain page a caller passed in, never these overflow
+                 * pages -- and a value can span an unbounded number of
+                 * them, more than that fixed 16-entry array could hold
+                 * anyway. Without an explicit flush here they exist only
+                 * in the buffer pool until garry_engine_close(), so any
+                 * unclean shutdown after commit leaves the overflow head
+                 * WAL-recovery points at pointing to pages that were
+                 * never actually written to disk -- observed as
+                 * "payload body truncated" on garry_overflow_read()
+                 * after recovery. Flush eagerly as each page is
+                 * finalized instead of deferring to commit/close. */
+                garry_pool_flush_page(pool, prev_pid);
             }
         }
 
@@ -317,6 +330,14 @@ garry_i32 garry_overflow_write(garry_buffer_pool *pool, const char *value, garry
             head = this_pid;
         prev_pid = this_pid;
         offset += this_chunk;
+    }
+
+    /* The loop above only flushes a page once a *later* page's back-link
+     * write touches it again; the final page in the chain never gets a
+     * subsequent iteration to trigger that, so flush it explicitly here. */
+    if (prev_pid >= 0)
+    {
+        garry_pool_flush_page(pool, prev_pid);
     }
 
     return head;
